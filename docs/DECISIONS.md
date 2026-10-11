@@ -278,3 +278,80 @@ CD0 values are re-derived with `npm run calibrate` whenever the physics changes.
 - **Turn rate readout.** It is computed from the aircraft's angular velocity, not from heading changes, so it is correct at any refresh rate.
 
 **Why:** It lets the product owner repeat the same test situations exactly while judging the flight model before Phase 1 sign-off. It is easy to remove, because everything sits behind the development-only switch.
+
+---
+
+# Phase 2 decisions (controls and cameras)
+
+## D32. Keyboard and mouse controls (Phase 2)
+
+**Decision:**
+- **Throttle:** Insert/Delete, as the product owner specified. **W/S** also works, because a Mac keyboard has no Insert key.
+- **Trim:** Home/End, as specified. **T/G** also works.
+- **Mac fn keys:** Insert, Delete, Home and End are recognised by key name, not key position. On a Mac, fn+Left sends "Home" from the Left-arrow key, and must trim, not roll.
+- **Unchanged:** Up arrow = nose down, I inverts, and Q/E is the rudder.
+- **Mouse flying:**
+  - Click the game to capture the pointer; Esc releases it.
+  - The mouse moves a virtual stick that stays where you leave it, like a real stick; X recentres it.
+  - The wheel moves the throttle by 5% a notch.
+  - `,` and `.` step the sensitivity, which is remembered in the browser.
+  - A held key takes priority over the mouse on its own axis.
+- **Starting:** keys 1-4 start parked on the airfield; Shift+1-4 keeps the 1,000 m air start.
+
+**Not done:** a rotary "blip switch". Only Wikipedia-derived sources mention it for the Camel. Key rebinding comes later, with the menus.
+
+## D33. Ground model (Phase 2)
+
+**Decision:** The ground is a flat field. The aircraft touches it through:
+- **Two main wheels and a tailskid:** spring-damper contacts with rolling, sideways and skid friction. There are no brakes and no steerable tailwheel, as in WWI.
+- **Crash points:** the propeller tip and the lower wingtips.
+- **Undercarriage collapse:** a touchdown sinking faster than 3 m/s.
+
+Wheel height comes from a 25 cm propeller clearance, and skid height from an 11-degree three-point attitude. Only the Camel and SPAD wheel tracks are sourced; the rest are estimates in AIRCRAFT_DATA.md.
+- **Chocks:** the aircraft starts chocked. The chocks are pulled when the throttle first passes 30%, standing in for the ground crew.
+- **Where the ground acts:** only in the time-stepping (`advance`). `evaluate` stays the free-air model, so the trim solver and every performance and validation result at "sea level" is unchanged.
+
+**Why:** The Phase 2 acceptance (take off, fly a circuit, land) needs it.
+
+**Findings:**
+- Like real tail-draggers, these aircraft are directionally unstable on the ground. Careless rudder on the roll-out ground-loops them into a wingtip; firm, well-damped rudder lands all four.
+- Take-off: lift-off at 1.13-1.21 x stall speed after 105-160 m.
+
+## D34. Propeller effects and fin rigging (Phase 2, product owner approved)
+
+**Decision:** Added three propeller effects to all four aircraft, with estimated coefficients flagged in AIRCRAFT_DATA.md:
+- **Propwash over the tail:** extra dynamic pressure of thrust / disc area, from momentum theory.
+- **Slipstream swirl on the fin:** a yaw moment proportional to propeller torque.
+- **P-factor:** the thrust centre shifts toward the descending blade.
+
+A fin offset cancels most of the swirl at cruise. Like a small wing, its moment grows with the dynamic pressure at the tail, so it has almost no effect at idle in a stall or spin.
+
+**Why:** Without them, engine torque in the tail-down attitude swung the rotary aircraft RIGHT on the take-off run, and the rudder had no bite at low speed. With them, all four swing left under power and need right rudder, which matches the sources and normal propeller behaviour. The gyroscopic swerve left when raising the tail, and the kick right when raising the nose (Canadian Museum of Flight, S18), are tested.
+
+**Consequences:**
+- The Camel's nose-attitude difference between left and right turns fell from about 12 to 8 degrees. It is still clearly in the sourced direction.
+- The SPAD and Albatros now differ slightly left to right (under 3 degrees; turn rates within 2%).
+- With no rudder at full power the nose swings 28-58 degrees left in 3 s, so the player must be ready with right rudder.
+- Validation and performance results are unchanged, because these effects are moments only.
+
+## D35. What "the Camel pulls right" means (Phase 2)
+
+**Decision:** Following the product owner's choice to follow the sources, the acceptance is tested as the sourced behaviour:
+- the nose drops in right turns and rises in left turns (Old Rhinebeck Aerodrome, S35; RAeS paper, S33);
+- right turns "whipped round" (S33, S34);
+- the RAE 1918 trials found steady left spins and jerky right spins (S33);
+- the take-off swerves (S18) come from the gyroscopic effect.
+
+The engine rotation (clockwise from the cockpit) is supported by the Shuttleworth chief pilot's explanation of the jerky right spins (S33).
+
+**Not reproduced:** the model's Camel does not turn faster to the right in a sustained turn (D16).
+
+## D36. Spin recovery is tested with two standard techniques (Phase 2)
+
+**Decision:** Each spin must be recoverable by one of two techniques:
+- the RAE technique (stick forward, opposite rudder);
+- Shuttleworth's "stick forward with rudder central".
+
+The Camel must recover both ways with the RAE technique.
+
+**Why:** With the propeller effects, the Dr.I's right spin turns into a left spin if opposite rudder is held throughout. The RAE recorded the same thing on the Camel. That spin recovers with the rudder central, so every spin remains recoverable, which is what the spec requires.

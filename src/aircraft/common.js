@@ -44,7 +44,21 @@ export const common = {
   // --- engine and propeller
   propDesignSpeedFraction: 0.9, // propeller is at its best efficiency at this fraction of top speed (curve: constants.PROPELLER_EFFICIENCY)
   propStaticMerit: 0.6, // figure of merit for static thrust
+  tailWashFraction: 0.5, // share of the slipstream's extra dynamic pressure felt by the elevator and rudder
+  swirlYaw: 0.5, // yaw moment from slipstream swirl on the fin, as a fraction of propeller torque
+  pFactor: 0.4, // thrust-centre offset toward the descending blade, fraction of propeller radius per radian
   torqueRigging: 0.8, // fraction of engine torque (at 60% throttle) the rigging cancels
   idlePowerFraction: 0.05, // power at throttle zero, fraction of rated
   idleRpmFraction: 0.55, // engine speed at throttle zero, fraction of rated
+
+  // --- ground handling (all estimates; see docs/AIRCRAFT_DATA.md)
+  propClearance: 0.25, // m, propeller tip above the ground in the level (tail-up) attitude
+  gearStaticDeflection: 0.06, // m, main wheel and tyre/bungee compression under the aircraft's weight
+  skidStaticDeflection: 0.04, // m, tailskid spring compression under its share of the weight
+  gearDampingRatio: 0.5, // fraction of critical damping in the gear springs
+  wheelRollingFriction: 0.06, // rolling resistance on grass, times the load
+  wheelSideFriction: 0.8, // sideways grip of the tyres on grass, times the load
+  skidFriction: 0.5, // friction of the tailskid dragging on grass, times the load
+  crashSinkRate: 3.0, // m/s, touchdown sink rate that collapses the undercarriage
+  chockReleaseThrottle: 0.3, // the chocks are pulled away when the throttle first passes this
 };

@@ -28,12 +28,27 @@ export const spad13 = {
     kind: 'inline',
     ratedPower: 164000, // W (M)
     ratedRpm: 2100, // crankshaft rpm (M)
-    rotationSign: 1,
+    rotationSign: 1, // +1 = right-hand propeller, clockwise seen from the cockpit (E): the left-hand 8B engine drives it through reversing reduction gears
     rotatingInertia: 0, // inline engine: torque and gyro effects not modelled in Phase 1
   },
   propeller: {
     diameter: 2.5, // m (M)
     gearRatio: 0.75, // propeller turns at 0.75 x crankshaft speed (M)
+  },
+  // Undercarriage (body axes, from the centre of gravity). The main wheels'
+  // height is derived from the propeller clearance; the tailskid height from
+  // the three-point ground attitude (src/physics/ground.js).
+  gear: {
+    track: 1.492, // m, distance between the main wheels (M) 4 ft 10.75 in
+    wheelRadius: 0.33, // m (E)
+    mainAhead: 0.08, // main wheel contact ahead of the centre of gravity, fraction of length (E)
+    tailAt: 0.62, // tailskid behind the centre of gravity, fraction of length (E)
+    groundAngle: 0.192, // rad, three-point attitude, about 11 degrees nose up (E)
+  },
+  // Pilot's eye, body axes from the centre of gravity (E). Rendering only.
+  cockpit: {
+    eyeBehind: 0.69, // m behind the centre of gravity
+    eyeAbove: 0.6, // m above the centre of gravity
   },
   aero: {
     oswald: 0.75, // (E)

@@ -6,9 +6,11 @@ import { Vector3 } from 'three';
 import { G, ISA } from '../core/constants.js';
 import { atmosphere } from './atmosphere.js';
 import { liftDrag, sideForce, momentCoefficients, wingConstants } from './aero.js';
-import { enginePower, engineOmega, propellerThrust, rotaryEffects, torqueRigging } from './engine.js';
+import { enginePower, engineOmega, propellerThrust, rotaryEffects, torqueRigging, finRigging } from './engine.js';
 import { deflections, updateSurfaces } from './controls.js';
 import { stepRigidBody, worldToBody } from './rigidBody.js';
+import { groundContact } from './ground.js';
+import { propellerMoments, slipstreamPressure } from './propEffects.js';
 
 const _vBody = new Vector3();
 
@@ -66,10 +68,13 @@ export function evaluate(ac, common, state, surfaces) {
     defl,
     stall,
   });
+  // Slipstream over the tail, swirl on the fin and P-factor.
+  const omegaProp = engineOmega(ac, common, surfaces.throttle) * ac.propeller.gearRatio;
+  const prop = propellerMoments(ac, common, { thrust, shaftTorque: power / omegaProp, alpha, defl, w });
   const moment = new Vector3(
     q * w.S * w.b * c.roll + rotary.torque + torqueRigging(ac, common), // roll about the nose
-    -q * w.S * w.b * c.yaw, // yaw (nose-right is -Y)
-    q * w.S * w.chord * c.pitch, // pitch (nose-up is +Z)
+    -(q * w.S * w.b * c.yaw + prop.yaw + finRigging(ac, common, q + common.tailWashFraction * slipstreamPressure(ac, thrust))), // yaw (nose-right is -Y)
+    q * w.S * w.chord * c.pitch + prop.pitch, // pitch (nose-up is +Z)
   );
 
   return {
@@ -99,9 +104,16 @@ export function evaluate(ac, common, state, surfaces) {
 }
 
 // Move the controls toward the input, then advance the aircraft by dt.
+// This is the only place the ground acts: evaluate() is the free-air model
+// used by the trim solver and performance calculations at any altitude.
 export function advance(ac, common, state, surfaces, input, dt) {
   updateSurfaces(surfaces, input, common, dt);
   const e = evaluate(ac, common, state, surfaces);
+  const ground = groundContact(ac, common, state); // zero when clear of the ground
+  e.force.add(ground.force);
+  e.moment.add(ground.moment);
   stepRigidBody(state, e, dt);
+  e.diag.onGround = ground.onGround;
+  e.diag.crash = ground.crash;
   return e.diag;
 }

@@ -60,6 +60,10 @@ All values are stored in SI units. The original figure and unit from the source 
 | S30 | W.F. Durand and E.P. Lesley, Experimental Research on Air Propellers II, NACA Report 30 (1919), Table III | https://ntrs.nasa.gov/citations/19930091058 | Government research report |
 | S31 | Virginia Tech, AOE 3104 Aircraft Performance course notes, "10. Thrust Models" | https://archive.aoe.vt.edu/lutze/AOE3104/thrustmodels.pdf | University course notes |
 | S32 | This Day in Aviation, Sopwith Camel (article "21 December 1916"): wing span, chord, gap, stagger, dihedral | https://www.thisdayinaviation.com/tag/gun-machine-vickers-303in-mk-1/ | Secondary article |
+| S33 | P. Jarrett, "Spinning the Camel", Journal of Aeronautical History, Paper 2024/05 (Royal Aeronautical Society), reporting RAE Farnborough spinning trials of Camel B2312 (1918) and pilot accounts | https://www.aerosociety.com/media/25508/paper-2024-05-jarrett-spinning-the-camel.pdf | Peer-reviewed historical paper quoting official trials |
+| S34 | H. Cowin, Aviation Pioneers (Osprey): Camel handling, as transcribed on flyingmachines.ru | https://flyingmachines.ru/Site2/Crafts/Craft25445.htm | Reference book (transcription) |
+| S35 | Old Rhinebeck Aerodrome, Sopwith Camel (reproduction, 160 hp Gnome) | https://oldrhinebeck.org/sopwith-camel/ | Museum page |
+| S36 | flyingmachines.ru Camel page, specification section (book not named on the page): wheel track | https://flyingmachines.ru/Site2/Crafts/Craft25445.htm | Transcription, source book not identified |
 
 Transcriptions on flyingmachines.ru reproduce the named books' tables; values from them are rated medium because the transcription itself was not checked against the printed book.
 
@@ -89,7 +93,7 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Engine displacement | 16.26 | L | 992.07 in³ | S11 | high | |
 | Engine mass | 173 | kg | 381 lb | S11 | high | Bare engine. Installed weight with cowling and mounts is not included. |
 | Engine diameter (rotating) | 1.021 | m | 40.2 in | S11 | high | Used for the rotating-mass estimate below. |
-| Engine rotation, viewed from the cockpit | clockwise | — | clockwise | S18, S19 | medium | Neither source states the direction outright. It is inferred from the effects they describe: S18 says the Camel turned "extremely sharply to the right and very poorly to the left", which needs forward-pointing engine angular momentum (clockwise from the cockpit). That also matches the product spec. S19 calls the old 270-degree left-turn habit a legend and suggests the practical effect was small, so the size of the effect is disputed. |
+| Engine rotation, viewed from the cockpit | clockwise | — | clockwise | S18, S19, S33, S35 | medium | No source states the direction outright; it follows from the documented effects, which need forward-pointing engine angular momentum: the nose rises in left turns and drops in right turns (S35, S33); right turns 'whipped round' with the nose dropping (S33, S34); and the Shuttleworth chief pilot explains the jerky right spins in the 1918 RAE trials by 'the gyroscopics pitching the nose down' with right yaw (S33). |
 | Propeller diameter | 2.59 | m | — | ASSUMPTION | estimate | Only a single collector's reading of a Lang propeller stamp (2,590 mm, for the 130 hp Clerget) was found, on a forum that our source policy excludes. Held as an estimate until a museum record or propeller reference confirms it. |
 | Maximum speed | 52.3 | m/s | 117 mph at sea level | S22 | medium | Mason, at 1,453 lb (659 kg): 117 mph at sea level, 113 mph at 10,000 ft. The drag (CD0) is calibrated to this figure. S4 gives 112 mph with no altitude; S15 115 mph; King (S23) lower figures at a heavier weight (see Validation data). |
 | Service ceiling | 5,791 | m | 19,000 ft | S4, S15, S22 | medium | Three sources agree, but none gives the conditions (load, engine state). King (S23) gives 18,000 ft. |
@@ -103,6 +107,13 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Pitch inertia Iyy | 1,941 | kg m² | — | ASSUMPTION | estimate | 659 kg x (0.30 x length)². Likely high for the Camel, whose mass is concentrated in the front. No measured WWI inertia data located, so the radius of gyration is assumed. |
 | Yaw inertia Izz | 4,937 | kg m² | — | ASSUMPTION | estimate | Ixx + Iyy (flat-body approximation). No measured WWI inertia data located. |
 | Rotating engine inertia about the crankshaft | 22.1 | kg m² | — | ASSUMPTION | estimate | 173 kg x (0.7 x 0.51 m)². Assumes the whole engine rotates with its mass at 70% of the radius. Drives gyroscopic precession (rotation speed at 1,250 rpm is 131 rad/s). |
+| Wheel track (`gear.track`) | 1.422 | m | 4 ft 8 in | S36 | medium | Distance between the main wheels. |
+| Wheel radius (`gear.wheelRadius`) | 0.33 | m | — | ASSUMPTION | estimate | Not found. Typical of the roughly 700 mm wheels of WWI fighters; only affects the drawn wheels. |
+| Main wheel contact ahead of the CG (`gear.mainAhead`) | 0.08 | fraction of length | — | ASSUMPTION | estimate | Not found. Places the wheel contact about 18 degrees ahead of the CG in the level attitude, the usual tail-dragger layout; less would nose over too easily, more would make lifting the tail hard. |
+| Tailskid behind the CG (`gear.tailAt`) | 0.62 | fraction of length | — | ASSUMPTION | estimate | Not found. The skid sits near the tail post; matches the drawn model. |
+| Three-point ground attitude (`gear.groundAngle`) | 0.192 | rad | about 11 degrees | ASSUMPTION | estimate | Not found. Typical nose-up angle of a WWI tail-dragger at rest. |
+| Pilot's eye behind the CG (`cockpit.eyeBehind`) | 0.63 | m | — | ASSUMPTION | estimate | Not found. About 11% of the length behind the CG; used only to place the cockpit camera. |
+| Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.6 | m | — | ASSUMPTION | estimate | Not found. Sitting eye height above the fuselage centre line; camera only. |
 
 ## SPAD S.XIII (Hispano-Suiza 8Be)
 
@@ -126,6 +137,7 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Propeller drive | Geared | — | geared propeller drive | S12 | medium | Gear ratio not found (see gaps). |
 | Propeller gear ratio | 0.75 | — | 0.75:1 reduction | S20 | medium | Given for the Hispano-Suiza 8B and 8Be. The earlier 8Ba is given as 0.585:1 in the same source, and a geared drive is also stated in S12. |
 | Propeller diameter | 2.50 | m | 2.50 m | S20 | medium | The source says the 8Be used 2.50 m or 2.55 m propellers. The smaller is used. Fixed-pitch two-bladed wood. |
+| Propeller rotation, viewed from the cockpit | clockwise | — | right-hand | ASSUMPTION | estimate | S17 calls the Hispano-Suiza a left-hand tractor engine; a search summary of S20 says the geared 8B drove a right-hand propeller (the reduction gears reverse it), but that page was not checked. Used for the slipstream and P-factor effects. |
 | Maximum speed | 59.17 | m/s | 213 km/h at 1,981 m | S17 | medium | McCook Field test (924 kg, engine at 2,040 rpm). The drag (CD0) is calibrated to this at 924 kg and 220 hp. Which engine the test aircraft had is uncertain: the report title says 220 hp Wright, the article text describes the 197 hp 8Ba (see FLIGHT_VALIDATION.md). |
 | Maximum speed altitude (`documented.maxSpeedAltitude`) | 1,981 | m | 6,500 ft | S17 | medium | Altitude of the calibration speed. |
 | Maximum speed, USAF fact sheet | 60.35 | m/s | 135 mph | S5 | medium | Altitude not stated; compared at sea level in the validation (model +0.7%). |
@@ -141,6 +153,13 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Roll inertia Ixx | 3,446 | kg m² | — | ASSUMPTION | estimate | 820 kg x (0.25 x 8.20 m)². No measured WWI inertia data located, so the radius of gyration is assumed. |
 | Pitch inertia Iyy | 2,929 | kg m² | — | ASSUMPTION | estimate | 820 kg x (0.30 x 6.30 m)². No measured WWI inertia data located, so the radius of gyration is assumed. |
 | Yaw inertia Izz | 6,375 | kg m² | — | ASSUMPTION | estimate | Ixx + Iyy (flat-body approximation). No measured WWI inertia data located. |
+| Wheel track (`gear.track`) | 1.492 | m | 4 ft 10.75 in | S17 | medium | Distance between the main wheels. |
+| Wheel radius (`gear.wheelRadius`) | 0.33 | m | — | ASSUMPTION | estimate | Not found. Typical of the roughly 700 mm wheels of WWI fighters; only affects the drawn wheels. |
+| Main wheel contact ahead of the CG (`gear.mainAhead`) | 0.08 | fraction of length | — | ASSUMPTION | estimate | Not found. Places the wheel contact about 18 degrees ahead of the CG in the level attitude, the usual tail-dragger layout; less would nose over too easily, more would make lifting the tail hard. |
+| Tailskid behind the CG (`gear.tailAt`) | 0.62 | fraction of length | — | ASSUMPTION | estimate | Not found. The skid sits near the tail post; matches the drawn model. |
+| Three-point ground attitude (`gear.groundAngle`) | 0.192 | rad | about 11 degrees | ASSUMPTION | estimate | Not found. Typical nose-up angle of a WWI tail-dragger at rest. |
+| Pilot's eye behind the CG (`cockpit.eyeBehind`) | 0.69 | m | — | ASSUMPTION | estimate | Not found. About 11% of the length behind the CG; used only to place the cockpit camera. |
+| Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.6 | m | — | ASSUMPTION | estimate | Not found. Sitting eye height above the fuselage centre line; camera only. |
 
 ## Fokker Dr.I (Oberursel UR.II)
 
@@ -179,6 +198,13 @@ No original Dr.I survives (S6), so all geometry and weights come from reproducti
 | Pitch inertia Iyy | 1,756 | kg m² | — | ASSUMPTION | estimate | 586 kg x (0.30 x 5.77 m)². No measured WWI inertia data located, so the radius of gyration is assumed. |
 | Yaw inertia Izz | 3,649 | kg m² | — | ASSUMPTION | estimate | Ixx + Iyy (flat-body approximation). No measured WWI inertia data located. |
 | Rotating engine inertia about the crankshaft | 18.8 | kg m² | — | ASSUMPTION | estimate | Engine mass and size were not found. Scaled from the Clerget 9B record (S11): 173 kg for 16.26 L gives 160 kg for the UR.II's 15.07 L (S13), radius 0.49 m, then 160 kg x (0.7 x 0.49 m)². |
+| Wheel track (`gear.track`) | 1.25 | m | — | ASSUMPTION | estimate | Not found. Scaled from the span with the average track/span ratio of the Camel and SPAD (0.174). |
+| Wheel radius (`gear.wheelRadius`) | 0.33 | m | — | ASSUMPTION | estimate | Not found. Typical of the roughly 700 mm wheels of WWI fighters; only affects the drawn wheels. |
+| Main wheel contact ahead of the CG (`gear.mainAhead`) | 0.08 | fraction of length | — | ASSUMPTION | estimate | Not found. Places the wheel contact about 18 degrees ahead of the CG in the level attitude, the usual tail-dragger layout; less would nose over too easily, more would make lifting the tail hard. |
+| Tailskid behind the CG (`gear.tailAt`) | 0.62 | fraction of length | — | ASSUMPTION | estimate | Not found. The skid sits near the tail post; matches the drawn model. |
+| Three-point ground attitude (`gear.groundAngle`) | 0.192 | rad | about 11 degrees | ASSUMPTION | estimate | Not found. Typical nose-up angle of a WWI tail-dragger at rest. |
+| Pilot's eye behind the CG (`cockpit.eyeBehind`) | 0.63 | m | — | ASSUMPTION | estimate | Not found. About 11% of the length behind the CG; used only to place the cockpit camera. |
+| Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.6 | m | — | ASSUMPTION | estimate | Not found. Sitting eye height above the fuselage centre line; camera only. |
 
 ## Albatros D.V (Mercedes D.IIIa)
 
@@ -201,6 +227,7 @@ Dimensions and weights come from the Smithsonian's original D.Va (D.7161/17), wh
 | Engine bore x stroke | 140 x 160 | mm | 5.512 x 6.299 in | S14 | medium | Given for the D.III. S14 says the D.IIIa crankshaft and rods were "practically identical". |
 | Engine displacement | 14.78 | L | 901.81 in³ | S14 | medium | Same caveat. |
 | Propeller diameter | 2.70 | m | — | ASSUMPTION | estimate | No source found for the D.V. Chosen so the tip speed at the rated 1,400 rpm is about 198 m/s, between the Camel (about 170 m/s) and the SPAD (about 206 m/s), the other aircraft in this set whose figures are recorded here. |
+| Propeller rotation, viewed from the cockpit | clockwise | — | — | ASSUMPTION | estimate | Not found. Assumed clockwise; used only for the small slipstream and P-factor effects. |
 | Maximum speed | 47.78 | m/s | 172 km/h | S25 | medium | Herris: D.Va with the 170 hp Mercedes D.IIIa at 937 kg; altitude not stated, taken as sea level. The drag (CD0) is calibrated to this at those conditions. S16's 170 km/h belongs to the D.V with the 160 hp D.III (also in S25). |
 | Service ceiling | 5,800 | m | 5,800 m | S25 | medium | Herris, D.Va. S16 gives 5,000 m (a compilation pairing it with the D.III engine). |
 | Armament | 2 x synchronised machine guns | — | machine guns, calibre not stated | S3 | medium | S3 says bullet damage passed through the right gun mount. Calibre and gun type to be confirmed in Phase 5. |
@@ -212,6 +239,13 @@ Dimensions and weights come from the Smithsonian's original D.Va (D.7161/17), wh
 | Roll inertia Ixx | 4,632 | kg m² | — | ASSUMPTION | estimate | 915 kg x (0.25 x 9.0 m)². No measured WWI inertia data located, so the radius of gyration is assumed. |
 | Pitch inertia Iyy | 4,388 | kg m² | — | ASSUMPTION | estimate | 915 kg x (0.30 x 7.3 m)². No measured WWI inertia data located, so the radius of gyration is assumed. |
 | Yaw inertia Izz | 9,021 | kg m² | — | ASSUMPTION | estimate | Ixx + Iyy (flat-body approximation). No measured WWI inertia data located. |
+| Wheel track (`gear.track`) | 1.57 | m | — | ASSUMPTION | estimate | Not found. Scaled from the span with the average track/span ratio of the Camel and SPAD (0.174). |
+| Wheel radius (`gear.wheelRadius`) | 0.33 | m | — | ASSUMPTION | estimate | Not found. Typical of the roughly 700 mm wheels of WWI fighters; only affects the drawn wheels. |
+| Main wheel contact ahead of the CG (`gear.mainAhead`) | 0.08 | fraction of length | — | ASSUMPTION | estimate | Not found. Places the wheel contact about 18 degrees ahead of the CG in the level attitude, the usual tail-dragger layout; less would nose over too easily, more would make lifting the tail hard. |
+| Tailskid behind the CG (`gear.tailAt`) | 0.62 | fraction of length | — | ASSUMPTION | estimate | Not found. The skid sits near the tail post; matches the drawn model. |
+| Three-point ground attitude (`gear.groundAngle`) | 0.192 | rad | about 11 degrees | ASSUMPTION | estimate | Not found. Typical nose-up angle of a WWI tail-dragger at rest. |
+| Pilot's eye behind the CG (`cockpit.eyeBehind`) | 0.8 | m | — | ASSUMPTION | estimate | Not found. About 11% of the length behind the CG; used only to place the cockpit camera. |
+| Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.6 | m | — | ASSUMPTION | estimate | Not found. Sitting eye height above the fuselage centre line; camera only. |
 
 ## Common flight-model parameters
 
@@ -244,7 +278,19 @@ Shared by all four aircraft. Every value is an estimate: no measured WWI stabili
 | Rudder travel (`common.maxYaw`) | 0.44 | rad | 25 degrees | ASSUMPTION | estimate | No source on control travel found. Typical of the period's layout. Tuned by feel. |
 | Control surface speed (`common.surfaceRate`) | 4 | travel/s | — | ASSUMPTION | estimate | How fast the surfaces move toward the commanded position (full travel in a quarter second). No measured value. A design choice so key presses feel immediate but not instant. |
 | Trim lever authority (`common.trimAuthority`) | 0.4 | fraction of elevator travel | — | ASSUMPTION | estimate | How much elevator the trim lever can add. A design choice. It is enough to trim all four aircraft across their speed range. |
-| Torque cancelled by rigging (`common.torqueRigging`) | 0.8 | fraction | — | ASSUMPTION | estimate | Fraction of the rotary engine's reaction torque (at 60% throttle) cancelled by a fixed roll moment standing in for the rigging. Chosen so the rotary aircraft fly roughly level hands-off at cruise, while a change of throttle still disturbs them. No source found on how the Camel was rigged. |
+| Torque cancelled by rigging (`common.torqueRigging`) | 0.8 | fraction | — | ASSUMPTION | estimate | Fraction of the rotary engine's reaction torque (at 60% throttle) cancelled by a fixed roll moment standing in for the rigging. Chosen so the rotary aircraft fly roughly level hands-off at cruise, while a change of throttle still disturbs them. No source found on how the Camel was rigged. The same fraction sets the fin offset that cancels the slipstream swirl at cruise; the fin's moment grows with the dynamic pressure at the tail. |
+| Propwash on the tail (`common.tailWashFraction`) | 0.5 | fraction | — | ASSUMPTION | estimate | Share of the slipstream's extra dynamic pressure (thrust / disc area, momentum theory) felt by the elevator and rudder. About half the tail sits in the slipstream. Gives rudder control at low speed under power. |
+| Slipstream swirl on the fin (`common.swirlYaw`) | 0.5 | fraction of propeller torque | — | ASSUMPTION | estimate | Momentum theory gives a fin yaw moment of roughly the propeller torque times fin area, lift slope and arm over twice the disc area times radius, about 1 for these aircraft; halved because only part of the fin sits in the swirl. |
+| P-factor (`common.pFactor`) | 0.4 | propeller radius per rad | — | ASSUMPTION | estimate | Shift of the thrust centre toward the descending blade per radian of angle of attack. Gives about 0.1 m at the 11 degree ground attitude. A typical textbook order; no WWI data. |
+| Propeller clearance (`common.propClearance`) | 0.25 | m | — | ASSUMPTION | estimate | Height of the propeller tip above the ground in the level (tail-up) attitude; sets the main wheel height. |
+| Undercarriage compression (`common.gearStaticDeflection`) | 0.06 | m | — | ASSUMPTION | estimate | Tyre and rubber-cord compression under the weight; sets the spring stiffness. |
+| Tailskid compression (`common.skidStaticDeflection`) | 0.04 | m | — | ASSUMPTION | estimate | Sets the tailskid spring stiffness. |
+| Undercarriage damping (`common.gearDampingRatio`) | 0.5 | fraction of critical | — | ASSUMPTION | estimate | Enough to stop bouncing in about one cycle, as bungee-sprung gear did. |
+| Wheel rolling resistance on grass (`common.wheelRollingFriction`) | 0.06 | times load | — | ASSUMPTION | estimate | Typical for narrow wheels on a grass field. |
+| Tyre sideways grip (`common.wheelSideFriction`) | 0.8 | times load | — | ASSUMPTION | estimate | Typical sideways friction of a tyre on grass. |
+| Tailskid friction (`common.skidFriction`) | 0.5 | times load | — | ASSUMPTION | estimate | A skid dragging on grass; the WWI substitute for brakes. |
+| Undercarriage collapse sink rate (`common.crashSinkRate`) | 3 | m/s | — | ASSUMPTION | estimate | About 600 ft/min; a touchdown faster than this counts as a crash. No structural data for these undercarriages was found. |
+| Chocks pulled at throttle (`common.chockReleaseThrottle`) | 0.3 | fraction | — | ASSUMPTION | estimate | Game rule: the aircraft starts chocked and the chocks are pulled when the throttle first passes 30%, standing in for the mechanics who held WWI aircraft until the pilot waved them away. |
 | Propeller best-efficiency speed (`common.propDesignSpeedFraction`) | 0.9 | fraction of top speed | — | ASSUMPTION | estimate | The fixed-pitch propeller is assumed to reach its peak on the measured efficiency curve (S30) at this fraction of the documented top speed at rated rpm. A design choice; no WWI propeller pitch data was found. |
 | Propeller figure of merit (static) (`common.propStaticMerit`) | 0.6 | — | — | ASSUMPTION | estimate | Fraction of ideal momentum-theory thrust achieved with the aircraft stationary. A typical value for a fixed-pitch propeller. Gives static thrust of about 50 to 60% of weight. |
 | Idle power (`common.idlePowerFraction`) | 0.05 | fraction of rated | — | ASSUMPTION | estimate | No source found. A design choice for the throttle-closed power. |

@@ -38,6 +38,21 @@ export const camel = {
     diameter: 2.59, // m (E)
     gearRatio: 1, // propeller turns with the engine
   },
+  // Undercarriage (body axes, from the centre of gravity). The main wheels'
+  // height is derived from the propeller clearance; the tailskid height from
+  // the three-point ground attitude (src/physics/ground.js).
+  gear: {
+    track: 1.422, // m, distance between the main wheels (M) 4 ft 8 in
+    wheelRadius: 0.33, // m (E)
+    mainAhead: 0.08, // main wheel contact ahead of the centre of gravity, fraction of length (E)
+    tailAt: 0.62, // tailskid behind the centre of gravity, fraction of length (E)
+    groundAngle: 0.192, // rad, three-point attitude, about 11 degrees nose up (E)
+  },
+  // Pilot's eye, body axes from the centre of gravity (E). Rendering only.
+  cockpit: {
+    eyeBehind: 0.63, // m behind the centre of gravity
+    eyeAbove: 0.6, // m above the centre of gravity
+  },
   aero: {
     oswald: 0.75, // (E)
     cd0: 0.036, // zero-lift drag coefficient (E) from the calibration speed: npm run calibrate

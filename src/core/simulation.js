@@ -4,13 +4,14 @@
 import { Quaternion, Vector3 } from 'three';
 import { common } from '../aircraft/index.js';
 import { advance } from '../physics/flightModel.js';
-import { trimLevel } from '../physics/trim.js';
+import { trimLevel, levelState } from '../physics/trim.js';
+import { restingPose } from '../physics/ground.js';
 import { createState, copyState } from '../physics/rigidBody.js';
-import { createInput } from '../physics/controls.js';
+import { createInput, createSurfaces } from '../physics/controls.js';
 
 export const START_ALTITUDE = 1000; // m
 export const START_SPEED_FRACTION = 0.8; // of the documented top speed
-const GROUND_CLEARANCE = 1.0; // m; below this the aircraft has hit the ground
+const FUSELAGE_FLOOR = 0.3; // m; the centre of gravity this low means the aircraft is on its belly
 
 export class Simulation {
   constructor() {
@@ -20,6 +21,7 @@ export class Simulation {
     this.surfaces = null;
     this.diag = null;
     this.crashed = false;
+    this.crashReason = null;
     this.time = 0;
     // The neutral controls the flight starts with (throttle and trim from the trim solver).
     this.startInput = createInput();
@@ -37,8 +39,33 @@ export class Simulation {
     this.startInput.throttle = trim.surfaces.throttle;
     this.startInput.trim = trim.surfaces.trim;
     this.crashed = false;
+    this.crashReason = null;
     this.time = 0;
     this.diag = null;
+    return this.startInput;
+  }
+
+  // Begin a flight parked on the airfield: three-point attitude, engine at
+  // idle, chocks in front of the wheels (pulled away when the throttle is
+  // opened past common.chockReleaseThrottle). Facing north.
+  startOnGround(aircraft) {
+    const pose = restingPose(aircraft, common);
+    const state = levelState(pose.height, 0, pose.pitch);
+    state.chocked = true;
+    this.aircraft = aircraft;
+    copyState(this.state, state);
+    this.state.chocked = true;
+    this.surfaces = createSurfaces();
+    this.surfaces.throttle = 0;
+    this.startInput = createInput();
+    this.startInput.throttle = 0;
+    this.crashed = false;
+    this.crashReason = null;
+    this.diag = null;
+    // Let the springs settle before the player takes over.
+    for (let i = 0; i < 240; i++) this.step(1 / 120, this.startInput);
+    copyState(this.previous, this.state);
+    this.time = 0;
     return this.startInput;
   }
 
@@ -46,9 +73,16 @@ export class Simulation {
   step(dt, input) {
     if (!this.aircraft || this.crashed) return;
     copyState(this.previous, this.state);
+    if (this.state.chocked && input.throttle > common.chockReleaseThrottle) this.state.chocked = false;
     this.diag = advance(this.aircraft, common, this.state, this.surfaces, input, dt);
     this.time += dt;
-    if (this.state.position.y < GROUND_CLEARANCE) this.crashed = true;
+    if (this.diag.crash) this.crash(this.diag.crash);
+    else if (this.state.position.y < FUSELAGE_FLOOR) this.crash('Hit the ground');
+  }
+
+  crash(reason) {
+    this.crashed = true;
+    this.crashReason = reason;
   }
 
   // Blend previous and current state for drawing. alpha is 0..1.

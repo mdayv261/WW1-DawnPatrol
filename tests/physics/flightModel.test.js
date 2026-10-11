@@ -75,11 +75,14 @@ describe('trim and level flight', () => {
 });
 
 describe('control authority', () => {
+  // Measured with the engine at idle, so only the airflow scales the controls
+  // (propwash over the tail is tested separately below).
   it('the same aileron gives about four times the roll moment at twice the airspeed', () => {
     const ac = AIRCRAFT.spad13;
     const roll = (speed) => {
       const state = levelState(1000, speed, 0);
       const s = createSurfaces();
+      s.throttle = 0;
       const base = evaluate(ac, common, state, s).moment.x;
       s.roll = 1;
       return evaluate(ac, common, state, s).moment.x - base;
@@ -92,11 +95,29 @@ describe('control authority', () => {
     const pitch = (speed) => {
       const state = levelState(1000, speed, 0);
       const s = createSurfaces();
+      s.throttle = 0;
       const base = evaluate(ac, common, state, s).moment.z;
       s.pull = 1;
       return evaluate(ac, common, state, s).moment.z - base;
     };
-    expect(pitch(60) / pitch(30)).toBeCloseTo(4, 2);
+    // Idle still gives 5% power, so a little propwash remains: about 3.9.
+    expect(pitch(60) / pitch(30)).toBeGreaterThan(3.8);
+    expect(pitch(60) / pitch(30)).toBeLessThan(4.05);
+  });
+});
+
+describe('propwash over the tail', () => {
+  it('full power gives the rudder bite at low speed; idle does not', () => {
+    const ac = AIRCRAFT.camel;
+    const rudder = (throttle) => {
+      const state = levelState(1000, 8, 0);
+      const s = createSurfaces();
+      s.throttle = throttle;
+      const base = evaluate(ac, common, state, s).moment.y;
+      s.yaw = 1;
+      return Math.abs(evaluate(ac, common, state, s).moment.y - base);
+    };
+    expect(rudder(1)).toBeGreaterThan(3 * rudder(0)); // about 4.6 times at 8 m/s
   });
 });
 

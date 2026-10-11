@@ -103,3 +103,27 @@ export function torqueRigging(ac, common) {
   const omega = engineOmega(ac, common, throttle);
   return common.torqueRigging * ac.engine.rotationSign * (power / omega);
 }
+
+// Yaw moment (N m, nose right positive) from the fin's rigged offset. An
+// offset fin is a small wing, so its moment grows with the dynamic pressure
+// at the tail (free stream plus propwash). It is sized to cancel the same
+// fraction (common.torqueRigging) of the slipstream swirl at 60% throttle
+// and cruise speed (80% of top speed, sea level) as torqueRigging cancels of
+// the engine torque. tailPressure: dynamic pressure at the tail now (Pa).
+const finCache = new WeakMap();
+export function finRigging(ac, common, tailPressure) {
+  let ref = finCache.get(ac);
+  if (!ref) {
+    const throttle = 0.6;
+    const speed = 0.8 * ac.documented.maxSpeed;
+    const power = enginePower(ac, common, throttle, ISA.RHO0);
+    const omegaProp = engineOmega(ac, common, throttle) * ac.propeller.gearRatio;
+    const thrust = propellerThrust(ac, common, power, speed, ISA.RHO0, throttle);
+    const area = (Math.PI * ac.propeller.diameter * ac.propeller.diameter) / 4;
+    const pressure = 0.5 * ISA.RHO0 * speed * speed + (common.tailWashFraction * thrust) / area;
+    const moment = common.torqueRigging * ac.engine.rotationSign * common.swirlYaw * (power / omegaProp);
+    ref = { pressure, moment };
+    finCache.set(ac, ref);
+  }
+  return (ref.moment * tailPressure) / ref.pressure;
+}

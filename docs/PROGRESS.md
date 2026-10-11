@@ -2,9 +2,28 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 1 signed off (11 Oct 2026); Phase 2 not started, scope to be agreed
+## Current status: Phase 2 (controls and cameras) in progress
 
 Phase 0 and Phase 1 are signed off. The product owner approved Phase 1 on 11 Oct 2026, after testing the flight model in the browser with the F4 test panel. Phase 1 included the core flight model for all four aircraft and its validation against sourced performance data (below). Phase 2 has not been started; its scope still needs to be agreed.
+
+## Phase 2 progress (in progress)
+
+**Checkpoint 1 done:**
+- **Controls (D32):** Insert/Delete and Home/End, plus W/S and T/G; the Mac fn keys work; mouse flying with adjustable sensitivity.
+- **Ground handling with an airfield start (D33):** keys 1-4 start on the airfield, Shift+1-4 in the air.
+- **Propeller effects (D34):** slipstream swirl, P-factor and propwash.
+- **Sourced Camel behaviour tests (D35).**
+- 301 tests pass, plus 15 known deviations.
+
+**Next:**
+- cockpit, chase and free-look cameras (C cycles; V or the right mouse button to look around);
+- cockpit instruments, and a J readout in the outside views;
+- docs and browser verification.
+
+**Known issues so far:**
+- Full power with no rudder swings the nose 28-58 degrees left in 3 s, so right rudder is needed. The strength comes from estimated propeller coefficients; judge it by feel.
+- Careless rudder on the landing roll-out ground-loops into a wingtip.
+- The Dr.I and Albatros wheel tracks are estimates.
 
 ## Flight model validation (11 Oct 2026)
 
@@ -120,5 +139,13 @@ Still open:
 
 ## Phase list
 - Phase 0: Foundations and research. Done and signed off.
-- Phase 1: Core flight model, all four aircraft, plus flight-model validation. Done and signed off (11 Oct 2026).
-- Phase 2 onward: not started. (Phase 7 includes gamepad and joystick support per the spec.)
+- Phase 1: Core flight model, all four aircraft, plus flight-model validation. Done and signed off (11 Oct 2026), committed d710c03.
+- **Phase 2: Controls and cameras.** In progress. Brief from the product owner:
+  - Keyboard: arrow keys for bank and pitch; Insert / Delete for throttle up / down; Home / End for trim up / down. W/S and T/G are also kept, because a Mac has no Insert key. Up arrow = nose down.
+  - Mouse flight controls with adjustable sensitivity; throttle and trim.
+  - Cockpit, chase and free-look cameras.
+  - Acceptance: you can take off, fly a circuit and land without the debug panel; the Camel visibly pulls right under power. The product owner decided to research what the Camel really did and follow the sources.
+  - This needs ground handling (take-off and landing) and basic instruments, so both are included.
+- **Phase 3: World and visuals.** Procedurally generated Western Front terrain (fields, woods, trench lines), sky and clouds. Low-polygon aircraft models built in code, with no third-party assets. Acceptance: steady frame rate at 1080p on the product owner's machine; each aircraft is recognisable by its silhouette.
+- **Phase 4: Weapons and damage.** Synchronised machine guns firing through the propeller, bullet ballistics with gravity and drag, limited ammunition and gun jams. Component damage to the engine, fuel, pilot, wings and control cables; damage changes the flight model. Acceptance: tests confirm bullet drop and travel time; a damaged wing causes a measurable roll.
+- Later phases: not yet defined (Phase 7 includes gamepad and joystick support, per the spec).

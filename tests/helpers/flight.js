@@ -71,7 +71,7 @@ export function holdBankTurn(ac, { side, pull, seconds = 6, bank = 60, altitude 
 // wings levelled. Returns the state at the end.
 export function stallAndSpin(
   ac,
-  { rudder = 0, recoverAt = Infinity, forward = 0.3, seconds = 16, recoverThrottle = 0, levelWings = false, windowFrom = Infinity },
+  { rudder = 0, recoverAt = Infinity, forward = 0.3, seconds = 16, recoverThrottle = 0, levelWings = false, windowFrom = Infinity, rudderHold = Infinity },
 ) {
   const { state, surfaces, input } = startTrimmed(ac, 3500, 0.8);
   input.throttle = 0;
@@ -86,7 +86,10 @@ export function stallAndSpin(
       input.yaw = t > 2.5 ? rudder : 0;
     } else {
       input.pull = -forward;
-      input.yaw = -rudder;
+      // Opposite rudder for `rudderHold` seconds, then centred (Infinity =
+      // held throughout). The 1918 RAE trials (S33) recovered in about 3 s
+      // and found that rudder left across could start a spin the other way.
+      input.yaw = t - recoverAt < rudderHold ? -rudder : 0;
       input.throttle = recoverThrottle;
       if (levelWings) {
         const bank = attitude(state).bank;
