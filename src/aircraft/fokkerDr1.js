@@ -13,6 +13,13 @@ export const fokkerDr1 = {
     height: 2.95, // m (M)
     wingArea: 18.7, // m^2, all three wings (M)
   },
+  // Wings, top to bottom (m). Spans from Herris (M); gaps 0.88 m and 0.86 m
+  // taken from the closely related MAG-Fokker 90.03 (E).
+  wingStack: [
+    { span: 7.19, height: 1.74 },
+    { span: 6.225, height: 0.86 },
+    { span: 5.725, height: 0 },
+  ],
   mass: {
     loaded: 586, // kg (M)
     ixx: 1893, // kg m^2 (E)
@@ -32,13 +39,14 @@ export const fokkerDr1 = {
   },
   aero: {
     oswald: 0.75, // (E)
-    cd0: 0.043, // (E)
+    cd0: 0.0356, // (E) from the calibration speed: npm run calibrate
     clMax: 1.4, // (E)
     staticMargin: 0.04, // (E)
     cnBeta: 0.08, // (E)
   },
   documented: {
-    maxSpeed: 46.0, // m/s, 103 mph, altitude not stated (M); another source gives 51.4
+    maxSpeed: 51.39, // m/s, 185 km/h at sea level (M); drag is calibrated to this. 103 mph is the 4,000 m figure
+    maxSpeedAltitude: 0, // m
     serviceCeiling: 6000, // m (M)
   },
 };

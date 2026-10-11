@@ -8,7 +8,7 @@ const CONTROL_CODES = new Set([
   'KeyQ', 'KeyE', 'KeyW', 'KeyS', 'KeyT', 'KeyG',
 ]);
 
-// handlers: { onSelect(index), onRestart(), onPause(), onDebug(), onHelp() }
+// handlers: { onSelect(index), onRestart(), onPause(), onDebug(), onHelp(), onTestPanel() }
 export function attachKeyboard(handlers) {
   const mapper = new InputMapper();
 
@@ -30,6 +30,9 @@ export function attachKeyboard(handlers) {
     else if (e.code === 'F3') {
       e.preventDefault();
       handlers.onDebug();
+    } else if (e.code === 'F4') {
+      e.preventDefault();
+      handlers.onTestPanel?.();
     } else if (e.code === 'KeyH') handlers.onHelp();
     else if (e.code === 'KeyI') mapper.invertPitch = !mapper.invertPitch;
   });

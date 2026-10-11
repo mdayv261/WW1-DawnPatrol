@@ -18,7 +18,7 @@ const _vBody = new Vector3();
 export function evaluate(ac, common, state, surfaces) {
   const altitude = state.position.y;
   const air = atmosphere(altitude);
-  const w = wingConstants(ac);
+  const w = wingConstants(ac, common);
   const mass = ac.mass.loaded;
 
   const vBody = worldToBody(state, state.velocity, _vBody);
@@ -40,7 +40,7 @@ export function evaluate(ac, common, state, surfaces) {
   const side = q * w.S * sideForce(common, beta);
 
   const power = enginePower(ac, common, surfaces.throttle, air.density);
-  const thrust = propellerThrust(ac, common, power, speed, air.density);
+  const thrust = propellerThrust(ac, common, power, speed, air.density, surfaces.throttle);
   const rotary = rotaryEffects(ac, common, surfaces.throttle, power);
 
   // Aero force in aeroplane axes, then converted to body axes.

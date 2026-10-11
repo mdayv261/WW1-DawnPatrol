@@ -42,8 +42,7 @@ export const common = {
   trimAuthority: 0.4, // fraction of full elevator travel the trim lever can add
 
   // --- engine and propeller
-  propEfficiencyPeak: 0.7, // best propeller efficiency
-  propDesignSpeedFraction: 0.9, // propeller is best at this fraction of top speed
+  propDesignSpeedFraction: 0.9, // propeller is at its best efficiency at this fraction of top speed (curve: constants.PROPELLER_EFFICIENCY)
   propStaticMerit: 0.6, // figure of merit for static thrust
   torqueRigging: 0.8, // fraction of engine torque (at 60% throttle) the rigging cancels
   idlePowerFraction: 0.05, // power at throttle zero, fraction of rated

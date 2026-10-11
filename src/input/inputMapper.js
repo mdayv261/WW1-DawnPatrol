@@ -54,6 +54,12 @@ export class InputMapper {
     return this.keys[action].some((c) => this.held.has(c));
   }
 
+  // True while the player holds any flight key (used to cancel a scripted
+  // test pilot so the player can take over).
+  pilotActive() {
+    return Object.keys(this.keys).some((action) => this.isDown(action));
+  }
+
   // Set the throttle and trim (used at the start of each flight).
   reset(input) {
     this.input = { ...createInput(), ...input };

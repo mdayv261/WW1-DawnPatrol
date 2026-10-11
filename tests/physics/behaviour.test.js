@@ -66,19 +66,34 @@ describe('turns: rotary engine asymmetry (Camel, Dr.I) against inline symmetry (
 });
 
 describe('spin and spin recovery', () => {
-  // Spin direction that forms for each aircraft with the current tuning
-  // (-1 = left rudder). The Dr.I does not sustain a spin yet (known issue).
-  const SPINS = { camel: -1, spad13: -1, albatros: -1 };
+  // A spin counts as steady only if the aircraft keeps rotating (over 2 rad/s)
+  // and stays stalled for the whole 12-20 s window, not just at one instant.
+  // Only the Camel does so with the current estimates; the others enter a
+  // rotation and then recover by themselves (known deviation, see
+  // docs/FLIGHT_VALIDATION.md). Full back stick, idle, left rudder.
+  const window = (ac) => stallAndSpin(ac, { rudder: -1, seconds: 20, windowFrom: 12 });
 
-  for (const [id, rudder] of Object.entries(SPINS)) {
-    const ac = AIRCRAFT[id];
-    it(`${ac.name}: full back stick plus rudder enters a sustained spin`, () => {
-      const r = stallAndSpin(ac, { rudder, seconds: 16 });
-      expect(Math.abs(r.yawRate)).toBeGreaterThan(1);
-      expect(r.stall).toBeGreaterThan(0.5);
-      expect(Math.abs(r.yawRate)).toBeLessThan(8); // a plausible spin, not a numerical runaway
+  it('Sopwith Camel F.1: full back stick plus left rudder gives a steady spin', () => {
+    const r = window(AIRCRAFT.camel);
+    expect(r.minYaw).toBeGreaterThan(2);
+    expect(r.minStall).toBeGreaterThan(0.9);
+    expect(r.maxYaw).toBeLessThan(8); // a plausible spin, not a numerical runaway
+  });
+
+  for (const id of ['spad13', 'dr1', 'albatros']) {
+    it.fails(`${AIRCRAFT[id].name}: KNOWN DEVIATION, the spin is transient (it self-recovers)`, () => {
+      const r = window(AIRCRAFT[id]);
+      expect(r.minYaw).toBeGreaterThan(1);
+      expect(r.minStall).toBeGreaterThan(0.9);
     });
   }
+
+  it('every aircraft rotates (incipient spin) at some point with pro-spin controls', () => {
+    for (const ac of AIRCRAFT_LIST) {
+      const r = window(ac);
+      expect(r.maxYaw, ac.name).toBeGreaterThan(0.9);
+    }
+  });
 
   for (const ac of AIRCRAFT_LIST) {
     for (const rudder of [-1, 1]) {

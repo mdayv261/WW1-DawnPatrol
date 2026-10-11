@@ -71,11 +71,13 @@ export function holdBankTurn(ac, { side, pull, seconds = 6, bank = 60, altitude 
 // wings levelled. Returns the state at the end.
 export function stallAndSpin(
   ac,
-  { rudder = 0, recoverAt = Infinity, forward = 0.3, seconds = 16, recoverThrottle = 0, levelWings = false },
+  { rudder = 0, recoverAt = Infinity, forward = 0.3, seconds = 16, recoverThrottle = 0, levelWings = false, windowFrom = Infinity },
 ) {
   const { state, surfaces, input } = startTrimmed(ac, 3500, 0.8);
   input.throttle = 0;
-  const log = { maxBank: 0, firstStall: null, bankAtMax: 0 };
+  // minYaw / maxYaw / minStall are tracked from `windowFrom` seconds on, to
+  // tell a steady spin from a passing one.
+  const log = { maxBank: 0, firstStall: null, bankAtMax: 0, minYaw: Infinity, maxYaw: 0, minStall: 1 };
   let diag;
   for (let i = 0; i < seconds / DT; i++) {
     const t = i * DT;
@@ -98,6 +100,12 @@ export function stallAndSpin(
       log.bankAtMax = bank;
     }
     if (log.firstStall === null && diag.stall > 0.9) log.firstStall = t;
+    if (t >= windowFrom) {
+      const yaw = Math.abs(state.angularVelocity.y);
+      log.minYaw = Math.min(log.minYaw, yaw);
+      log.maxYaw = Math.max(log.maxYaw, yaw);
+      log.minStall = Math.min(log.minStall, diag.stall);
+    }
   }
   return {
     ...log,

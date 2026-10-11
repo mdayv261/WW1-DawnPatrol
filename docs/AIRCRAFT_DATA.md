@@ -49,6 +49,19 @@ All values are stored in SI units. The original figure and unit from the source 
 | S19 | Flying magazine (P. Garrison), Sopwith Camel article | https://www.flyingmag.com/?p=22991 | Magazine article (body partly paywalled; read as far as visible) |
 | S20 | This Day in Aviation, Hispano-Suiza 8B articles (SPAD XIII 27 Oct 1918; McCook test 27 Apr 1921) | https://www.thisdayinaviation.com/tag/hispano-suiza-8b/ | Secondary articles |
 | S21 | Gagg and Farrar, Altitude Performance of Aircraft Engines Equipped with Gear-Driven Superchargers, SAE paper 340096 (1934) | https://saemobilus.sae.org/content/340096 | Engineering paper. Only the abstract was read. |
+| S22 | F. Mason, The British Fighter since 1912 (Putnam): Camel F.1, 130 hp Clerget, performance and weights, as transcribed on flyingmachines.ru | https://flyingmachines.ru/Site2/Crafts/Craft25445.htm | Reference book (transcription) |
+| S23 | H. King, Sopwith Aircraft 1912-1920 (Putnam): Camel F.1, 130 hp Clerget, as transcribed on flyingmachines.ru | https://flyingmachines.ru/Site2/Crafts/Craft25445.htm | Reference book (transcription) |
+| S24 | W. Green and G. Swanborough, The Complete Book of Fighters: Camel F.1 (130 hp Clerget 9B) and Fokker Dr.I, as transcribed on flyingmachines.ru | https://flyingmachines.ru/Site2/Crafts/Craft25445.htm and https://flyingmachines.ru/Site2/Crafts/Craft25493.htm | Reference book (transcription) |
+| S25 | J. Herris, Albatros Aircraft of WWI, vol. 4: Fighters (Aeronaut Books): D.V and D.Va specification table, as transcribed on flyingmachines.ru | https://flyingmachines.ru/Site2/Arts/Art29083.htm | Reference book (transcription) |
+| S26 | J. Herris and T. Phillips, Fokker Aircraft of WWI, vol. 4 (Aeronaut Books): Dr.I spans and Fokker type-description (Baubeschreibung) performance, as transcribed on flyingmachines.ru | https://flyingmachines.ru/Site2/Crafts/Craft25493.htm | Reference book quoting manufacturer data (transcription) |
+| S27 | O. Thetford and P. Gray, German Aircraft of the First World War (Putnam): Fokker Dr.I, as transcribed on flyingmachines.ru | https://flyingmachines.ru/Site2/Crafts/Craft25493.htm | Reference book (transcription) |
+| S28 | P. Grosz, G. Haddow and P. Schiemer, Austro-Hungarian Army Aircraft of World War One (Flying Machines Press): MAG-Fokker 90.03 gaps; Albatros D.III (Oeffag) gap, as transcribed on flyingmachines.ru | https://flyingmachines.ru/Site2/Crafts/Craft25493.htm and https://flyingmachines.ru/Site2/Crafts/Craft25500.htm | Reference book (transcription) |
+| S29 | L. Prandtl, Induced Drag of Multiplanes, NACA Technical Note 182 (1924) | https://ntrs.nasa.gov/citations/19930080964 | Government research report |
+| S30 | W.F. Durand and E.P. Lesley, Experimental Research on Air Propellers II, NACA Report 30 (1919), Table III | https://ntrs.nasa.gov/citations/19930091058 | Government research report |
+| S31 | Virginia Tech, AOE 3104 Aircraft Performance course notes, "10. Thrust Models" | https://archive.aoe.vt.edu/lutze/AOE3104/thrustmodels.pdf | University course notes |
+| S32 | This Day in Aviation, Sopwith Camel (article "21 December 1916"): wing span, chord, gap, stagger, dihedral | https://www.thisdayinaviation.com/tag/gun-machine-vickers-303in-mk-1/ | Secondary article |
+
+Transcriptions on flyingmachines.ru reproduce the named books' tables; values from them are rated medium because the transcription itself was not checked against the printed book.
 
 Consulted but not used for any value: RAF Museum Camel page (no specifications),
 Grace's Guide Camel page (no figures), Smithsonian pages on si.edu (blocked by a bot check, not bypassed),
@@ -60,10 +73,13 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 
 | Parameter | Value | Unit | Original figure | Source | Confidence | Notes |
 |---|---|---|---|---|---|---|
-| Wingspan (upper) | 8.53 | m | 28 ft | S1, S15 | high | S1 gives "28 ft (8.5 m)". Lower-wing span not found (see gaps). |
+| Wingspan (upper) | 8.53 | m | 28 ft | S1, S15 | high | S1 gives "28 ft (8.5 m)". The lower wing has the same span (S32). |
 | Length | 5.72 | m | 18 ft 9 in | S1, S15 | high | |
 | Height | 2.59 | m | 8 ft 6 in | S1, S15 | high | |
 | Wing area | 21.46 | m² | 231 ft² | S8, S15 | medium | Reproduction and a compilation agree. No original-aircraft museum record gives it. |
+| Upper wing span, wing stack (`wingStack.0.span`) | 8.534 | m | 28 ft 0 in | S32, S1 | medium | Used for the multiplane induced drag. |
+| Lower wing span, wing stack (`wingStack.1.span`) | 8.534 | m | 28 ft 0 in | S32 | medium | Both wings 28 ft 0 in. |
+| Mean wing gap (`wingStack.0.height`) | 1.337 | m | 5 ft at the fuselage | S32 | medium | 5 ft (1.524 m) at the fuselage; the lower wing has 5 degrees dihedral and the upper none, so the gap closes to 1.151 m at the tips. Prandtl's theory assumes parallel wings, so the mean over the span is used. Chord 4 ft 6 in, stagger 1 ft 6 in (S32). |
 | Empty weight | 421.8 | kg | 930 lb | S1 | high | S15 gives 421 kg. Other sources range 889 to 962 lb, depending on equipment and engine. |
 | Maximum take-off weight | 659 | kg | 1,453 lb | S8, S15 | medium | Both give 1,453 lb. Treated as loaded weight with pilot, fuel, oil and ammunition. |
 | Engine | Clerget 9B 9-cylinder rotary | — | 130 hp Clerget 9B | S1, S4, S11 | high | |
@@ -75,10 +91,10 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Engine diameter (rotating) | 1.021 | m | 40.2 in | S11 | high | Used for the rotating-mass estimate below. |
 | Engine rotation, viewed from the cockpit | clockwise | — | clockwise | S18, S19 | medium | Neither source states the direction outright. It is inferred from the effects they describe: S18 says the Camel turned "extremely sharply to the right and very poorly to the left", which needs forward-pointing engine angular momentum (clockwise from the cockpit). That also matches the product spec. S19 calls the old 270-degree left-turn habit a legend and suggests the practical effect was small, so the size of the effect is disputed. |
 | Propeller diameter | 2.59 | m | — | ASSUMPTION | estimate | Only a single collector's reading of a Lang propeller stamp (2,590 mm, for the 130 hp Clerget) was found, on a forum that our source policy excludes. Held as an estimate until a museum record or propeller reference confirms it. |
-| Maximum speed | 50.1 | m/s | 112 mph | S4 | medium | The altitude is not stated. S15 gives 115 mph (51.4 m/s). Some listings quote a lower speed at 10,000 ft, so treat this as a target to tune against, not a sea-level fact. |
-| Service ceiling | 5,791 | m | 19,000 ft | S4, S15 | medium | The two sources agree, but neither gives the conditions (load, engine state), so a test-flight value may differ. |
+| Maximum speed | 52.3 | m/s | 117 mph at sea level | S22 | medium | Mason, at 1,453 lb (659 kg): 117 mph at sea level, 113 mph at 10,000 ft. The drag (CD0) is calibrated to this figure. S4 gives 112 mph with no altitude; S15 115 mph; King (S23) lower figures at a heavier weight (see Validation data). |
+| Service ceiling | 5,791 | m | 19,000 ft | S4, S15, S22 | medium | Three sources agree, but none gives the conditions (load, engine state). King (S23) gives 18,000 ft. |
 | Armament | 2 x Vickers .303 in (7.7 mm), synchronised | — | two Vickers .303 | S1, S4 | high | Ballistics are not recorded yet (see gaps). |
-| Zero-lift drag coefficient CD0 | 0.036 | — | — | ASSUMPTION | estimate | Back-calculated: level flight at 50.1 m/s needs thrust = 0.70 x 96.9 kW / 50.1 = 1,356 N. Induced drag (W = 659 kg, e = 0.75, aspect ratio 3.39) is 159 N. The remainder, over q x S (q = 1,535 Pa, S = 21.46 m²), gives 0.036. Assumes the top speed is at sea level and propeller efficiency 0.70. Both are guesses. |
+| Zero-lift drag coefficient CD0 | 0.036 | — | — | ASSUMPTION | estimate | Fitted (`npm run calibrate`) so the model's full-throttle level top speed at sea level and 659 kg equals Mason's 117 mph, using the multiplane induced drag (S29), measured propeller curve (S30) and power-altitude law (S31). The Phase 1 value (0.036, from 112 mph with a fixed 0.70 propeller efficiency) happens to come out the same. |
 | Oswald efficiency e | 0.75 | — | — | ASSUMPTION | estimate | No measured value located. A typical biplane value with gap/chord near 1. Refine with Munk biplane theory (NACA TR-151) in Phase 1. |
 | Maximum lift coefficient CLmax | 1.3 | — | — | ASSUMPTION | estimate | No measured value located. Typical of a thin cambered 1917 wing section. Tune against a documented stall speed once found. |
 | Static margin (`aero.staticMargin`) | 0.03 | fraction of chord | — | ASSUMPTION | estimate | No measured value located. Kept small because accounts of the Camel (S18) stress its extreme manoeuvrability, which goes with low pitch stability. A tuning choice to be adjusted by flying it. |
@@ -96,6 +112,9 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Length | 6.30 | m | 20 ft 8 in | S2, S5 | high | S17 gives 6.20 m. |
 | Height | 2.41 | m | 7 ft 11 in | S2, S5 | high | |
 | Wing area | 21.09 | m² | 227 ft² | S9, S17 | medium | A reproduction and a test article agree. |
+| Upper wing span, wing stack (`wingStack.0.span`) | 8.2 | m | 26 ft 11 in | S2, S17 | medium | S17 says the upper and lower wings had equal span and chord. |
+| Lower wing span, wing stack (`wingStack.1.span`) | 8.2 | m | equal to upper | S17 | medium | Equal span (S17). S17's test aircraft measured 8.02 m; the museum span (S2) is used. |
+| Wing gap (`wingStack.0.height`) | 1.181 | m | 3 ft 10.5 in | S17 | medium | McCook Field test aircraft. Chord 1.400 m, stagger 1.25 degrees, no dihedral (S17). |
 | Empty weight | 566 | kg | 1,245 lb | S2 | high | S9 also gives 1,245 lb. S17 gives 664 kg for a fully equipped test aircraft. |
 | Gross weight | 820 | kg | 1,808 lb | S2 | high | S5 gives 1,815 lb (823 kg). S17 gives 924 kg for the equipped 8Ba test aircraft. |
 | Engine | Hispano-Suiza 8Be V-8, water-cooled | — | 220 hp Hispano-Suiza 8Be | S2, S5 | high | S17 tested an earlier 8Ba, 200 hp. |
@@ -107,13 +126,14 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Propeller drive | Geared | — | geared propeller drive | S12 | medium | Gear ratio not found (see gaps). |
 | Propeller gear ratio | 0.75 | — | 0.75:1 reduction | S20 | medium | Given for the Hispano-Suiza 8B and 8Be. The earlier 8Ba is given as 0.585:1 in the same source, and a geared drive is also stated in S12. |
 | Propeller diameter | 2.50 | m | 2.50 m | S20 | medium | The source says the 8Be used 2.50 m or 2.55 m propellers. The smaller is used. Fixed-pitch two-bladed wood. |
-| Maximum speed | 60.4 | m/s | 135 mph | S5 | medium | The altitude is not stated. |
-| Maximum speed, measured (8Ba, 200 hp) | 59.2 | m/s | 213 km/h at 1,981 m | S17 | medium | McCook Field test, engine at 2,040 rpm. A different engine from the one modelled, so a floor for the 8Be, not an exact match. |
+| Maximum speed | 59.17 | m/s | 213 km/h at 1,981 m | S17 | medium | McCook Field test (924 kg, engine at 2,040 rpm). The drag (CD0) is calibrated to this at 924 kg and 220 hp. Which engine the test aircraft had is uncertain: the report title says 220 hp Wright, the article text describes the 197 hp 8Ba (see FLIGHT_VALIDATION.md). |
+| Maximum speed altitude (`documented.maxSpeedAltitude`) | 1,981 | m | 6,500 ft | S17 | medium | Altitude of the calibration speed. |
+| Maximum speed, USAF fact sheet | 60.35 | m/s | 135 mph | S5 | medium | Altitude not stated; compared at sea level in the validation (model +0.7%). |
 | Climb time to 1,981 m (6,500 ft), 8Ba | 390 | s | 6.5 min | S17 | medium | Same test. |
 | Climb time to 4,572 m (15,000 ft), 8Ba | 1,380 | s | 23 min | S17 | medium | Same test. |
 | Service ceiling | 5,608 | m | 18,400 ft | S17 | medium | Same test. Absolute ceiling 20,000 ft (6,096 m). |
 | Armament | 2 x Vickers .303 in (7.7 mm), synchronised, 400 rounds per gun | — | two Vickers, 400 rounds each | S5, S17 | high | |
-| Zero-lift drag coefficient CD0 | 0.0365 | — | — | ASSUMPTION | estimate | Same method as the Camel: 0.70 x 164 kW at 60.35 m/s, W = 820 kg, e = 0.75, AR = 3.19, S = 21.09 m², giving D = 1,902 N and induced drag 183 N. The result is sensitive to the altitude of the 135 mph figure. |
+| Zero-lift drag coefficient CD0 | 0.039 | — | — | ASSUMPTION | estimate | Fitted (`npm run calibrate`) so the model's full-throttle level top speed at 1,981 m, 924 kg and 220 hp equals the McCook 213 km/h. With the 197 hp alternative it would be 0.0343 (see FLIGHT_VALIDATION.md). Phase 1 value: 0.0365. |
 | Oswald efficiency e | 0.75 | — | — | ASSUMPTION | estimate | No measured value located. A typical biplane value with gap/chord near 1. Refine with Munk biplane theory (NACA TR-151) in Phase 1. |
 | Maximum lift coefficient CLmax | 1.3 | — | — | ASSUMPTION | estimate | No measured value located. Typical of a thin cambered 1917 wing section. Tune against a documented stall speed once found. |
 | Static margin (`aero.staticMargin`) | 0.1 | fraction of chord | — | ASSUMPTION | estimate | No measured value located. Set larger than the Camel and Dr.I as a design choice so the four aircraft handle differently. No source on SPAD stability was found. |
@@ -128,10 +148,15 @@ No original Dr.I survives (S6), so all geometry and weights come from reproducti
 
 | Parameter | Value | Unit | Original figure | Source | Confidence | Notes |
 |---|---|---|---|---|---|---|
-| Wingspan (upper) | 7.19 | m | 23 ft 7 in | S6, S10 | medium | Reproductions only. S10 gives 23.58 ft. Middle and lower spans not found (see gaps). |
+| Wingspan (upper) | 7.19 | m | 23 ft 7 in | S6, S10, S26 | medium | S10 gives 23.58 ft; Herris (S26) gives 7.190 m. Middle and lower spans 6.225 m and 5.725 m (S26). |
 | Length | 5.77 | m | 18 ft 11 in | S6, S7 | medium | S7 gives 5.77 m. |
 | Height | 2.95 | m | 9 ft 8 in | S6, S7 | medium | Two reproduction sources agree. No original aircraft survives to measure. |
 | Wing area (total, three wings) | 18.70 | m² | 201.5 ft² | S7, S10 | medium | Two reproduction sources agree (S10 converts to 18.72 m²). No original aircraft survives to measure. |
+| Upper wing span, wing stack (`wingStack.0.span`) | 7.19 | m | 7.190 m | S26 | medium | Herris. |
+| Middle wing span (`wingStack.1.span`) | 6.225 | m | 6.225 m | S26 | medium | Herris. |
+| Lower wing span (`wingStack.2.span`) | 5.725 | m | 5.725 m | S26 | medium | Herris. |
+| Upper wing height above lower wing (`wingStack.0.height`) | 1.74 | m | 0.88 m + 0.86 m | ASSUMPTION | estimate | The production Dr.I gaps were not found. The closely related MAG-Fokker 90.03 (a lengthened Dr.I derivative) had an upper gap of 0.88 m and a lower gap of 0.86 m (S28); their sum is used. |
+| Middle wing height above lower wing (`wingStack.1.height`) | 0.86 | m | 0.86 m | ASSUMPTION | estimate | Lower gap of the MAG-Fokker 90.03 (S28), as above. |
 | Empty weight | 405 | kg | 891 lb | S6, S7 | medium | S7 gives 406 kg, S10 gives 893 lb. |
 | Loaded weight | 586 | kg | 1,291 lb | S6, S7 | medium | S10 gives 1,289 lb. |
 | Engine | Oberursel UR.II 9-cylinder rotary | — | 110 hp Oberursel Ur II | S6, S7, S13 | high | S6 also allows a Le Rhône 110 hp. The UR.II was a licensed Le Rhône 9J copy. |
@@ -141,11 +166,11 @@ No original Dr.I survives (S6), so all geometry and weights come from reproducti
 | Engine displacement | 15.07 | L | 919.87 in³ | S13 | high | |
 | Engine rotation, viewed from the cockpit | clockwise | — | — | ASSUMPTION | estimate | Not found. Assumed to match the Clerget because the UR.II copied the Le Rhône 9J (S13) and French-type rotaries generally turned the same way. Needs a source before we rely on it. |
 | Propeller diameter | 2.60 | m | — | ASSUMPTION | estimate | Only a forum post (excluded by our source policy) gave 2,600 to 2,620 mm for propellers fitted to the Dr.I with the 110 hp engine. Held as an estimate until a museum record confirms it. |
-| Maximum speed | 46.0 | m/s | 103 mph | S6, S10 | medium | S7 gives 185 km/h (51.4 m/s). Altitude not stated. The two figures disagree by 12%. |
-| Service ceiling | 6,000 | m | 19,685 ft | S6 | medium | One source only (a reproduction's fact sheet). Conditions not stated. |
+| Maximum speed | 51.39 | m/s | 185 km/h at sea level | S24, S7, S26 | medium | Green and Swanborough (S24) give 185 km/h at sea level and 165 km/h at 4,000 m; Thetford and Gray (S27) also give 165 km/h (103 mph) at 4,000 m. So the 103 mph of S6 and S10 is the 4,000 m figure, not a sea-level one, and the two figures are not in conflict. The drag (CD0) is calibrated to 185 km/h. Herris (S26) gives 185 km/h from Fokker's own data. |
+| Service ceiling | 6,000 | m | 19,685 ft | S6, S26 | medium | One source only (a reproduction's fact sheet). Conditions not stated. |
 | Rate of climb | 5.7 | m/s | 5.7 m/s | S7 | medium | Altitude not stated. |
 | Armament | 2 x 7.92 mm LMG 08/15, synchronised | — | two 7.92 mm Spandau LMG 08/15 | S6, S10 | high | S7 says "LMG 08". |
-| Zero-lift drag coefficient CD0 | 0.043 | — | — | ASSUMPTION | estimate | Same method as the Camel: 0.70 x 82 kW at 46.0 m/s (103 mph), W = 586 kg, e = 0.75, AR = 2.76, S = 18.70 m². Using the 185 km/h figure would give a much lower CD0. |
+| Zero-lift drag coefficient CD0 | 0.0356 | — | — | ASSUMPTION | estimate | Fitted (`npm run calibrate`) so the model's full-throttle level top speed at sea level equals 185 km/h. The Phase 1 value 0.043 was wrong because 103 mph, a 4,000 m figure, was treated as a sea-level speed. |
 | Oswald efficiency e | 0.75 | — | — | ASSUMPTION | estimate | No measured value located. A typical biplane value with gap/chord near 1. Refine with Munk biplane theory (NACA TR-151) in Phase 1. A triplane may be somewhat higher. |
 | Maximum lift coefficient CLmax | 1.4 | — | — | ASSUMPTION | estimate | No measured value located. Slightly above the biplanes because the Dr.I used thicker, cantilever wing sections. |
 | Static margin (`aero.staticMargin`) | 0.04 | fraction of chord | — | ASSUMPTION | estimate | No measured value located. Kept small as a design choice for the most agile aircraft in the set. A tuning choice to be adjusted by flying it. |
@@ -165,6 +190,9 @@ Dimensions and weights come from the Smithsonian's original D.Va (D.7161/17), wh
 | Length | 7.3 | m | 24 ft | S3 | high | S16 gives 7.36 m. |
 | Height | 2.8 | m | 9 ft 2 in | S3 | high | S16 gives 2.75 m. |
 | Wing area | 20.9 | m² | 225 ft² | S16 | medium | A single compilation. Not in the museum record. |
+| Upper wing span, wing stack (`wingStack.0.span`) | 9.0 | m | 9.00 m | S3, S25 | medium | Herris gives 9.00 m. |
+| Lower wing span (`wingStack.1.span`) | 8.73 | m | 8.73 m | S25 | medium | Herris. Chords 1.5 m upper and 1.0 m lower. |
+| Wing gap (`wingStack.0.height`) | 1.47 | m | 1.47 m | ASSUMPTION | estimate | The D.V gap was not found. The Oeffag-built Albatros D.III has the same 9.00 m and 8.73 m spans and a 1.47 m gap in two books (S28, S25); that value is used. |
 | Empty weight | 680 | kg | 1,500 lb | S3 | high | S16 gives 717 kg. |
 | Gross weight | 915 | kg | 2,017 lb | S3, S16 | high | |
 | Engine | Mercedes D.IIIa 6-cylinder inline, water-cooled | — | 180 hp Mercedes D.IIIa | S3 | high | S3 says the D.V began with 160 hp and was later "approximately 180 horsepower". |
@@ -173,10 +201,10 @@ Dimensions and weights come from the Smithsonian's original D.Va (D.7161/17), wh
 | Engine bore x stroke | 140 x 160 | mm | 5.512 x 6.299 in | S14 | medium | Given for the D.III. S14 says the D.IIIa crankshaft and rods were "practically identical". |
 | Engine displacement | 14.78 | L | 901.81 in³ | S14 | medium | Same caveat. |
 | Propeller diameter | 2.70 | m | — | ASSUMPTION | estimate | No source found for the D.V. Chosen so the tip speed at the rated 1,400 rpm is about 198 m/s, between the Camel (about 170 m/s) and the SPAD (about 206 m/s), the other aircraft in this set whose figures are recorded here. |
-| Maximum speed | 47.2 | m/s | 170 km/h | S16 | medium | S16 pairs it with a 158 hp D.III engine, so a D.Va with the 180 hp D.IIIa should be faster. Altitude not stated. |
-| Service ceiling | 5,000 | m | 16,404 ft | S16 | medium | A single compilation with no cited source, and it pairs the figure with a 158 hp D.III engine. |
+| Maximum speed | 47.78 | m/s | 172 km/h | S25 | medium | Herris: D.Va with the 170 hp Mercedes D.IIIa at 937 kg; altitude not stated, taken as sea level. The drag (CD0) is calibrated to this at those conditions. S16's 170 km/h belongs to the D.V with the 160 hp D.III (also in S25). |
+| Service ceiling | 5,800 | m | 5,800 m | S25 | medium | Herris, D.Va. S16 gives 5,000 m (a compilation pairing it with the D.III engine). |
 | Armament | 2 x synchronised machine guns | — | machine guns, calibre not stated | S3 | medium | S3 says bullet damage passed through the right gun mount. Calibre and gun type to be confirmed in Phase 5. |
-| Zero-lift drag coefficient CD0 | 0.0505 | — | — | ASSUMPTION | estimate | Same method as the Camel, using the S16 pairing: 0.70 x 118 kW at 47.2 m/s, W = 915 kg, e = 0.75, AR = 3.88, S = 20.9 m². Probably too high because the real aircraft had the stronger engine. |
+| Zero-lift drag coefficient CD0 | 0.0602 | — | — | ASSUMPTION | estimate | Fitted (`npm run calibrate`) so the model's full-throttle level top speed at sea level, 937 kg and 170 hp equals Herris's 172 km/h. High compared with the others; the source speed's altitude is not stated. Phase 1 value: 0.0505. |
 | Oswald efficiency e | 0.75 | — | — | ASSUMPTION | estimate | No measured value located. A typical biplane value with gap/chord near 1. Refine with Munk biplane theory (NACA TR-151) in Phase 1. |
 | Maximum lift coefficient CLmax | 1.3 | — | — | ASSUMPTION | estimate | No measured value located. Typical of a thin cambered 1917 wing section. Tune against a documented stall speed once found. |
 | Static margin (`aero.staticMargin`) | 0.08 | fraction of chord | — | ASSUMPTION | estimate | No measured value located. Set larger than the Camel and Dr.I as a design choice. No source on Albatros stability was found. |
@@ -217,14 +245,99 @@ Shared by all four aircraft. Every value is an estimate: no measured WWI stabili
 | Control surface speed (`common.surfaceRate`) | 4 | travel/s | — | ASSUMPTION | estimate | How fast the surfaces move toward the commanded position (full travel in a quarter second). No measured value. A design choice so key presses feel immediate but not instant. |
 | Trim lever authority (`common.trimAuthority`) | 0.4 | fraction of elevator travel | — | ASSUMPTION | estimate | How much elevator the trim lever can add. A design choice. It is enough to trim all four aircraft across their speed range. |
 | Torque cancelled by rigging (`common.torqueRigging`) | 0.8 | fraction | — | ASSUMPTION | estimate | Fraction of the rotary engine's reaction torque (at 60% throttle) cancelled by a fixed roll moment standing in for the rigging. Chosen so the rotary aircraft fly roughly level hands-off at cruise, while a change of throttle still disturbs them. No source found on how the Camel was rigged. |
-| Peak propeller efficiency (`common.propEfficiencyPeak`) | 0.7 | — | — | ASSUMPTION | estimate | Typical for a fixed-pitch wooden propeller. It is the same value used when back-calculating zero-lift drag, so the two stay consistent. |
-| Propeller best-efficiency speed (`common.propDesignSpeedFraction`) | 0.9 | fraction of top speed | — | ASSUMPTION | estimate | Propeller efficiency peaks at this fraction of the documented top speed. A design choice. |
+| Propeller best-efficiency speed (`common.propDesignSpeedFraction`) | 0.9 | fraction of top speed | — | ASSUMPTION | estimate | The fixed-pitch propeller is assumed to reach its peak on the measured efficiency curve (S30) at this fraction of the documented top speed at rated rpm. A design choice; no WWI propeller pitch data was found. |
 | Propeller figure of merit (static) (`common.propStaticMerit`) | 0.6 | — | — | ASSUMPTION | estimate | Fraction of ideal momentum-theory thrust achieved with the aircraft stationary. A typical value for a fixed-pitch propeller. Gives static thrust of about 50 to 60% of weight. |
 | Idle power (`common.idlePowerFraction`) | 0.05 | fraction of rated | — | ASSUMPTION | estimate | No source found. A design choice for the throttle-closed power. |
 | Idle engine speed (`common.idleRpmFraction`) | 0.55 | fraction of rated | — | ASSUMPTION | estimate | No source found. A design choice for the throttle-closed engine speed. Sets the gyroscopic angular momentum at low throttle. |
 | Flat-plate drag coefficient (stalled wing) (`constants.FLAT_PLATE_CD`) | 1.98 | — | — | ASSUMPTION | estimate | A textbook value for a flat plate broadside to the wind. Not checked against a source in this project. Used for the post-stall drag. |
 | Wing section lift slope (`constants.SECTION_LIFT_SLOPE`) | 5.655 | per rad | 0.9 x 2 pi | ASSUMPTION | estimate | Thin-airfoil theory gives 2 pi per radian and real sections reach about 90% of that. A textbook relation. Used to derive each aircraft's finite-wing lift slope. |
-| Engine power versus air density | proportional | — | P = P0 x density ratio | ASSUMPTION | estimate | A simple stand-in. Gagg and Farrar (S21) describe a better formula for normally aspirated engines, but their constants were not verified. |
+
+---
+
+## Physics constants from sources
+
+Values that come from published research rather than estimates. `tests/aircraftCode.test.js` checks each row against `src/core/constants.js`.
+
+| Parameter | Value | Unit | Original figure | Source | Confidence | Notes |
+|---|---|---|---|---|---|---|
+| Prandtl sigma constant A (`constants.PRANDTL.SIGMA_A`) | 0.66 | — | 0.66 | S29 | high | TN-182 equation (5): sigma = (1 - A g)/(B + C g), g = gap/span. |
+| Prandtl sigma constant B (`constants.PRANDTL.SIGMA_B`) | 1.055 | — | 1.05 (printed) | S29 | medium | The scan prints 1.05, but the report's worked example (p.8) and Table I are only reproduced with 1.055. Tests check both. |
+| Prandtl sigma constant C (`constants.PRANDTL.SIGMA_C`) | 3.7 | — | 3.7 | S29 | high | TN-182 equation (5). |
+| Engine power lapse constant A (`constants.ENGINE_LAPSE.A`) | 1.132 | — | 1.132 | S31 | medium | Power = sea-level power x (A sigma - B) for an unsupercharged engine. Usually credited to Gagg and Farrar (S21). |
+| Engine power lapse constant B (`constants.ENGINE_LAPSE.B`) | 0.132 | — | 0.132 | S31 | medium | B = A - 1. |
+| Propeller best advance ratio (`constants.PROPELLER_EFFICIENCY.PEAK_J`) | 0.825 | V/(nD) | 0.80 to 0.85 | S30 | medium | The averaged curve peaks (0.790) between J = 0.80 and 0.85; the midpoint is used. |
+| Propeller efficiency at J = 0.20 (`constants.PROPELLER_EFFICIENCY.ETA.0`) | 0.342 | — | J = 0.20 | S30 | high | Mean of propellers No. 1-4 in Table III (wooden models, 1917, retested 1918). |
+| Propeller efficiency at J = 0.30 (`constants.PROPELLER_EFFICIENCY.ETA.1`) | 0.4775 | — | J = 0.30 | S30 | high | Mean of propellers No. 1-4 in Table III (wooden models, 1917, retested 1918). |
+| Propeller efficiency at J = 0.40 (`constants.PROPELLER_EFFICIENCY.ETA.2`) | 0.587 | — | J = 0.40 | S30 | high | Mean of propellers No. 1-4 in Table III (wooden models, 1917, retested 1918). |
+| Propeller efficiency at J = 0.45 (`constants.PROPELLER_EFFICIENCY.ETA.3`) | 0.627 | — | J = 0.45 | S30 | high | Mean of propellers No. 1-4 in Table III (wooden models, 1917, retested 1918). |
+| Propeller efficiency at J = 0.50 (`constants.PROPELLER_EFFICIENCY.ETA.4`) | 0.6668 | — | J = 0.50 | S30 | high | Mean of propellers No. 1-4 in Table III (wooden models, 1917, retested 1918). |
+| Propeller efficiency at J = 0.55 (`constants.PROPELLER_EFFICIENCY.ETA.5`) | 0.7003 | — | J = 0.55 | S30 | high | Mean of propellers No. 1-4 in Table III (wooden models, 1917, retested 1918). |
+| Propeller efficiency at J = 0.60 (`constants.PROPELLER_EFFICIENCY.ETA.6`) | 0.729 | — | J = 0.60 | S30 | high | Mean of propellers No. 1-4 in Table III (wooden models, 1917, retested 1918). |
+| Propeller efficiency at J = 0.65 (`constants.PROPELLER_EFFICIENCY.ETA.7`) | 0.7528 | — | J = 0.65 | S30 | high | Mean of propellers No. 1-4 in Table III (wooden models, 1917, retested 1918). |
+| Propeller efficiency at J = 0.70 (`constants.PROPELLER_EFFICIENCY.ETA.8`) | 0.771 | — | J = 0.70 | S30 | high | Mean of propellers No. 1-4 in Table III (wooden models, 1917, retested 1918). |
+| Propeller efficiency at J = 0.75 (`constants.PROPELLER_EFFICIENCY.ETA.9`) | 0.7838 | — | J = 0.75 | S30 | high | Mean of propellers No. 1-4 in Table III (wooden models, 1917, retested 1918). |
+| Propeller efficiency at J = 0.80 (`constants.PROPELLER_EFFICIENCY.ETA.10`) | 0.79 | — | J = 0.80 | S30 | high | Mean of propellers No. 1-4 in Table III (wooden models, 1917, retested 1918). |
+| Propeller efficiency at J = 0.85 (`constants.PROPELLER_EFFICIENCY.ETA.11`) | 0.789 | — | J = 0.85 | S30 | high | Mean of propellers No. 1-4 in Table III (wooden models, 1917, retested 1918). |
+| Propeller efficiency at J = 0.90 (`constants.PROPELLER_EFFICIENCY.ETA.12`) | 0.7755 | — | J = 0.90 | S30 | high | Mean of propellers No. 1-4 in Table III (wooden models, 1917, retested 1918). |
+| Propeller efficiency at J = 0.95 (`constants.PROPELLER_EFFICIENCY.ETA.13`) | 0.7433 | — | J = 0.95 | S30 | high | Mean of propellers No. 1-4 in Table III (wooden models, 1917, retested 1918). |
+| Propeller efficiency at J = 1.00 (`constants.PROPELLER_EFFICIENCY.ETA.14`) | 0.685 | — | J = 1.00 | S30 | high | Mean of propellers No. 1-4 in Table III (wooden models, 1917, retested 1918). |
+
+## Validation data
+
+Sourced performance figures the model is tested against (`src/aircraft/validationCases.js`, `tests/physics/validation.test.js`). Results: `docs/FLIGHT_VALIDATION.md`. `tests/aircraftCode.test.js` checks every row against the code.
+
+| Parameter | Value | Unit | Original figure | Source | Confidence | Notes |
+|---|---|---|---|---|---|---|
+| camel-mason: mass (`validation.camel-mason.mass`) | 659 | kg | 659 kg | S22 | medium | Conditions of this source's figures. Mason, The British Fighter since 1912 (130 hp Clerget, 1,453 lb). |
+| camel-mason: top speed at 0 m (`validation.camel-mason.topSpeed@0`) | 52.30 | m/s | 117.0 mph / 188 km/h | S22 | medium | Calibration point: the drag is fitted to it. Mason, The British Fighter since 1912 (130 hp Clerget, 1,453 lb). |
+| camel-mason: top speed at 3048 m (`validation.camel-mason.topSpeed@3048`) | 50.52 | m/s | 113.0 mph / 182 km/h | S22 | medium | Independent check of the model. Mason, The British Fighter since 1912 (130 hp Clerget, 1,453 lb). |
+| camel-mason: time to climb to 3048 m (`validation.camel-mason.climbTime@3048`) | 635 | s | 10 min 35 s | S22 | medium | Independent check of the model. Mason, The British Fighter since 1912 (130 hp Clerget, 1,453 lb). |
+| camel-mason: service ceiling (`validation.camel-mason.serviceCeiling`) | 5791 | m | 19,000 ft | S22 | medium | Independent check of the model. Mason, The British Fighter since 1912 (130 hp Clerget, 1,453 lb). |
+| camel-king: mass (`validation.camel-king.mass`) | 672 | kg | 672 kg | S23 | medium | Conditions of this source's figures. King, Sopwith Aircraft 1912-1920 (130 hp Clerget, 1,482 lb). |
+| camel-king: top speed at 3048 m (`validation.camel-king.topSpeed@3048`) | 46.72 | m/s | 104.5 mph / 168 km/h | S23 | medium | Independent check of the model. King, Sopwith Aircraft 1912-1920 (130 hp Clerget, 1,482 lb). |
+| camel-king: top speed at 4572 m (`validation.camel-king.topSpeed@4572`) | 43.59 | m/s | 97.5 mph / 157 km/h | S23 | medium | Independent check of the model. King, Sopwith Aircraft 1912-1920 (130 hp Clerget, 1,482 lb). |
+| camel-king: time to climb to 3048 m (`validation.camel-king.climbTime@3048`) | 705 | s | 11 min 45 s | S23 | medium | Independent check of the model. King, Sopwith Aircraft 1912-1920 (130 hp Clerget, 1,482 lb). |
+| camel-king: time to climb to 4572 m (`validation.camel-king.climbTime@4572`) | 1395 | s | 23 min 15 s | S23 | medium | Independent check of the model. King, Sopwith Aircraft 1912-1920 (130 hp Clerget, 1,482 lb). |
+| camel-king: service ceiling (`validation.camel-king.serviceCeiling`) | 5486 | m | 18,000 ft | S23 | medium | Independent check of the model. King, Sopwith Aircraft 1912-1920 (130 hp Clerget, 1,482 lb). |
+| camel-green: mass (`validation.camel-green.mass`) | 659 | kg | 659 kg | S24 | medium | Conditions of this source's figures. Green and Swanborough, The Complete Book of Fighters (130 hp Clerget 9B). |
+| camel-green: top speed at 1981 m (`validation.camel-green.topSpeed@1981`) | 51.41 | m/s | 115.0 mph / 185 km/h | S24 | medium | Independent check of the model. Green and Swanborough, The Complete Book of Fighters (130 hp Clerget 9B). |
+| camel-green: time to climb to 1981 m (`validation.camel-green.climbTime@1981`) | 360 | s | 6 min 00 s | S24 | medium | Independent check of the model. Green and Swanborough, The Complete Book of Fighters (130 hp Clerget 9B). |
+| spad-mccook: mass (`validation.spad-mccook.mass`) | 924 | kg | 924 kg | S17 | medium | Conditions of this source's figures. McCook Field test of S.XIII 17956, 1921, at 924 kg. Titled "220 h.p. Wright engine"; the as-modelled 220 hp is used. |
+| spad-mccook: top speed at 1981 m (`validation.spad-mccook.topSpeed@1981`) | 59.17 | m/s | 132.4 mph / 213 km/h | S17 | medium | Calibration point: the drag is fitted to it. McCook Field test of S.XIII 17956, 1921, at 924 kg. Titled "220 h.p. Wright engine"; the as-modelled 220 hp is used. |
+| spad-mccook: time to climb to 1981 m (`validation.spad-mccook.climbTime@1981`) | 390 | s | 6 min 30 s | S17 | medium | Independent check of the model. McCook Field test of S.XIII 17956, 1921, at 924 kg. Titled "220 h.p. Wright engine"; the as-modelled 220 hp is used. |
+| spad-mccook: time to climb to 4572 m (`validation.spad-mccook.climbTime@4572`) | 1380 | s | 23 min 00 s | S17 | medium | Independent check of the model. McCook Field test of S.XIII 17956, 1921, at 924 kg. Titled "220 h.p. Wright engine"; the as-modelled 220 hp is used. |
+| spad-mccook: service ceiling (`validation.spad-mccook.serviceCeiling`) | 5608 | m | 18,400 ft | S17 | medium | Independent check of the model. McCook Field test of S.XIII 17956, 1921, at 924 kg. Titled "220 h.p. Wright engine"; the as-modelled 220 hp is used. |
+| spad-mccook: absolute ceiling (`validation.spad-mccook.absoluteCeiling`) | 6096 | m | 20,000 ft | S17 | medium | Independent check of the model. McCook Field test of S.XIII 17956, 1921, at 924 kg. Titled "220 h.p. Wright engine"; the as-modelled 220 hp is used. |
+| spad-usaf: top speed at 0 m (`validation.spad-usaf.topSpeed@0`) | 60.35 | m/s | 135.0 mph / 217 km/h | S5 | medium | Independent check of the model. USAF Museum fact sheet, 135 mph; altitude not stated, compared at sea level. |
+| dr1-green: top speed at 0 m (`validation.dr1-green.topSpeed@0`) | 51.39 | m/s | 115.0 mph / 185 km/h | S24 | medium | Calibration point: the drag is fitted to it. Green and Swanborough: 185 km/h at sea level, 165 km/h at 4,000 m. |
+| dr1-green: top speed at 4000 m (`validation.dr1-green.topSpeed@4000`) | 45.83 | m/s | 102.5 mph / 165 km/h | S24 | medium | Independent check of the model. Green and Swanborough: 185 km/h at sea level, 165 km/h at 4,000 m. |
+| dr1-thetford: time to climb to 1000 m (`validation.dr1-thetford.climbTime@1000`) | 174 | s | 2 min 54 s | S27 | medium | Independent check of the model. Thetford and Gray, German Aircraft of the First World War. |
+| dr1-thetford: service ceiling (`validation.dr1-thetford.serviceCeiling`) | 6096 | m | 20,000 ft | S27 | medium | Independent check of the model. Thetford and Gray, German Aircraft of the First World War. |
+| dr1-herris: mass (`validation.dr1-herris.mass`) | 571 | kg | 571 kg | S26 | medium | Conditions of this source's figures. Herris, Fokker Aircraft of WWI vol. 4: Fokker type description (Baubeschreibung) figures at 571 kg; manufacturer data. |
+| dr1-herris: time to climb to 1000 m (`validation.dr1-herris.climbTime@1000`) | 174 | s | 2 min 54 s | S26 | medium | Independent check of the model. Herris, Fokker Aircraft of WWI vol. 4: Fokker type description (Baubeschreibung) figures at 571 kg; manufacturer data. |
+| dr1-herris: time to climb to 2000 m (`validation.dr1-herris.climbTime@2000`) | 330 | s | 5 min 30 s | S26 | medium | Independent check of the model. Herris, Fokker Aircraft of WWI vol. 4: Fokker type description (Baubeschreibung) figures at 571 kg; manufacturer data. |
+| dr1-herris: time to climb to 3000 m (`validation.dr1-herris.climbTime@3000`) | 558 | s | 9 min 18 s | S26 | medium | Independent check of the model. Herris, Fokker Aircraft of WWI vol. 4: Fokker type description (Baubeschreibung) figures at 571 kg; manufacturer data. |
+| dr1-herris: time to climb to 4000 m (`validation.dr1-herris.climbTime@4000`) | 834 | s | 13 min 54 s | S26 | medium | Independent check of the model. Herris, Fokker Aircraft of WWI vol. 4: Fokker type description (Baubeschreibung) figures at 571 kg; manufacturer data. |
+| dr1-herris: time to climb to 5000 m (`validation.dr1-herris.climbTime@5000`) | 1314 | s | 21 min 54 s | S26 | medium | Independent check of the model. Herris, Fokker Aircraft of WWI vol. 4: Fokker type description (Baubeschreibung) figures at 571 kg; manufacturer data. |
+| dr1-herris: service ceiling (`validation.dr1-herris.serviceCeiling`) | 6000 | m | 19,685 ft | S26 | medium | Independent check of the model. Herris, Fokker Aircraft of WWI vol. 4: Fokker type description (Baubeschreibung) figures at 571 kg; manufacturer data. |
+| dr1-aviodrome: climb rate at 0 m (`validation.dr1-aviodrome.climbRate@0`) | 5.70 | m/s | — | S7 | medium | Independent check of the model. Aviodrome: rate of climb 5.7 m/s, altitude not stated (taken as sea level). |
+| albatros-dva-herris: mass (`validation.albatros-dva-herris.mass`) | 937 | kg | 937 kg | S25 | medium | Conditions of this source's figures. Herris, Albatros Aircraft of WWI vol. 4: D.Va, 170 hp Mercedes D.IIIa, 937 kg. Speed altitude not stated (taken as sea level). |
+| albatros-dva-herris: power (`validation.albatros-dva-herris.power`) | 126769 | W | 170 hp | S25 | medium | Conditions of this source's figures. Herris, Albatros Aircraft of WWI vol. 4: D.Va, 170 hp Mercedes D.IIIa, 937 kg. Speed altitude not stated (taken as sea level). |
+| albatros-dva-herris: top speed at 0 m (`validation.albatros-dva-herris.topSpeed@0`) | 47.78 | m/s | 106.9 mph / 172 km/h | S25 | medium | Calibration point: the drag is fitted to it. Herris, Albatros Aircraft of WWI vol. 4: D.Va, 170 hp Mercedes D.IIIa, 937 kg. Speed altitude not stated (taken as sea level). |
+| albatros-dva-herris: time to climb to 1000 m (`validation.albatros-dva-herris.climbTime@1000`) | 240 | s | 4 min 00 s | S25 | medium | Independent check of the model. Herris, Albatros Aircraft of WWI vol. 4: D.Va, 170 hp Mercedes D.IIIa, 937 kg. Speed altitude not stated (taken as sea level). |
+| albatros-dva-herris: time to climb to 2000 m (`validation.albatros-dva-herris.climbTime@2000`) | 528 | s | 8 min 48 s | S25 | medium | Independent check of the model. Herris, Albatros Aircraft of WWI vol. 4: D.Va, 170 hp Mercedes D.IIIa, 937 kg. Speed altitude not stated (taken as sea level). |
+| albatros-dva-herris: time to climb to 3000 m (`validation.albatros-dva-herris.climbTime@3000`) | 887 | s | 14 min 47 s | S25 | medium | Independent check of the model. Herris, Albatros Aircraft of WWI vol. 4: D.Va, 170 hp Mercedes D.IIIa, 937 kg. Speed altitude not stated (taken as sea level). |
+| albatros-dva-herris: time to climb to 4000 m (`validation.albatros-dva-herris.climbTime@4000`) | 1365 | s | 22 min 45 s | S25 | medium | Independent check of the model. Herris, Albatros Aircraft of WWI vol. 4: D.Va, 170 hp Mercedes D.IIIa, 937 kg. Speed altitude not stated (taken as sea level). |
+| albatros-dva-herris: time to climb to 5000 m (`validation.albatros-dva-herris.climbTime@5000`) | 2100 | s | 35 min 00 s | S25 | medium | Independent check of the model. Herris, Albatros Aircraft of WWI vol. 4: D.Va, 170 hp Mercedes D.IIIa, 937 kg. Speed altitude not stated (taken as sea level). |
+| albatros-dva-herris: service ceiling (`validation.albatros-dva-herris.serviceCeiling`) | 5800 | m | 19,029 ft | S25 | medium | Independent check of the model. Herris, Albatros Aircraft of WWI vol. 4: D.Va, 170 hp Mercedes D.IIIa, 937 kg. Speed altitude not stated (taken as sea level). |
+| albatros-dv-herris: mass (`validation.albatros-dv-herris.mass`) | 915 | kg | 915 kg | S25 | medium | Conditions of this source's figures. Herris: D.V, 160 hp Mercedes D.III, 915 kg. Speed altitude not stated (taken as sea level). |
+| albatros-dv-herris: power (`validation.albatros-dv-herris.power`) | 119312 | W | 160 hp | S25 | medium | Conditions of this source's figures. Herris: D.V, 160 hp Mercedes D.III, 915 kg. Speed altitude not stated (taken as sea level). |
+| albatros-dv-herris: top speed at 0 m (`validation.albatros-dv-herris.topSpeed@0`) | 47.22 | m/s | 105.6 mph / 170 km/h | S25 | medium | Independent check of the model. Herris: D.V, 160 hp Mercedes D.III, 915 kg. Speed altitude not stated (taken as sea level). |
+| albatros-dv-herris: time to climb to 1000 m (`validation.albatros-dv-herris.climbTime@1000`) | 260 | s | 4 min 20 s | S25 | medium | Independent check of the model. Herris: D.V, 160 hp Mercedes D.III, 915 kg. Speed altitude not stated (taken as sea level). |
+| albatros-dv-herris: time to climb to 2000 m (`validation.albatros-dv-herris.climbTime@2000`) | 530 | s | 8 min 50 s | S25 | medium | Independent check of the model. Herris: D.V, 160 hp Mercedes D.III, 915 kg. Speed altitude not stated (taken as sea level). |
+| albatros-dv-herris: time to climb to 3000 m (`validation.albatros-dv-herris.climbTime@3000`) | 870 | s | 14 min 30 s | S25 | medium | Independent check of the model. Herris: D.V, 160 hp Mercedes D.III, 915 kg. Speed altitude not stated (taken as sea level). |
+| albatros-dv-herris: time to climb to 4000 m (`validation.albatros-dv-herris.climbTime@4000`) | 1360 | s | 22 min 40 s | S25 | medium | Independent check of the model. Herris: D.V, 160 hp Mercedes D.III, 915 kg. Speed altitude not stated (taken as sea level). |
+| albatros-dv-herris: time to climb to 5000 m (`validation.albatros-dv-herris.climbTime@5000`) | 2100 | s | 35 min 00 s | S25 | medium | Independent check of the model. Herris: D.V, 160 hp Mercedes D.III, 915 kg. Speed altitude not stated (taken as sea level). |
 
 ---
 
@@ -232,19 +345,21 @@ Shared by all four aircraft. Every value is an estimate: no measured WWI stabili
 
 ## Open research gaps (no value recorded; nothing invented)
 
-These are needed in later phases. None is required by Phase 0 acceptance.
+Updated after the flight-model validation (see `docs/FLIGHT_VALIDATION.md`).
 
 | Gap | Needed for | Where to look next |
 |---|---|---|
-| Propeller pitch and mass for all four aircraft | Thrust and gyroscopic effect | Museum object records |
-| Engine mass for Oberursel UR.II and Mercedes D.IIIa | Centre of gravity (Phase 1) | NASM engine records. A related Mercedes D.IIIav (supercharged) is listed at 288 kg, but that is a different engine. |
-| Engine power versus altitude for all four engines | Altitude performance | Period engine test reports (Royal Aircraft Establishment, McCook Field). Phase 1 uses power proportional to air density, an estimate (see Common flight-model parameters). Gagg and Farrar (S21) describe a better method; its constants were not verified. |
-| Stall speeds, wing loading checks and landing speeds | Tuning CLmax (Phase 1) | Test pilots' reports, McCook Field reports |
-| Lower and middle wing spans and chords, gap, stagger, dihedral, incidence | Wing geometry (Phase 1) | Museum drawings, Windsock Datafiles |
-| Airfoil sections for each aircraft | Lift and drag curves (Phase 1) | NACA and RAE reports on WWI sections |
-| Fuel and oil capacities, fuel consumption | Endurance and weight change (Phases 1 and 5) | Museum object records. S17 gives 83 kg fuel for the SPAD but the wording is ambiguous. |
-| Climb performance for Camel, Dr.I and Albatros with altitude | Tuning (Phase 1) | Martlesham or McCook test reports |
-| Camel and Dr.I range or endurance (sources disagree) | Fuel model (Phase 1) | As above |
-| Vickers Mk.I and LMG 08/15: rate of fire (synchronised), muzzle velocity, bullet mass, jam rates | Weapons (Phase 5) | Royal Armouries, Imperial War Museum, Australian War Memorial |
-| Aerodynamic data for the estimates above (CD0, e, CLmax, inertia) | Phase 1 | Eberhardt, AIAA 2005-119 (Museum of Flight WWI fighters), Munk, NACA TR-151 "General Biplane Theory". Neither could be read in Phase 0. |
-| Propeller efficiency (0.70 assumed in the CD0 estimates) | Phase 1 | Period propeller tests |
+| Stall and landing speeds for all four aircraft | Validating the stall model (CLmax) | Only unsourced web listings were found (Camel "48 mph", Dr.I "72 km/h"); not used. Martlesham Heath / RAE / McCook test reports, or the printed Bruce and Mason books. |
+| Which engine the 1921 McCook SPAD test aircraft had (220 hp Wright or 197 hp 8Ba) | SPAD climb validation | The Air Service Information Circular and McCook Field report for project P-154 |
+| Wing gap of the production Dr.I and of the Albatros D.V | Multiplane induced drag (currently estimates from related types) | Windsock Datafiles, factory drawings |
+| Engine power against altitude for these specific engines (rotaries, over-compressed Mercedes D.IIIa) | Altitude performance above about 4,000 m | Period engine test reports (RAE, McCook Field, Adlershof) |
+| Propeller pitch and mass for all four aircraft | Propeller efficiency curve placement; gyroscopic effect | Museum object records |
+| Engine mass for Oberursel UR.II and Mercedes D.IIIa | Centre of gravity | NASM engine records. A related Mercedes D.IIIav (supercharged) is listed at 288 kg, but that is a different engine. |
+| Airfoil sections for each aircraft | Lift and drag curves | NACA and RAE reports on WWI sections |
+| Fuel and oil capacities, fuel consumption | Endurance and weight change | Museum object records. S17 gives 83 kg fuel for the SPAD but the wording is ambiguous. |
+| Camel and Dr.I range or endurance (sources disagree) | Fuel model | As above |
+| Vickers Mk.I and LMG 08/15: rate of fire (synchronised), muzzle velocity, bullet mass, jam rates | Weapons | Royal Armouries, Imperial War Museum, Australian War Memorial |
+| Measured stability and control data (damping, control power, inertia) | Handling | Eberhardt, AIAA 2005-119 (Museum of Flight WWI fighters), not yet accessible |
+| Printed originals of the transcribed book tables (S22-S28) | Raising those values from medium confidence | Library copies of the books |
+
+Resolved by the validation work: lower and middle wing spans (Camel, SPAD, Dr.I, Albatros), Camel and SPAD wing gaps, climb performance for all four aircraft, power against altitude (general law, S31), propeller efficiency (S30), multiplane theory (S29), and the meaning of the two Dr.I top-speed figures (sea level vs 4,000 m).

@@ -43,7 +43,7 @@ function bisect(f, lo, hi, iterations = 40) {
 // elevator trim. feasible is false if the speed cannot be held (above top
 // speed, below stall) or needs more trim than the lever offers.
 export function trimLevel(ac, common, altitude, speed) {
-  const w = wingConstants(ac);
+  const w = wingConstants(ac, common);
   const alphaLow = common.alphaZeroLift + 0.01;
   const alphaHigh = common.alphaZeroLift + 0.95 * w.stallAngle;
   const horizontal = new Vector3(0, 0, -1);

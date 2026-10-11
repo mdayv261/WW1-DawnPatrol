@@ -13,6 +13,11 @@ export const spad13 = {
     height: 2.41, // m (H)
     wingArea: 21.09, // m^2 (M)
   },
+  // Wings, top to bottom (m). Equal span and chord; gap 3 ft 10.5 in (M).
+  wingStack: [
+    { span: 8.2, height: 1.181 },
+    { span: 8.2, height: 0 },
+  ],
   mass: {
     loaded: 820, // kg gross (H)
     ixx: 3446, // kg m^2 (E)
@@ -32,13 +37,14 @@ export const spad13 = {
   },
   aero: {
     oswald: 0.75, // (E)
-    cd0: 0.0365, // (E)
+    cd0: 0.039, // (E) from the calibration speed: npm run calibrate
     clMax: 1.3, // (E)
     staticMargin: 0.1, // (E)
     cnBeta: 0.12, // (E)
   },
   documented: {
-    maxSpeed: 60.35, // m/s, 135 mph, altitude not stated (M)
+    maxSpeed: 59.17, // m/s, 213 km/h at 1,981 m, McCook Field test at 924 kg (M); drag is calibrated to this
+    maxSpeedAltitude: 1981, // m
     serviceCeiling: 5608, // m (M)
   },
 };

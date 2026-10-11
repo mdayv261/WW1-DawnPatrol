@@ -148,3 +148,27 @@ describe('Common flight-model parameters section', () => {
     }
   });
 });
+
+// The two research sections (sourced constants, validation figures) follow
+// the same row rules as the aircraft sections.
+for (const heading of ['Physics constants from sources', 'Validation data']) {
+  describe(`${heading} section`, () => {
+    const key = Object.keys(secs).find((h) => h.startsWith(heading));
+    const rows = key ? dataRows(secs[key]) : [];
+
+    it('exists and has rows', () => {
+      expect(key).toBeTruthy();
+      expect(rows.length).toBeGreaterThan(5);
+    });
+
+    it('every row is complete, with a valid confidence and a known source (or ASSUMPTION for estimates)', () => {
+      for (const r of rows) {
+        expect(r.length, r[0]).toBe(COLUMNS.length);
+        COLUMNS.forEach((col, i) => expect(r[i], `"${r[0]}" has an empty ${col}`).not.toBe(''));
+        expect(CONFIDENCE).toContain(r[5]);
+        if (r[5] === 'estimate') expect(r[4]).toBe('ASSUMPTION');
+        else for (const id of r[4].split(',').map((s) => s.trim())) expect(sourceIds.has(id), `${r[0]} cites ${id}`).toBe(true);
+      }
+    });
+  });
+}

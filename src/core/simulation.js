@@ -25,9 +25,10 @@ export class Simulation {
     this.startInput = createInput();
   }
 
-  // Begin a new flight in trimmed level flight.
-  start(aircraft, altitude = START_ALTITUDE) {
-    const trim = trimLevel(aircraft, common, altitude, START_SPEED_FRACTION * aircraft.documented.maxSpeed);
+  // Begin a new flight in trimmed level flight (by default at 1,000 m and 80%
+  // of the documented top speed).
+  start(aircraft, altitude = START_ALTITUDE, speed = START_SPEED_FRACTION * aircraft.documented.maxSpeed) {
+    const trim = trimLevel(aircraft, common, altitude, speed);
     this.aircraft = aircraft;
     copyState(this.state, trim.state);
     copyState(this.previous, trim.state);

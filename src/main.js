@@ -10,6 +10,8 @@ import { AIRCRAFT_LIST } from './aircraft/index.js';
 import { attachKeyboard } from './input/keyboard.js';
 import { createDebugOverlay, createHelp, createBanner } from './ui/overlays.js';
 import { debugLines } from './ui/debugText.js';
+import { createTestPanel } from './ui/testPanel.js';
+import { startScenario, SCENARIOS } from './dev/flightScenarios.js';
 
 const canvas = document.getElementById('game');
 const { renderer, scene, camera, ground, groundTile } = createScene(canvas);
@@ -23,6 +25,10 @@ const banner = createBanner();
 let aircraftIndex = 0;
 let model = null; // { group, prop } for the current aircraft
 let paused = false;
+// Temporary flight-test panel (development builds only, D31).
+let testPanel = null;
+let runner = null; // scripted test pilot for the current scenario, if any
+let scenarioLabel = 'normal start';
 
 // Choose the starting aircraft from ?aircraft=camel|spad13|dr1|albatros.
 const requested = new URLSearchParams(window.location.search).get('aircraft');
@@ -35,15 +41,28 @@ const keyboard = attachKeyboard({
   onPause: () => { paused = !paused; },
   onDebug: () => debug.toggle(),
   onHelp: () => help.toggle(),
+  onTestPanel: () => testPanel?.toggle(),
 });
 
-function startFlight(index) {
+if (import.meta.env.DEV) testPanel = createTestPanel(AIRCRAFT_LIST, (i, id) => startFlight(i, id));
+
+// Start a flight; `scenario` is a test-panel scenario id (normal start if omitted).
+function startFlight(index, scenario = null) {
   aircraftIndex = index;
   const ac = AIRCRAFT_LIST[index];
   if (model) scene.remove(model.group);
   model = createAircraftMesh(ac);
   scene.add(model.group);
-  keyboard.reset(sim.start(ac));
+  if (import.meta.env.DEV && scenario) {
+    const s = startScenario(sim, ac, scenario);
+    keyboard.reset(s.input);
+    runner = s.runner;
+    scenarioLabel = `${ac.name}: ${SCENARIOS.find((x) => x.id === scenario).label}`;
+  } else {
+    keyboard.reset(sim.start(ac));
+    runner = null;
+    scenarioLabel = `${ac.name}: normal start`;
+  }
   chase.reset();
   paused = false;
 }
@@ -58,7 +77,12 @@ const drawPosition = { x: 0, z: 0 };
 function update(realDt) {
   if (paused) return 1;
   const input = keyboard.update(realDt);
-  return loop.advance(realDt, (dt) => sim.step(dt, input)).alpha;
+  // A flight key hands control back from a scripted test pilot.
+  if (import.meta.env.DEV && runner && keyboard.pilotActive()) runner.cancel();
+  return loop.advance(realDt, (dt) => {
+    if (import.meta.env.DEV && runner) runner.apply(input, dt);
+    sim.step(dt, input);
+  }).alpha;
 }
 
 // Draw one frame from the current state.
@@ -80,6 +104,7 @@ function draw(realDt, alpha, now) {
     lastOverlay = now;
     banner.set(sim.crashed ? 'CRASHED - press R' : paused ? 'PAUSED' : '');
     if (debug.visible) debug.set(debugLines(sim.aircraft, sim.diag, { crashed: sim.crashed, paused }));
+    if (import.meta.env.DEV && testPanel?.visible) testPanel.update(sim, runner, scenarioLabel);
   }
   renderer.render(scene, camera);
 }
@@ -102,6 +127,8 @@ if (import.meta.env.DEV) {
     sim,
     keyboard,
     debug,
+    testPanel,
+    startFlight,
     // Run `seconds` of game time in 1/60 s frames, then draw one frame.
     advance(seconds) {
       const frames = Math.round(seconds * 60);

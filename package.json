@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "calibrate": "node scripts/calibrateDrag.mjs",
+    "validate": "node scripts/flightValidation.mjs"
   },
   "dependencies": {
     "three": "0.186.1"

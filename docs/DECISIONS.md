@@ -192,3 +192,89 @@ It does **not** show a markedly **faster right turn**. At the same bank and stic
 **Decision:** Physics tests are headless and deterministic. Scripted "pilots" (`tests/helpers/flight.js`) fly fixed manoeuvres, so results repeat exactly. Behaviour thresholds come from measured runs of the current estimates, so they guard against accidental change, **not against history**: no documented stall speeds or climb rates were found to validate against. Top speed is the one performance figure checked against documented data (within 5%). A test also links `docs/AIRCRAFT_DATA.md` to the aircraft data files and fails if a number differs, or if a number has no row. A check of that test (deliberately breaking three values) confirmed it catches them.
 
 **Development hook:** In development only (not in production builds), `window.__dawn` lets a script advance the game by a number of seconds and draw one frame. It exists because a browser pauses animation in hidden tabs, which blocks automated checks. It is not part of the game.
+
+---
+
+# Flight model validation decisions (11 Oct 2026)
+
+Results: `docs/FLIGHT_VALIDATION.md`.
+
+## D21. Validation policy
+
+**Decision:** The model is checked against sourced performance figures at each source's own weight, power and altitude (`src/aircraft/validationCases.js`, `tests/physics/validation.test.js`). Tolerances were set by the product owner: top speed within 5%, climb and ceiling within 15%. Each aircraft's drag (CD0) is fitted to exactly **one** sourced top speed (its calibration point); everything else is an independent check. Every physics value comes from a source or a formula fed by sourced geometry, **never from fitting to the validation targets**. When a check fails anyway, it stays failing: it is marked as a known deviation (an explicit expected failure, `it.fails`) with a written reason, and is flagged for the product owner.
+
+**Why:** Three adjustable numbers can be made to fit eight data points by luck. Fitting would hide real errors and make the tests meaningless. An expected failure keeps the gap visible, and if the model later starts matching, the test fails so the record gets updated.
+
+## D22. Engine power versus altitude (supersedes the density-only rule in D15)
+
+**Decision:** Power = sea-level power x (1.132 sigma - 0.132), where sigma is the density ratio (Virginia Tech AOE 3104 notes, usually credited to Gagg and Farrar).
+
+**Why:** Unsupercharged engines lose power faster than density falls. The old rule overstated altitude power, and that hid the climb under-prediction, because two errors cancelled in the ceilings.
+
+## D23. Propeller efficiency from measured data
+
+**Decision:** Efficiency against advance ratio J = V/(nD) follows the mean of propellers 1-4 in Durand and Lesley's NACA Report 30, Table III (1917 wooden models, peak 0.79). Each aircraft's propeller is assumed to peak at 0.9 of its documented top speed at rated rpm, and its J is scaled onto the measured curve. At low speed the momentum-theory static limit governs. The curve is zero at zero speed, which at first made static thrust zero; that bug was fixed and is now tested.
+
+**Why:** The old parabola, with a 0.70 peak, gave about 0.62 at climb speed. The measured curve gives about 0.70. Report 30's companion study (NACA TR-220) found flight efficiencies close to model efficiencies.
+
+## D24. Multiplane induced drag (Prandtl)
+
+**Decision:** The induced drag and the lift slope use Prandtl's multiplane factor kappa (NACA TN-182), computed from each aircraft's wing spans and vertical gaps. One general formula covers biplanes and triplanes with unequal spans: kappa = b1^2 / (1^T M^-1 1), with M_ij = sigma_ij / (b_i b_j). It reproduces TN-182's equations (9) and (9a), the worked examples and Tables II and III, and tests check all of these.
+- **Stagger is ignored,** which Munk's law permits.
+- **Camel:** its lower wing has dihedral, so the mean gap over the span is used.
+- **Dr.I and Albatros D.V:** their gaps come from closely related types (MAG-Fokker 90.03 and Oeffag D.III) and are flagged as estimates.
+- **Formula correction:** the printed constant "1.05" in TN-182 equation (5) is taken as 1.055, because only that value reproduces the report's own example and table.
+
+**Why:** At climb speed induced drag is about half of all drag. Treating stacked wings as one wing of the upper span overstated it by roughly 20%.
+
+## D25. Peak lift equals CLmax
+
+**Decision:** The centre of the smooth stall is solved (per aircraft, cached) so that the highest point of the blended lift curve equals the recorded CLmax.
+
+**Why:** The smooth stall started cutting lift early, so the effective peak was 13-15% below CLmax and stall speeds were about 8% too high.
+
+## D26. Calibration points chosen per aircraft
+
+| Aircraft | Calibration figure | Why this one |
+|---|---|---|
+| Camel | 117 mph at sea level, 659 kg (Mason) | Altitude and weight stated, and it matches the model's weight. USAF's 112 mph has no altitude. |
+| SPAD | 213 km/h at 1,981 m, 924 kg, 220 hp (McCook Field test) | A measured test with altitude and weight. The engine is uncertain (see FLIGHT_VALIDATION.md). |
+| Dr.I | 185 km/h at sea level (Green and Swanborough, Herris, Aviodrome) | The previous 103 mph is the 4,000 m figure. Treating it as a sea-level speed had made the drag far too high. |
+| Albatros | 172 km/h, 937 kg, 170 hp (Herris, D.Va) | Weight and engine are stated with the speed. The altitude is not stated, so it is taken as sea level. |
+
+CD0 values are re-derived with `npm run calibrate` whenever the physics changes.
+
+## D27. Spin test checks steadiness (supersedes the spin claim in D19)
+
+**Decision:** A spin counts as steady only if rotation stays above 2 rad/s and the wing stays stalled for the whole 12-20 s window. Only the Camel does so. The SPAD, Dr.I and Albatros spins are transient and are recorded as known deviations. A scan of the shared spin parameters found no setting that made those spins steady while keeping recoveries and wing drop, so the parameters were left unchanged.
+
+**Why:** The Phase 1 test sampled one instant (16 s) and so overstated how many aircraft really spin.
+
+## D28. Performance model location
+
+**Decision:** Steady-state performance (top speed, stall speed, best climb, time to climb, ceilings) lives in `src/physics/performance.js`, using the excess-power method. The validation runner is in `src/physics/validation.js`, and the report script is `npm run validate`.
+
+**Why:** It is reused by the tests, the report, and later by the AI (energy management) and UI.
+
+## D29. Product owner decisions on the validation (11 Oct 2026)
+
+- **SPAD 1921 test engine:** keep the McCook case at 220 hp (the report title) until the original report is found. Its three climb and ceiling deviations stay documented.
+- **Known deviations:** the 12 validation deviations and the 3 transient spins stay documented as expected failures, not tuned.
+- **Camel turn behaviour (closes the question in D16):** the physics-derived nose-drop in right turns is enough. No extra effect will be added to make right turns tighter.
+
+## D30. Albatros drag left as fitted (11 Oct 2026)
+
+**Decision (product owner):** Keep the Albatros CD0 at 0.0602, fitted to Herris's 172 km/h at 170 hp and 937 kg, with no adjustment.
+
+**Why:** The high value is consistent with Herris's speed and climb data together. The obvious alternatives either make it worse (more engine power raises it) or break the climb agreement (lower drag makes the model climb 15-22% too fast). The real cause cannot be settled without the D.Va's test conditions or propeller data. Full analysis is in FLIGHT_VALIDATION.md, "Why the Albatros drag coefficient is high".
+
+## D31. Temporary F4 flight test panel (11 Oct 2026)
+
+**Decision:** A temporary panel, toggled with F4, starts any aircraft in six test scenarios: level flight at 1,000 m, full-throttle level flight, stall, left turn, right turn and spin. It shows live readouts, including bank and turn rate, which F3 does not show. Code: `src/dev/flightScenarios.js`, `src/ui/testPanel.js`, wired in `src/main.js`.
+- **Development builds only.** It is absent from `npm run build`, and this was checked.
+- **No physics changes.** Scenarios only set a trimmed starting state and drive a short "scripted pilot" through the normal stick, rudder and throttle inputs.
+- **Pilot override.** Any flight key cancels the script.
+- **Full-throttle scenario.** It holds wings level and height. The rotary engines' torque is only rigged out at cruise power, so at full throttle the aircraft would otherwise roll away before reaching top speed.
+- **Turn rate readout.** It is computed from the aircraft's angular velocity, not from heading changes, so it is correct at any refresh rate.
+
+**Why:** It lets the product owner repeat the same test situations exactly while judging the flight model before Phase 1 sign-off. It is easy to remove, because everything sits behind the development-only switch.

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { enginePower, engineOmega, propellerThrust, rotaryEffects, torqueRigging } from '../../src/physics/engine.js';
 import { createSurfaces, updateSurfaces, deflections, createInput } from '../../src/physics/controls.js';
 import { AIRCRAFT_LIST, AIRCRAFT, common } from '../../src/aircraft/index.js';
-import { ISA, G } from '../../src/core/constants.js';
+import { ISA, G, ENGINE_LAPSE, PROPELLER_EFFICIENCY } from '../../src/core/constants.js';
 
 const RHO0 = ISA.RHO0;
 
@@ -11,10 +11,16 @@ describe('engine power', () => {
     for (const ac of AIRCRAFT_LIST) expect(enginePower(ac, common, 1, RHO0)).toBeCloseTo(ac.engine.ratedPower, 3);
   });
 
-  it('falls in proportion to air density', () => {
+  it('falls with air density as A sigma - B (unsupercharged engine)', () => {
     for (const ac of AIRCRAFT_LIST) {
-      expect(enginePower(ac, common, 1, RHO0 / 2) / enginePower(ac, common, 1, RHO0)).toBeCloseTo(0.5, 6);
+      const ratio = enginePower(ac, common, 1, RHO0 / 2) / enginePower(ac, common, 1, RHO0);
+      expect(ratio).toBeCloseTo(ENGINE_LAPSE.A * 0.5 - ENGINE_LAPSE.B, 6);
     }
+  });
+
+  it('loses more than in proportion to density (0.434 of sea-level power at half density)', () => {
+    const ac = AIRCRAFT.camel;
+    expect(enginePower(ac, common, 1, RHO0 / 2) / enginePower(ac, common, 1, RHO0)).toBeCloseTo(0.434, 3);
   });
 
   it('idles at the idle fraction and rises with throttle', () => {
@@ -36,7 +42,7 @@ describe('propeller thrust', () => {
       const p = ac.engine.ratedPower;
       for (let v = 5; v <= 1.2 * ac.documented.maxSpeed; v += 5) {
         const t = propellerThrust(ac, common, p, v, RHO0);
-        expect(t * v).toBeLessThanOrEqual(common.propEfficiencyPeak * p * 1.001);
+        expect(t * v).toBeLessThanOrEqual(Math.max(...PROPELLER_EFFICIENCY.ETA) * p * 1.001);
       }
     }
   });
@@ -134,5 +140,30 @@ describe('controls', () => {
     s.pull = 1;
     s.trim = 1;
     expect(deflections(common, s).pull).toBeCloseTo(common.maxPull, 6);
+  });
+});
+
+describe('propeller efficiency curve (Durand and Lesley, NACA Report 30)', () => {
+  it('peaks at 0.79 near the design speed', async () => {
+    const { propellerEfficiency } = await import('../../src/physics/engine.js');
+    for (const ac of AIRCRAFT_LIST) {
+      const design = common.propDesignSpeedFraction * ac.documented.maxSpeed;
+      expect(propellerEfficiency(ac, common, design, 1)).toBeCloseTo(0.79, 2);
+    }
+  });
+
+  it('is lower at climb speed (about 60% of top speed) but well above half the peak', async () => {
+    const { propellerEfficiency } = await import('../../src/physics/engine.js');
+    for (const ac of AIRCRAFT_LIST) {
+      const eta = propellerEfficiency(ac, common, 0.6 * ac.documented.maxSpeed, 1);
+      expect(eta).toBeLessThan(0.79);
+      expect(eta).toBeGreaterThan(0.6);
+    }
+  });
+
+  it('the stored curve averages propellers 1 to 4 of Table III', () => {
+    // Spot values from the table, averaged by hand: J = 0.5 and J = 0.8.
+    expect(PROPELLER_EFFICIENCY.ETA[PROPELLER_EFFICIENCY.J.indexOf(0.5)]).toBeCloseTo((0.67 + 0.66 + 0.675 + 0.662) / 4, 3);
+    expect(PROPELLER_EFFICIENCY.ETA[PROPELLER_EFFICIENCY.J.indexOf(0.8)]).toBeCloseTo((0.786 + 0.781 + 0.806 + 0.787) / 4, 3);
   });
 });

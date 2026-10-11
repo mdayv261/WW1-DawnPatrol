@@ -2,11 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { AIRCRAFT_LIST, common } from '../src/aircraft/index.js';
 import * as constants from '../src/core/constants.js';
+import { VALIDATION_CASES } from '../src/aircraft/validationCases.js';
+import { checkKey } from '../src/physics/validation.js';
 
 // Links the code to docs/AIRCRAFT_DATA.md. Every physics number in the
-// aircraft data files must appear in the document with the same value, so
-// the two can never drift apart (project rule: constants live in the data
-// files, and each is cited or marked as an estimate with a reason).
+// aircraft data files, the shared parameters, the sourced constants and the
+// validation figures must appear in the document with the same value, so the
+// two can never drift apart (project rule: constants live in the data files,
+// and each is cited or marked as an estimate with a reason).
 
 const text = readFileSync(new URL('../docs/AIRCRAFT_DATA.md', import.meta.url), 'utf8');
 
@@ -27,7 +30,10 @@ function sectionRows(heading) {
   return rows;
 }
 
-const number = (s) => Number(s.replace(/,/g, '').replace(/^[−-]/, (m) => '-'));
+const number = (s) => Number(s.replace(/,/g, '').split(/\s/)[0]);
+const KEY = /`([A-Za-z0-9_.@-]+)`/;
+const get = (obj, path) => path.split('.').reduce((o, k) => o?.[k], obj);
+const close = (a, b, rel = 0.01) => Math.abs(a - b) <= Math.max(Math.abs(b) * rel, 1e-9);
 
 // Headline figures: doc row name (prefix) -> where it lives in an aircraft file.
 const MAPPED = [
@@ -51,12 +57,6 @@ const MAPPED = [
   [/^Service ceiling/, 'documented.serviceCeiling', 1],
 ];
 
-const get = (obj, path) => path.split('.').reduce((o, k) => o?.[k], obj);
-
-// Paths in an aircraft file that do not need their own row (identity or
-// "not modelled" zero values, explained elsewhere).
-const EXEMPT = new Set(['wings', 'engine.rotationSign', 'engine.kind']);
-
 function leaves(obj, prefix = '') {
   return Object.entries(obj).flatMap(([k, v]) =>
     v && typeof v === 'object' ? leaves(v, `${prefix}${k}.`) : [[`${prefix}${k}`, v]],
@@ -70,46 +70,39 @@ const SECTION = {
   albatros: 'Albatros D.V',
 };
 
+// Which code path (and unit scale) a document row describes, if any.
+function rowPath(row) {
+  const key = row[0].match(KEY);
+  if (key) return [key[1], 1];
+  const m = MAPPED.find(([re]) => re.test(row[0]));
+  return m ? [m[1], m[2]] : null;
+}
+
 describe('aircraft data files match docs/AIRCRAFT_DATA.md', () => {
   for (const ac of AIRCRAFT_LIST) {
     describe(ac.name, () => {
       const rows = sectionRows(SECTION[ac.id]);
-      const covered = new Set();
 
-      it('every documented headline figure equals the value in the code', () => {
+      it('every documented figure equals the value in the code', () => {
         for (const r of rows) {
-          // Rows with an explicit `path` key (backticks) take priority.
-          const key = r[0].match(/`([a-zA-Z.]+)`/);
-          let path = key ? key[1] : null;
-          let scale = 1;
-          if (!path) {
-            const m = MAPPED.find(([re]) => re.test(r[0]));
-            if (!m) continue;
-            [, path, scale] = m;
-          }
-          const codeValue = get(ac, path);
+          const p = rowPath(r);
+          if (!p) continue;
+          const codeValue = get(ac, p[0]);
           if (typeof codeValue !== 'number') continue;
-          const doc = number(r[1].split(/\s/)[0]);
+          const doc = number(r[1]);
           if (Number.isNaN(doc)) continue;
-          const expected = doc * scale;
-          const tolerance = Math.max(Math.abs(expected) * 0.01, 1e-9); // docs round values
-          expect(Math.abs(codeValue - expected), `${ac.id} ${path}: code ${codeValue} vs doc ${expected}`).toBeLessThanOrEqual(tolerance);
-          covered.add(path);
+          expect(close(codeValue, doc * p[1]), `${ac.id} ${p[0]}: code ${codeValue} vs doc ${doc * p[1]}`).toBe(true);
         }
       });
 
       it('every number in the aircraft file has a row in the document', () => {
-        // Re-run the matching to know which paths are covered.
-        for (const r of rows) {
-          const key = r[0].match(/`([a-zA-Z.]+)`/);
-          const m = key ? [null, key[1]] : MAPPED.find(([re]) => re.test(r[0]));
-          if (m) covered.add(key ? key[1] : m[1]);
-        }
+        const covered = new Set(rows.map(rowPath).filter(Boolean).map((p) => p[0]));
         for (const [path, value] of leaves(ac)) {
-          if (['id', 'name', 'side', 'engine.kind'].includes(path) || EXEMPT.has(path)) continue;
-          if (typeof value !== 'number') continue;
-          // Inline engines have no rotating inertia and direct-drive rotaries gear ratio 1: documented in prose.
-          if (path === 'engine.rotatingInertia' && value === 0) continue;
+          if (typeof value !== 'number' || ['wings', 'engine.rotationSign'].includes(path)) continue;
+          // Zero means "none" or "reference" (no rotating mass on an inline
+          // engine, the lowest wing's height, a sea-level calibration speed),
+          // and a gear ratio of 1 means direct drive; both are explained in prose.
+          if (value === 0) continue;
           if (path === 'propeller.gearRatio' && value === 1) continue;
           expect(covered.has(path), `${ac.id}: ${path} has no row in AIRCRAFT_DATA.md`).toBe(true);
         }
@@ -118,33 +111,76 @@ describe('aircraft data files match docs/AIRCRAFT_DATA.md', () => {
   }
 });
 
-describe('common flight-model parameters match the document', () => {
-  const rows = sectionRows('Common flight-model parameters');
+describe('shared parameters and sourced constants match the document', () => {
+  const rows = [...sectionRows('Common flight-model parameters'), ...sectionRows('Physics constants from sources')];
+  const byKey = new Map();
+  for (const r of rows) {
+    const m = r[0].match(/`((common|constants)\.[A-Za-z0-9_.]+)`/);
+    if (m) byKey.set(m[1], number(r[1]));
+  }
+  const codeKeys = [
+    ...Object.keys(common).map((k) => `common.${k}`),
+    'constants.FLAT_PLATE_CD',
+    'constants.SECTION_LIFT_SLOPE',
+    ...Object.keys(constants.PRANDTL).map((k) => `constants.PRANDTL.${k}`),
+    ...Object.keys(constants.ENGINE_LAPSE).map((k) => `constants.ENGINE_LAPSE.${k}`),
+    'constants.PROPELLER_EFFICIENCY.PEAK_J',
+    ...constants.PROPELLER_EFFICIENCY.ETA.map((_, i) => `constants.PROPELLER_EFFICIENCY.ETA.${i}`),
+  ];
+  const resolve = (key) => {
+    const [root, ...rest] = key.split('.');
+    return get(root === 'common' ? common : constants, rest.join('.'));
+  };
 
   it('has a row for every value in common.js and constants.js, with the same number', () => {
-    const byKey = new Map();
-    for (const r of rows) {
-      const m = r[0].match(/`(common|constants)\.([A-Za-z_]+)`/);
-      if (m) byKey.set(`${m[1]}.${m[2]}`, number(r[1]));
-    }
-    const code = [
-      ...Object.entries(common).map(([k, v]) => [`common.${k}`, v]),
-      ...['FLAT_PLATE_CD', 'SECTION_LIFT_SLOPE'].map((k) => [`constants.${k}`, constants[k]]),
-    ];
-    for (const [key, value] of code) {
+    for (const key of codeKeys) {
       expect(byKey.has(key), `${key} has no row in AIRCRAFT_DATA.md`).toBe(true);
-      const doc = byKey.get(key);
-      const tolerance = Math.max(Math.abs(value) * 0.01, 1e-9);
-      expect(Math.abs(doc - value), `${key}: code ${value} vs doc ${doc}`).toBeLessThanOrEqual(tolerance);
+      expect(close(byKey.get(key), resolve(key)), `${key}: code ${resolve(key)} vs doc ${byKey.get(key)}`).toBe(true);
     }
   });
 
   it('documents nothing that is not in the code', () => {
+    for (const key of byKey.keys()) expect(resolve(key), `${key} is documented but not in the code`).toBeTypeOf('number');
+  });
+
+  it('the propeller curve rows give the right advance ratio for each value', () => {
     for (const r of rows) {
-      const m = r[0].match(/`(common|constants)\.([A-Za-z_]+)`/);
-      if (!m) continue;
-      const source = m[1] === 'common' ? common : constants;
-      expect(m[2] in source, `${m[0]} is documented but not in the code`).toBe(true);
+      const m = r[0].match(/J = ([0-9.]+) \(`constants\.PROPELLER_EFFICIENCY\.ETA\.(\d+)`\)/);
+      if (m) expect(Number(m[1])).toBeCloseTo(constants.PROPELLER_EFFICIENCY.J[Number(m[2])], 6);
     }
+  });
+});
+
+describe('validation figures match the document', () => {
+  const rows = sectionRows('Validation data');
+  const byKey = new Map();
+  for (const r of rows) {
+    const m = r[0].match(/`validation\.([^`]+)`/);
+    if (m) byKey.set(m[1], number(r[1]));
+  }
+
+  it('every validation figure and condition has a row with the same value and source', () => {
+    for (const c of VALIDATION_CASES) {
+      const expected = [
+        ...Object.entries(c.conditions).map(([k, v]) => [`${c.id}.${k}`, v]),
+        ...c.checks.map((k) => [`${c.id}.${checkKey(k)}`, k.value]),
+      ];
+      for (const [key, value] of expected) {
+        expect(byKey.has(key), `${key} has no row in AIRCRAFT_DATA.md`).toBe(true);
+        expect(close(byKey.get(key), value), `${key}: code ${value} vs doc ${byKey.get(key)}`).toBe(true);
+        const row = rows.find((r) => r[0].includes(`\`validation.${key}\``));
+        expect(row[4], `${key} source`).toBe(c.source);
+      }
+    }
+  });
+
+  it('documents no validation figure that is not in the code', () => {
+    const codeKeys = new Set(
+      VALIDATION_CASES.flatMap((c) => [
+        ...Object.keys(c.conditions).map((k) => `${c.id}.${k}`),
+        ...c.checks.map((k) => `${c.id}.${checkKey(k)}`),
+      ]),
+    );
+    for (const key of byKey.keys()) expect(codeKeys.has(key), `${key} is documented but not in the code`).toBe(true);
   });
 });

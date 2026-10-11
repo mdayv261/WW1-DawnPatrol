@@ -39,6 +39,7 @@ const HELP = [
   '  T / G          trim nose up / down',
   '  1-4            Camel, SPAD, Dr.I, Albatros',
   '  R restart   P pause   F3 debug   I invert pitch   H hide this',
+  '  F4 flight test panel (development builds only)',
 ].join('\n');
 
 export function createHelp() {

@@ -1,14 +1,20 @@
 // Engine and propeller: power vs throttle and altitude, thrust vs airspeed,
 // and the rotating-engine effects (reaction torque and angular momentum).
 
-import { ISA } from '../core/constants.js';
+import { ISA, ENGINE_LAPSE, PROPELLER_EFFICIENCY } from '../core/constants.js';
 
-// Power produced (W). Falls with air density (an estimate, see
-// docs/AIRCRAFT_DATA.md "Common flight-model parameters").
+// Fraction of sea-level power an unsupercharged engine gives at a given air
+// density (Virginia Tech AOE 3104 notes, eq. 2: A*sigma - B).
+export function altitudePowerFactor(density) {
+  const sigma = density / ISA.RHO0;
+  return Math.max(0, ENGINE_LAPSE.A * sigma - ENGINE_LAPSE.B);
+}
+
+// Power produced (W) at a throttle setting and air density.
 export function enginePower(ac, common, throttle, density) {
   const t = Math.min(1, Math.max(0, throttle));
   const fraction = common.idlePowerFraction + (1 - common.idlePowerFraction) * t;
-  return ac.engine.ratedPower * fraction * (density / ISA.RHO0);
+  return ac.engine.ratedPower * fraction * altitudePowerFactor(density);
 }
 
 // Crankshaft speed in rad/s.
@@ -18,15 +24,50 @@ export function engineOmega(ac, common, throttle) {
   return ((ac.engine.ratedRpm * fraction) / 60) * 2 * Math.PI;
 }
 
-// Propeller thrust (N) from shaft power and airspeed. Efficiency peaks near
-// the design speed; at low speed thrust is limited by the static (momentum
-// theory) value. The two limits are joined smoothly.
-export function propellerThrust(ac, common, power, speed, density) {
+// Look up the measured efficiency curve (Durand and Lesley, NACA Report 30)
+// at advance ratio j. Below the table it falls linearly to zero at j = 0;
+// above it, it continues along the last measured slope (never below zero).
+function curveEfficiency(j) {
+  const { J, ETA } = PROPELLER_EFFICIENCY;
+  if (j <= J[0]) return Math.max(0, (ETA[0] * j) / J[0]);
+  const last = J.length - 1;
+  if (j >= J[last]) {
+    const slope = (ETA[last] - ETA[last - 1]) / (J[last] - J[last - 1]);
+    return Math.max(0, ETA[last] + slope * (j - J[last]));
+  }
+  let i = 1;
+  while (J[i] < j) i++;
+  const f = (j - J[i - 1]) / (J[i] - J[i - 1]);
+  return ETA[i - 1] + f * (ETA[i] - ETA[i - 1]);
+}
+
+// Propeller revolutions per second at a throttle setting.
+export function propellerRevs(ac, common, throttle) {
+  return (engineOmega(ac, common, throttle) / (2 * Math.PI)) * ac.propeller.gearRatio;
+}
+
+// Propeller efficiency at an airspeed and throttle. The aircraft's
+// fixed-pitch propeller is assumed to have the measured curve's shape, with
+// its best efficiency at propDesignSpeedFraction of the documented top speed
+// (at rated rpm), so the advance ratio is scaled onto the curve.
+export function propellerEfficiency(ac, common, speed, throttle = 1) {
+  const D = ac.propeller.diameter;
+  const j = Math.max(0, speed) / (propellerRevs(ac, common, throttle) * D);
+  const designJ = (common.propDesignSpeedFraction * ac.documented.maxSpeed) / (propellerRevs(ac, common, 1) * D);
+  return curveEfficiency((j * PROPELLER_EFFICIENCY.PEAK_J) / designJ);
+}
+
+// Propeller thrust (N) from shaft power and airspeed. At speed it is
+// efficiency x power / speed; at low speed it is limited by the static
+// (momentum theory) value. The two limits are joined smoothly.
+export function propellerThrust(ac, common, power, speed, density, throttle = 1) {
   if (power <= 0) return 0;
-  const designSpeed = common.propDesignSpeedFraction * ac.documented.maxSpeed;
-  const x = (speed - designSpeed) / (1.1 * designSpeed);
-  const efficiency = Math.max(0.05, common.propEfficiencyPeak * (1 - x * x));
-  const dynamicLimit = (efficiency * power) / Math.max(speed, 0.5);
+  // Efficiency tends to zero with speed, but efficiency / speed stays finite,
+  // so both are taken at a small minimum speed; the static limit takes over.
+  const v = Math.max(speed, 0.5);
+  const efficiency = propellerEfficiency(ac, common, v, throttle);
+  const dynamicLimit = (efficiency * power) / v;
+  if (dynamicLimit <= 0) return 0;
 
   const area = (Math.PI * ac.propeller.diameter * ac.propeller.diameter) / 4;
   const staticLimit =
