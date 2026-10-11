@@ -128,3 +128,23 @@ describe('AIRCRAFT_DATA.md', () => {
     });
   }
 });
+
+describe('Common flight-model parameters section', () => {
+  const key = Object.keys(secs).find((h) => h.startsWith('Common flight-model parameters'));
+  const rows = key ? dataRows(secs[key]) : [];
+
+  it('exists and has a full set of rows', () => {
+    expect(key).toBeTruthy();
+    expect(rows.length).toBeGreaterThanOrEqual(30);
+  });
+
+  it('every row is an estimate with an ASSUMPTION source and a real reason', () => {
+    for (const r of rows) {
+      expect(r.length).toBe(COLUMNS.length);
+      COLUMNS.forEach((col, i) => expect(r[i], `"${r[0]}" has an empty ${col}`).not.toBe(''));
+      expect(r[5], `"${r[0]}" must be an estimate`).toBe('estimate');
+      expect(r[4]).toBe('ASSUMPTION');
+      expect(r[6].length, `"${r[0]}" needs a reason`).toBeGreaterThanOrEqual(30);
+    }
+  });
+});

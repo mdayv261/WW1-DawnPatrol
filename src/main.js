@@ -1,29 +1,112 @@
-// Entry point. Starts the renderer and the fixed-step loop.
-// Phase 0 has no physics yet, so the physics step is an empty placeholder.
+// Entry point: wires the simulation, input, rendering and overlays together.
+// Physics runs at a fixed 120 Hz; drawing happens once per screen refresh.
 
 import { createScene } from './render/scene.js';
+import { createAircraftMesh } from './render/aircraftMesh.js';
+import { ChaseCamera } from './render/chaseCamera.js';
 import { FixedStepLoop } from './core/fixedStepLoop.js';
+import { Simulation } from './core/simulation.js';
+import { AIRCRAFT_LIST } from './aircraft/index.js';
+import { attachKeyboard } from './input/keyboard.js';
+import { createDebugOverlay, createHelp, createBanner } from './ui/overlays.js';
+import { debugLines } from './ui/debugText.js';
 
 const canvas = document.getElementById('game');
-const { renderer, scene, camera } = createScene(canvas);
+const { renderer, scene, camera, ground, groundTile } = createScene(canvas);
 const loop = new FixedStepLoop();
+const sim = new Simulation();
+const chase = new ChaseCamera(camera);
+const debug = createDebugOverlay();
+const help = createHelp();
+const banner = createBanner();
 
-// Called 120 times per simulated second. Physics goes here from Phase 1.
-function physicsStep(_dt) {}
+let aircraftIndex = 0;
+let model = null; // { group, prop } for the current aircraft
+let paused = false;
+
+// Choose the starting aircraft from ?aircraft=camel|spad13|dr1|albatros.
+const requested = new URLSearchParams(window.location.search).get('aircraft');
+const found = AIRCRAFT_LIST.findIndex((a) => a.id === requested);
+if (found >= 0) aircraftIndex = found;
+
+const keyboard = attachKeyboard({
+  onSelect: (i) => { if (i < AIRCRAFT_LIST.length) startFlight(i); },
+  onRestart: () => startFlight(aircraftIndex),
+  onPause: () => { paused = !paused; },
+  onDebug: () => debug.toggle(),
+  onHelp: () => help.toggle(),
+});
+
+function startFlight(index) {
+  aircraftIndex = index;
+  const ac = AIRCRAFT_LIST[index];
+  if (model) scene.remove(model.group);
+  model = createAircraftMesh(ac);
+  scene.add(model.group);
+  keyboard.reset(sim.start(ac));
+  chase.reset();
+  paused = false;
+}
+
+startFlight(aircraftIndex);
+
+let lastOverlay = 0;
+const drawPosition = { x: 0, z: 0 };
+
+// Read the keys and run as many fixed physics steps as realDt calls for.
+// Returns alpha, how far we are between the last two physics states.
+function update(realDt) {
+  if (paused) return 1;
+  const input = keyboard.update(realDt);
+  return loop.advance(realDt, (dt) => sim.step(dt, input)).alpha;
+}
+
+// Draw one frame from the current state.
+function draw(realDt, alpha, now) {
+  const { position, quaternion } = sim.interpolate(alpha);
+  model.group.position.copy(position);
+  model.group.quaternion.copy(quaternion);
+  const d = sim.diag;
+  if (d) model.prop.rotation.x += (d.rpm / 60) * Math.PI * 2 * realDt * 0.15; // slowed so it reads on screen
+
+  // Keep the ground under the aircraft, in whole texture tiles so it never swims.
+  drawPosition.x = Math.round(position.x / groundTile) * groundTile;
+  drawPosition.z = Math.round(position.z / groundTile) * groundTile;
+  ground.position.set(drawPosition.x, 0, drawPosition.z);
+
+  chase.update(position, quaternion, realDt);
+
+  if (now - lastOverlay > 100) {
+    lastOverlay = now;
+    banner.set(sim.crashed ? 'CRASHED - press R' : paused ? 'PAUSED' : '');
+    if (debug.visible) debug.set(debugLines(sim.aircraft, sim.diag, { crashed: sim.crashed, paused }));
+  }
+  renderer.render(scene, camera);
+}
 
 let lastTime = performance.now();
 
 function frame(now) {
-  const realDt = (now - lastTime) / 1000;
+  const realDt = Math.min(0.1, (now - lastTime) / 1000);
   lastTime = now;
-
-  const { alpha } = loop.advance(realDt, physicsStep);
-  // From Phase 1 the renderer uses alpha to blend the previous and current
-  // physics states. Nothing moves yet, so it is unused for now.
-  void alpha;
-
-  renderer.render(scene, camera);
+  draw(realDt, update(realDt), now);
   requestAnimationFrame(frame);
 }
 
 requestAnimationFrame(frame);
+
+// Development only (removed from production builds): lets an automated test
+// drive the game when the browser tab is hidden and not animating.
+if (import.meta.env.DEV) {
+  window.__dawn = {
+    sim,
+    keyboard,
+    debug,
+    // Run `seconds` of game time in 1/60 s frames, then draw one frame.
+    advance(seconds) {
+      const frames = Math.round(seconds * 60);
+      for (let i = 0; i < frames; i++) update(1 / 60);
+      draw(1 / 60, loop.accumulator / loop.dt, performance.now() + 1000);
+    },
+  };
+}

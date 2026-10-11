@@ -98,7 +98,8 @@ export function createScene(canvas) {
   scene.fog = new THREE.Fog(HORIZON_COLOUR, 3000, 25000);
 
   scene.add(createSky());
-  scene.add(createGround());
+  const ground = createGround();
+  scene.add(ground);
 
   const sun = new THREE.DirectionalLight(0xfff1d6, 2.2);
   sun.position.copy(SUN_DIRECTION).multiplyScalar(1000);
@@ -120,5 +121,5 @@ export function createScene(canvas) {
   window.addEventListener('resize', resize);
   resize();
 
-  return { renderer, scene, camera };
+  return { renderer, scene, camera, ground, groundTile: FIELD_SIZE };
 }

@@ -126,3 +126,69 @@ Defaults chosen for the other two, subject to the product owner's objection: Fok
 **Decision:** The placeholder scene has a shader-based sky dome (horizon-to-zenith gradient with a sun glow), distance haze (fog), a 60 km flat ground with a repeating field-patchwork texture, a sun light plus a sky light, and a camera at 300 m looking at the horizon.
 
 **Why:** It proves the toolchain end to end. The repeating patchwork is deliberately visible: judging speed and altitude by eye needs ground texture, and it will make the first flight tests much easier to read. The real procedural Western Front terrain replaces it in a later phase.
+
+---
+
+# Phase 1 decisions (flight model)
+
+## D12. Integration method (Phase 1)
+
+**Decision:** Semi-implicit (symplectic) Euler at 120 Hz for position and velocity. Orientation advances by rotating the quaternion by the angle turned in each step (the exact result for a constant rate), then renormalising. Rotation uses Euler's equation including the gyroscopic term from the spinning engine: `I dw/dt = M - w x (I w + H)`.
+
+**Why:** Simple, stable at 120 Hz for these time constants, and deterministic. A higher-order method (RK4) was not needed: the tests show orientation stays unit length and angular momentum is conserved to within 2% over 10 seconds of free tumbling. Revisit if a later phase shows drift.
+
+## D13. Coordinate and sign conventions inside the flight model (Phase 1)
+
+**Decision:** `src/physics/aero.js` uses the textbook aeroplane axes (x forward, y right, z down) so its coefficients can be compared with textbooks. `flightModel.js` converts to the game's body axes (D5) at one place. In the aeroplane axes: alpha is positive nose above the wind, beta positive when the wind comes from the right, roll positive right-wing-down, yaw positive nose-right.
+Controls: stick back = pull = nose up; stick right = right wing down; right rudder = nose right.
+
+**Why:** Keeping the conversion in one place prevents sign errors. Each sign is covered by a test (for example "stick right rolls right wing down").
+
+## D14. Aerodynamic model (Phase 1)
+
+- **Lift:** straight line below the stall with the slope derived from aspect ratio (Prandtl finite-wing formula with a 0.9 x 2 pi section slope). It is a derived value, not an input.
+- **Stall:** a smooth step at `CLmax / slope` from the zero-lift angle, about 1 degree wide. Past it, lift and drag blend to flat-plate values (lift `2 sin a cos a`, drag 1.98 `sin^2 a`), so the model stays sensible at any angle, including tumbling.
+- **Drag:** parasitic `CD0` plus induced `CL^2 / (pi e AR)`.
+- **Moments:** static stability from a static margin, plus damping and control terms. Control authority scales with dynamic pressure automatically because moments are `q S b C`. No fudge factor.
+- **Wing drop and spins:** when stalled, roll damping reverses sign (autorotation) and levels off at high rates; sideslip roll effect reverses; a small fixed left-wing-down bias gives the drop a repeatable direction; yaw is driven toward the dropping wing; elevator loses half its effect; and a nose-down moment appears.
+
+**Why:** The spec asks for wing drop, spins and recoverability. This is the smallest model that produces them. All the shaping numbers are estimates and are listed with reasons in `docs/AIRCRAFT_DATA.md` ("Common flight-model parameters").
+
+## D15. Engine and propeller (Phase 1)
+
+- **Power** is proportional to air density (a stand-in; Gagg and Farrar describe a better method whose constants were not verified).
+- **Thrust** comes from power and airspeed with a peak-efficiency speed, joined smoothly to the static (momentum-theory) limit. Static thrust works out to about 50 to 60% of weight, a plausible figure.
+- **Rotary engines** (Camel, Dr.I): the whole engine spins, giving angular momentum along the nose (clockwise from the cockpit) for gyroscopic effect, plus a reaction torque that rolls the airframe left.
+- **Rigging compensation (design choice, flagged):** the aircraft carry a fixed roll moment cancelling 80% of the engine torque at 60% throttle, standing in for the way rotary aircraft were rigged. Without it the Camel rolled left at about 3 degrees/s hands-off. No source was found for how the Camel was actually rigged.
+- **Inline engines** (SPAD, Albatros): no torque or gyro in Phase 1. Their spinning parts are small and no propeller rotation data was found.
+- **Throttle:** continuous 0 to 100% for all aircraft, which the spec asks for. Real rotary Camels were mostly flown on a blip switch, not a throttle. Possible later refinement.
+
+## D16. Camel turn behaviour: what the model does and does not show (Phase 1)
+
+**Finding:** With the engine's real angular momentum, the model shows the **nose-attitude** effect strongly: the Camel's nose sits about 12 degrees lower in a right turn than in a left turn at the same stick and bank, and the Dr.I about 15 degrees. Inline aircraft are exactly symmetric.
+It does **not** show a markedly **faster right turn**. At the same bank and stick the sustained turn rates differ by only 10 to 15% (and slightly favour the left, because the left turn flies slower with the nose higher). The Flying magazine article (S19) says flight tests found similar sustained turn rates, with the 270-degree-left-turn story a legend, while the Canadian Museum of Flight (S18) says the Camel turned "extremely sharply to the right and very poorly to the left".
+
+**Decision:** Keep the physics-derived behaviour and do not add a fudge factor. The nose-drop in right turns, which the spec lists explicitly, is delivered and tested. The sustained-rate similarity is also tested (within 20%). **Product owner to decide** after flying it whether to bias this further (see PROGRESS.md).
+
+## D17. Input mapping (Phase 1)
+
+**Decision:** Arrow keys for the stick (Down = pull back, Up = push forward, like a real stick; `I` inverts), Q/E rudder, W/S throttle, T/G trim, 1 to 4 choose aircraft, R restart, P pause, F3 debug, H hide help. Key presses ramp the stick gradually (about a second to full travel) and return to centre quickly on release, so a tap is a small input. Mouse, gamepad and rebinding come in the controls phase.
+
+**Why:** A binary key pressed full-on takes a light aeroplane into a stall in about a second. The ramp makes small corrections possible from a keyboard.
+
+## D18. Scope deferred from Phase 1 and why
+
+- **Ground handling, take-off, landing:** the flight starts in the air at 1,000 m at 80% of top speed, trimmed. Touching the ground (under 1 m) ends the flight and R restarts.
+- **Structural limits and damage:** no documented limit loads or never-exceed speeds have been found, and we do not invent data. The g-load is shown in F3. The Camel can currently be dived well beyond any historical limit.
+- **Mouse, gamepad, rebinding, menus, weapons, AI, terrain, audio, cockpit instruments:** later phases.
+
+## D19. Spin tuning and its sensitivity (Phase 1)
+
+**Decision:** The stall and spin parameters were tuned so that a spin can be entered and recovered, then locked in with tests. With the current values the Camel, SPAD and Albatros each enter a sustained spin to the left (with left rudder, full back stick and the engine at idle), rotating at roughly 2 to 4 rad/s, and all four aircraft recover with opposite rudder and the stick eased forward.
+**Known weaknesses:** the Fokker Dr.I rotates (about 0.9 rad/s) but does not sustain a full spin. The behaviour is delicate: changing the pitch damping by 12% broke the SPAD's spin in a test. The spin is only entered when the stick is pulled hard, with rudder, at low power. More tuning is expected once the product owner has flown it.
+
+## D20. How the physics is tested (Phase 1)
+
+**Decision:** Physics tests are headless and deterministic. Scripted "pilots" (`tests/helpers/flight.js`) fly fixed manoeuvres, so results repeat exactly. Behaviour thresholds come from measured runs of the current estimates, so they guard against accidental change, **not against history**: no documented stall speeds or climb rates were found to validate against. Top speed is the one performance figure checked against documented data (within 5%). A test also links `docs/AIRCRAFT_DATA.md` to the aircraft data files and fails if a number differs, or if a number has no row. A check of that test (deliberately breaking three values) confirmed it catches them.
+
+**Development hook:** In development only (not in production builds), `window.__dawn` lets a script advance the game by a number of seconds and draw one frame. It exists because a browser pauses animation in hidden tabs, which blocks automated checks. It is not part of the game.
