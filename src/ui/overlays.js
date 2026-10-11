@@ -45,7 +45,7 @@ const HELP = [
   '            trigger fire, 2 camera, 3/4 trim, 5 readout, 7 pause, 8 restart',
   '            F2 joystick screen (test, learn, flip); press the trigger once if it is not found',
   '  C camera (cockpit / chase / free)   V or right mouse: look around',
-  '  J instruments readout   R restart   P pause   F3 debug   I invert pitch',
+  '  J instruments readout   L graphics quality   R restart   P pause   F3 debug   I invert pitch',
   '  H hide this   F4 flight test panel (development builds only)',
 ].join('\n');
 

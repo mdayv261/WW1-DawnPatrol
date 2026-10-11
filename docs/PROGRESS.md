@@ -2,14 +2,29 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 3 (world and visuals) in progress, checkpoints 1, 2 and 2b committed; checkpoint 3 under way
+## Current status: Phase 3 (world and visuals) built; waiting for the product owner's acceptance test
 
-Phases 0, 1 and 2 are signed off (Phase 2 on 11 Oct 2026, including the joystick). Phase 3 has three checkpoints; each is committed only with the product owner's permission:
-1. **Aircraft models**: done and committed (48df111); the product owner confirmed all four are recognisable by silhouette.
-2. **Terrain**: done and committed (fields, woods, villages, roads, a river, trench lines). Product owner's feedback: the flying model feels natural and realistic, the terrain looks OK but could be more detailed, and there should be recognisable airfields with white triangle markers, a wind sock and a control tower. That is checkpoint 2b, in progress.
-3. **Sky, clouds, quality levels and the frame-rate pass.**
+Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft models (48df111), terrain (c3b90ec), airfields and detail (dee316a), and checkpoint 3 (quality levels, pixel budget, frame-rate readout, cirrus). Phase 4 must not start until the product owner confirms Phase 3.
 
-## Phase 3 checkpoint 2b: airfields and a more detailed landscape (D44)
+## Phase 3 checkpoint 3: quality, frame rate and sky (D46)
+
+**Built and tested by the product owner: 75 fps maximum, 65 fps 1% low, worst frame 14 ms at 2059x1020 pixels on Medium (116 calls, 290,000 triangles), so the frame-rate acceptance is met. Still to do for Phase 3: the last of the ground flicker and crashes on trees and buildings.**
+- **L cycles graphics quality** Low, Medium, High (remembered in the browser; `?quality=low|medium|high` in the address overrides it). The terrain and clouds rebuild at once.
+- **Pixel budget:** the picture is drawn with about 2.1 million pixels (about 1920 x 1080) at Medium, even on a retina screen, then scaled to fit; High draws at the screen's own resolution; Low about 1 million.
+- **F3 shows the performance:** frames per second, the 1% low, the worst frame in the last two seconds, draw calls, triangles, quality level, pixels drawn, and terrain tiles.
+- **High cirrus** wisps in the sky; the sky colours, sun and haze are in one place for a later time-of-day setting.
+- 495 tests pass (plus 15 known deviations); physics untouched.
+
+**Phase 3 acceptance test (the two things in the brief):**
+1. **Steady frame rate at 1080p.** Run `npm run dev`, open http://localhost:5173 at your usual window size and press **1** then **F3**. Take off and fly for a minute or two: over the airfield, along the front line (east, about 4.3 km), over villages and through the clouds (climb to 1,500-2,500 m). Read **frames** in the F3 box: you want about 60 fps with a **worst** below about 25 ms. Press **L** to try Low and High and compare. If Medium is not steady, tell me the numbers.
+2. **Each aircraft recognisable by its silhouette.** Open http://localhost:5173/hangar.html, press **All four** and **Silhouette** (already confirmed at checkpoint 1; the models have since gained moving control surfaces).
+
+**Known issues:**
+- I could not read a real frame rate in the test browser (it pauses animation in hidden tabs), only render timings, so the fps figure is yours to read.
+- Switching quality rebuilds the ground around you, which can take a second or two on High.
+- Clouds, wind and the control tower are visual extras (no effect on flight).
+
+## Phase 3 checkpoint 2b: airfields and a more detailed landscape (D44), committed
 
 **Done and committed; the product owner flew it and confirmed the ground flicker is gone** (on top of checkpoint 2, committed as c3b90ec).
 
@@ -262,6 +277,6 @@ Still open:
   - Cockpit, chase and free-look cameras.
   - Acceptance: you can take off, fly a circuit and land without the debug panel; the Camel visibly pulls right under power. The product owner decided to research what the Camel really did and follow the sources.
   - This needs ground handling (take-off and landing) and basic instruments, so both are included.
-- **Phase 3: World and visuals.** In progress (checkpoint 1 built). Procedurally generated Western Front terrain (fields, woods, trench lines), sky and clouds. Low-polygon aircraft models built in code, with no third-party assets. Acceptance: steady frame rate at 1080p on the product owner's machine; each aircraft is recognisable by its silhouette.
+- **Phase 3: World and visuals.** Built; waiting for acceptance. Procedurally generated Western Front terrain (fields, woods, trench lines), sky and clouds. Low-polygon aircraft models built in code, with no third-party assets. Acceptance: steady frame rate at 1080p on the product owner's machine; each aircraft is recognisable by its silhouette.
 - **Phase 4: Weapons and damage.** Synchronised machine guns firing through the propeller, bullet ballistics with gravity and drag, limited ammunition and gun jams. Component damage to the engine, fuel, pilot, wings and control cables; damage changes the flight model. Acceptance: tests confirm bullet drop and travel time; a damaged wing causes a measurable roll.
 - Later phases: not yet defined (Phase 7 includes gamepad and joystick support, per the spec).

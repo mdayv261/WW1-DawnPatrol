@@ -20,6 +20,7 @@ export function debugLines(aircraft, diag, flags = {}) {
   if (flags.paused) lines.push('PAUSED');
   if (flags.joystick) lines.push(`joystick  ${flags.joystick}`);
   if (flags.airfield) lines.push(`airfield  ${flags.airfield}`);
+  if (flags.extra) lines.push(...flags.extra);
   if (!diag) return lines;
   lines.push(
     `airspeed  ${fixed(toMph(diag.speed))} mph  ${fixed(toKmh(diag.speed))} km/h`,

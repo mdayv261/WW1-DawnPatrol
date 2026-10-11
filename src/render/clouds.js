@@ -136,6 +136,12 @@ export class Clouds {
     this.count = 0;
   }
 
+  // Change how far and how thickly the sky is filled (graphics quality).
+  setQuality(quality) {
+    this.quality = quality;
+    this.last = null; // rebuild on the next update
+  }
+
   // Rebuild the puff list round the camera and sort it far to near.
   rebuild(camera) {
     const q = this.quality;

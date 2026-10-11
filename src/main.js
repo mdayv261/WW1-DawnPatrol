@@ -26,19 +26,29 @@ import { common } from './aircraft/index.js';
 import { seedFrom } from './world/noise.js';
 import { Terrain } from './render/terrain/terrain.js';
 import { Clouds } from './render/clouds.js';
-import { QUALITY_LEVELS, qualityFromUrl } from './render/quality.js';
+import { QUALITY_LEVELS, QUALITY_KEY, chooseQuality, nextQuality } from './render/quality.js';
+import { FrameStats, perfLines } from './ui/perfStats.js';
 
 const canvas = document.getElementById('game');
-const { renderer, scene, camera, ground, groundTile } = createScene(canvas);
+// Graphics quality: ?quality= in the address, else the level saved in this browser, else Medium; L changes it.
+const storage = (() => {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+})();
+let qualityName = chooseQuality(window.location.search, storage);
+const { renderer, scene, camera, ground, groundTile, view, setMaxPixels } = createScene(canvas, QUALITY_LEVELS[qualityName].maxPixels);
+const frameStats = new FrameStats();
 const loop = new FixedStepLoop();
 const sim = new Simulation();
 const rig = new CameraRig(camera);
 // The world: a Western Front landscape from a seed (?seed=), drawn at a quality level (?quality=).
 const params = new URLSearchParams(window.location.search);
 const world = createWorld(params.has('seed') ? seedFrom(params.get('seed')) : undefined);
-const quality = QUALITY_LEVELS[qualityFromUrl(window.location.search)];
-const terrain = new Terrain(scene, world, quality, renderer.capabilities.getMaxAnisotropy());
-const clouds = new Clouds(scene, world.seed, quality, scene.fog);
+const terrain = new Terrain(scene, world, QUALITY_LEVELS[qualityName], renderer.capabilities.getMaxAnisotropy());
+const clouds = new Clouds(scene, world.seed, QUALITY_LEVELS[qualityName], scene.fog);
 const debug = createDebugOverlay();
 const help = createHelp();
 const banner = createBanner();
@@ -84,6 +94,7 @@ const keyboard = attachKeyboard({
     showNotice(rig.lookToggle ? 'Looking around (mouse moves the view; V again to stop)' : 'Looking ahead');
   },
   onReadout: () => showNotice(readout.toggle() ? 'Instrument readout on' : 'Instrument readout off'),
+  onQuality: () => applyQuality(nextQuality(qualityName)),
   onPause: () => { paused = !paused; },
   onDebug: () => debug.toggle(),
   onHelp: () => help.toggle(),
@@ -107,6 +118,23 @@ const mouse = attachMouse(canvas, {
     showNotice(captured ? 'Mouse flying on (Esc to release, X to centre stick)' : 'Mouse released (click the game to fly with the mouse)', 3000),
   invertPitch: () => keyboard.invertPitch,
 });
+
+// Switch graphics quality: the terrain and clouds are rebuilt for the new level and the
+// screen is redrawn with its pixel budget. Remembered in this browser.
+function applyQuality(name) {
+  qualityName = name;
+  const q = QUALITY_LEVELS[name];
+  setMaxPixels(q.maxPixels);
+  terrain.setQuality(q);
+  clouds.setQuality(q);
+  terrain.prime(sim.state.position);
+  try {
+    storage?.setItem(QUALITY_KEY, name);
+  } catch {
+    // not remembered (private window)
+  }
+  showNotice(`Graphics quality: ${name}`, 2500);
+}
 
 // USB joystick: buttons call the same actions as the keys.
 const joystick = attachJoystick({
@@ -212,7 +240,10 @@ function draw(realDt, alpha, now) {
     }
     if (debug.visible) {
       const nearest = world.nearestAirfield(sim.state.position.x, sim.state.position.z);
-      debug.set(debugLines(sim.aircraft, sim.diag, { crashed: sim.crashed, paused, joystick: stick ? stick.id : 'not detected', airfield: airfieldLine(nearest) }));
+      debug.set(debugLines(sim.aircraft, sim.diag, {
+        crashed: sim.crashed, paused, joystick: stick ? stick.id : 'not detected', airfield: airfieldLine(nearest),
+        extra: perfLines(frameStats, renderer.info.render, qualityName, view, terrain.stats()),
+      }));
     }
     if (import.meta.env.DEV && testPanel?.visible) testPanel.update(sim, runner, scenarioLabel);
     if (joystickPanel.visible) joystickPanel.update();
@@ -235,6 +266,7 @@ window.addEventListener('error', (e) => showError(e.error ?? e.message));
 function frame(now) {
   requestAnimationFrame(frame); // keep the loop going whatever happens below
   try {
+    frameStats.push(now - lastTime, now); // the real time since the last frame, for the F3 readout
     const realDt = Math.min(0.1, (now - lastTime) / 1000);
     lastTime = now;
     draw(realDt, update(realDt), now);
@@ -252,6 +284,8 @@ if (import.meta.env.DEV) {
     sim,
     terrain,
     clouds,
+    applyQuality,
+    frameStats,
     world,
     renderer,
     keyboard,

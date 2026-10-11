@@ -2,51 +2,12 @@
 // This is rendering only. Nothing in the physics code may import this file.
 
 import * as THREE from 'three';
+import { SKY, createSky, sunDirection } from './sky.js';
+import { pixelRatioFor } from './quality.js';
 
-const HORIZON_COLOUR = 0xc9dcec; // pale haze where sky meets ground
-const ZENITH_COLOUR = 0x2f6fb5; // deeper blue straight overhead
 const GROUND_SIZE = 60000; // metres across
 const FIELD_SIZE = 150; // metres per texture tile
 const CAMERA_FAR = 30000; // the haze hides everything beyond 25 km; a shorter depth range means finer depth precision
-
-// Sun direction as a unit vector (up and slightly toward -Z = north).
-const SUN_DIRECTION = new THREE.Vector3(0.4, 0.55, -0.7).normalize();
-
-// Sky dome: a big inside-out sphere shaded from horizon colour to zenith
-// colour, with a soft glow around the sun.
-function createSky() {
-  const material = new THREE.ShaderMaterial({
-    side: THREE.BackSide,
-    depthWrite: false,
-    fog: false,
-    uniforms: {
-      horizon: { value: new THREE.Color(HORIZON_COLOUR) },
-      zenith: { value: new THREE.Color(ZENITH_COLOUR) },
-      sunDir: { value: SUN_DIRECTION.clone() },
-    },
-    vertexShader: `
-      varying vec3 vDir;
-      void main() {
-        vDir = normalize(position);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }`,
-    fragmentShader: `
-      uniform vec3 horizon;
-      uniform vec3 zenith;
-      uniform vec3 sunDir;
-      varying vec3 vDir;
-      void main() {
-        float h = clamp(vDir.y, 0.0, 1.0);
-        vec3 col = mix(horizon, zenith, pow(h, 0.55));
-        float s = max(dot(normalize(vDir), sunDir), 0.0);
-        col += vec3(1.0, 0.92, 0.75) * (pow(s, 600.0) * 1.5 + pow(s, 12.0) * 0.12);
-        gl_FragColor = vec4(col, 1.0);
-      }`,
-  });
-  const dome = new THREE.Mesh(new THREE.SphereGeometry(CAMERA_FAR * 0.9, 32, 16), material);
-  dome.frustumCulled = false;
-  return dome;
-}
 
 // A small canvas of green and brown patches, repeated across the ground so
 // that speed and altitude are easy to judge by eye.
@@ -88,38 +49,49 @@ function createGround() {
 }
 
 // Builds everything and returns what main.js needs to draw frames.
-export function createScene(canvas) {
+// maxPixels: most pixels drawn per frame (see quality.js); change it with setMaxPixels().
+export function createScene(canvas, maxPixels = Infinity) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  let pixelBudget = maxPixels;
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(HORIZON_COLOUR);
+  scene.background = new THREE.Color(SKY.horizon);
   // Haze: distant ground fades into the horizon colour.
-  scene.fog = new THREE.Fog(HORIZON_COLOUR, 3000, 25000);
+  scene.fog = new THREE.Fog(SKY.horizon, SKY.hazeNear, SKY.hazeFar);
 
-  scene.add(createSky());
+  scene.add(createSky(CAMERA_FAR * 0.9));
   const ground = createGround();
   scene.add(ground);
 
-  const sun = new THREE.DirectionalLight(0xfff1d6, 2.2);
-  sun.position.copy(SUN_DIRECTION).multiplyScalar(1000);
+  const sun = new THREE.DirectionalLight(SKY.sunColour, SKY.sunIntensity);
+  sun.position.copy(sunDirection()).multiplyScalar(1000);
   scene.add(sun);
-  scene.add(new THREE.HemisphereLight(0xbfd8f0, 0x5d7f3a, 1.0));
+  scene.add(new THREE.HemisphereLight(SKY.skyLight, SKY.groundLight, SKY.ambientIntensity));
 
   // Placeholder viewpoint: 300 m up, looking toward the horizon.
   const camera = new THREE.PerspectiveCamera(60, 1, 1, CAMERA_FAR);
   camera.position.set(0, 300, 0);
   camera.lookAt(0, 270, -1000);
 
+  const view = { width: 1, height: 1, pixelRatio: 1 }; // for the F3 overlay
   function resize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
+    const ratio = pixelRatioFor(pixelBudget, window.devicePixelRatio, w, h);
+    renderer.setPixelRatio(ratio);
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    Object.assign(view, { width: w, height: h, pixelRatio: ratio });
   }
   window.addEventListener('resize', resize);
   resize();
 
-  return { renderer, scene, camera, ground, groundTile: FIELD_SIZE };
+  return {
+    renderer, scene, camera, ground, groundTile: FIELD_SIZE, view,
+    setMaxPixels(n) {
+      pixelBudget = n;
+      resize();
+    },
+  };
 }
