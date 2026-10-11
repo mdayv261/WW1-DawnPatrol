@@ -86,20 +86,28 @@ export function attachMouse(canvas, handlers) {
     captured = document.pointerLockElement === canvas;
     handlers.onCapture?.(captured);
   });
+  let lookButton = false;
   document.addEventListener('mousemove', (e) => {
-    if (!captured) return;
+    // Looking around with the right button works even without capture.
+    if (!captured && !lookButton) return;
     if (handlers.onMove?.(e.movementX, e.movementY)) return; // camera looking around
-    stick.move(e.movementX, e.movementY, handlers.invertPitch?.());
+    if (captured) stick.move(e.movementX, e.movementY, handlers.invertPitch?.());
   });
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
     handlers.onWheel?.(wheelThrottle(e.deltaY));
   }, { passive: false });
   canvas.addEventListener('mousedown', (e) => {
-    if (e.button === 2) handlers.onLookButton?.(true);
+    if (e.button === 2) {
+      lookButton = true;
+      handlers.onLookButton?.(true);
+    }
   });
   window.addEventListener('mouseup', (e) => {
-    if (e.button === 2) handlers.onLookButton?.(false);
+    if (e.button === 2) {
+      lookButton = false;
+      handlers.onLookButton?.(false);
+    }
   });
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 

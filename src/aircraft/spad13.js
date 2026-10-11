@@ -6,6 +6,7 @@ export const spad13 = {
   id: 'spad13',
   name: 'SPAD S.XIII',
   side: 'Allied',
+  instruments: { speed: 'kmh', altitude: 'm' }, // French instruments
   wings: 2,
   geometry: {
     wingspan: 8.2, // m (H)

@@ -35,11 +35,15 @@ const HELP = [
   '  Down / Up      pull back (nose up) / push forward',
   '  Left / Right   roll',
   '  Q / E          rudder left / right',
-  '  W / S          throttle up / down',
-  '  T / G          trim nose up / down',
   '  1-4            Camel, SPAD, Dr.I, Albatros',
-  '  R restart   P pause   F3 debug   I invert pitch   H hide this',
-  '  F4 flight test panel (development builds only)',
+  '  Insert/Delete or W/S   throttle up / down (mouse wheel too)',
+  '  Home/End or T/G        trim nose up / down',
+  '  1-4 airfield start      Shift+1-4 air start at 1,000 m',
+  '  Mouse: click to fly with the mouse, Esc to release, X centre stick,',
+  '         , and . sensitivity',
+  '  C camera (cockpit / chase / free)   V or right mouse: look around',
+  '  J instruments readout   R restart   P pause   F3 debug   I invert pitch',
+  '  H hide this   F4 flight test panel (development builds only)',
 ].join('\n');
 
 export function createHelp() {
@@ -55,6 +59,23 @@ export function createBanner() {
     set(text) {
       el.textContent = text;
       el.style.display = text ? 'block' : 'none';
+    },
+  };
+}
+
+// Small instrument readout for the outside views (J toggles), in the
+// aircraft's own units. Hidden in the cockpit, which has real instruments.
+export function createReadout() {
+  const el = panel('bottom: 10px; right: 10px; text-align: right;');
+  let enabled = true;
+  return {
+    toggle() {
+      enabled = !enabled;
+      return enabled;
+    },
+    set(text, show) {
+      el.textContent = text;
+      el.style.display = enabled && show ? 'block' : 'none';
     },
   };
 }

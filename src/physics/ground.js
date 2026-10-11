@@ -109,7 +109,11 @@ export function groundContact(ac, common, state) {
     if (c.kind === 'wheel') {
       const rolling = state.chocked ? 2.0 : common.wheelRollingFriction;
       _f.addScaledVector(_fwd, -rolling * normal * Math.tanh(along / (state.chocked ? 0.02 : 0.3)));
-      _f.addScaledVector(_lat, -common.wheelSideFriction * normal * Math.tanh(across / 0.3));
+      // A tyre's side grip builds with the angle it slides at (slip angle),
+      // not with the sideways speed alone: a slight drift at landing speed
+      // is a small slip angle and only part of the grip.
+      const slip = Math.atan2(across, Math.max(Math.abs(along), common.tyreSlipRefSpeed));
+      _f.addScaledVector(_lat, -common.wheelSideFriction * normal * Math.tanh(slip / common.tyreSlipAngle));
     } else {
       const slide = Math.hypot(along, across);
       if (slide > 1e-6) {

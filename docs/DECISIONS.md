@@ -355,3 +355,39 @@ The engine rotation (clockwise from the cockpit) is supported by the Shuttlewort
 The Camel must recover both ways with the RAE technique.
 
 **Why:** With the propeller effects, the Dr.I's right spin turns into a left spin if opposite rudder is held throughout. The RAE recorded the same thing on the Camel. That spin recovers with the rudder central, so every spin remains recoverable, which is what the spec requires.
+
+## D37. Three cameras; a placeholder cockpit (Phase 2)
+
+**Decision:** C cycles three views:
+- **Chase:** the existing camera, with the horizon kept level.
+- **Free-look:** orbits the aircraft. The mouse turns it and the wheel zooms (6 to 120 m). It never goes below 1 m.
+- **Cockpit:** at the pilot's eye, rolling with the aircraft. Hold the right mouse button, or press V, to turn the head (about 150 degrees either side, up to 75 degrees up). The head eases back forward when you let go.
+
+The cockpit is decking, twin guns and an instrument panel, built in code. They are placed so that the guns sit just below the line of sight and the whole panel fits on screen with the 60-degree field of view. The near clipping distance drops from 1 m to 0.05 m in the cockpit only.
+
+**Why:** These are the three views in the brief. Rendering never touches the physics. The pilot's eye positions are estimates (AIRCRAFT_DATA.md).
+
+**Mouse:** while looking around or in free-look, the mouse moves the view instead of the stick. The right button looks around even when the mouse is not captured. In free-look, the wheel zooms instead of working the throttle.
+
+## D38. Instruments in each side's period units (Phase 2)
+
+**Decision:** The cockpit panel shows an airspeed indicator, an altimeter, a rev counter, a compass and a slip ball. It is drawn in code on a canvas and refreshed about ten times a second.
+- **Camel:** mph and feet.
+- **SPAD, Dr.I and Albatros:** km/h and metres.
+
+The outside views show the same numbers as a one-line readout (J). All the physics stays in SI units; the conversion is only in `src/ui/instrumentMath.js` (tested).
+
+**Why:** The acceptance test must be flown without the debug panel, so the pilot needs speed, height, rpm, heading and balance. The SPAD flew with French and US units. The British units are used for the Camel only.
+
+**Later:** period instrument layouts per aircraft come with the cockpit and UI work in a later phase.
+
+## D39. Tyre side grip builds with the slip angle (Phase 2)
+
+**Decision:** A wheel's sideways friction is μ × load × tanh(slip angle / 0.1 rad). The slip angle is the angle between where the wheel points and where it moves; it is measured against at least 1 m/s of rolling speed. Previously the full grip came at 0.3 m/s of sideways speed, whatever the rolling speed.
+
+**Why:** In the browser check, a landing with a slight drift (about 1.7 m/s sideways at 20 m/s) tripped the aircraft over its wheels and onto a wingtip, even with full opposite aileron. The wheels are about 1.4 m below the centre of gravity, so a sudden full sideways grip rolls the aircraft over. Real tyres build their side force over a few degrees of slip angle. Both new values are estimates (AIRCRAFT_DATA.md).
+
+**Test:** each aircraft lands drifting 1.5 m/s to either side, holding the wings level, and must roll out without hitting a wingtip. This test fails with the old formula.
+
+**Still true:** with no aileron at all on the roll-out, a dropping wing can still go down to the ground. That is the realistic consequence of the wings carrying most of the weight near flying speed.
+

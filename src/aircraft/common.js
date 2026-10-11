@@ -58,6 +58,8 @@ export const common = {
   gearDampingRatio: 0.5, // fraction of critical damping in the gear springs
   wheelRollingFriction: 0.06, // rolling resistance on grass, times the load
   wheelSideFriction: 0.8, // sideways grip of the tyres on grass, times the load
+  tyreSlipAngle: 0.1, // rad, slip angle over which the side grip builds up (about 6 degrees)
+  tyreSlipRefSpeed: 1, // m/s, below this rolling speed the slip angle is taken against 1 m/s
   skidFriction: 0.5, // friction of the tailskid dragging on grass, times the load
   crashSinkRate: 3.0, // m/s, touchdown sink rate that collapses the undercarriage
   chockReleaseThrottle: 0.3, // the chocks are pulled away when the throttle first passes this

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { Vector3 } from 'three';
 import { Simulation } from '../../src/core/simulation.js';
 import { AIRCRAFT_LIST, AIRCRAFT, common } from '../../src/aircraft/index.js';
 import { gearGeometry } from '../../src/physics/ground.js';
@@ -59,12 +60,14 @@ function takeOff(ac) {
 // Glide onto the field from `height` m at 1.25 x stall speed with the given
 // sink rate, engine at idle, holding the three-point attitude and steering
 // straight with the rudder on the roll-out, as a pilot would.
-function land(ac, sinkRate, seconds = 40, height = 3) {
+function land(ac, sinkRate, seconds = 40, height = 3, drift = 0) {
   const sim = new Simulation();
   sim.startOnGround(ac);
   const vs = stallSpeed(ac, common, 0);
   const state = levelState(sim.state.position.y + height, 1.25 * vs, ac.gear.groundAngle * 0.6);
   state.velocity.y = -sinkRate;
+  // Sideways drift toward the right wing (body +Z), in m/s.
+  state.velocity.add(new Vector3(0, 0, drift).applyQuaternion(state.quaternion));
   for (const k of ['position', 'velocity', 'quaternion', 'angularVelocity']) sim.state[k].copy(state[k]);
   sim.state.chocked = false;
   const input = createInput();
@@ -135,6 +138,17 @@ describe('ground handling', () => {
         expect(touched).toBe(true);
         expect(sim.crashed).toBe(false);
         expect(sim.state.velocity.length()).toBeLessThan(3);
+      });
+
+      it('a landing drifting sideways at 1.5 m/s, wings held level, rolls out without tipping onto a wingtip', () => {
+        // Tyre side grip builds with slip angle, so a slight drift at
+        // landing speed is not an instant trip over the wheels.
+        for (const drift of [-1.5, 1.5]) {
+          const { sim, touched } = land(ac, 1, 40, 3, drift);
+          expect(touched).toBe(true);
+          expect(sim.crashReason).toBeNull();
+          expect(sim.state.velocity.length()).toBeLessThan(3);
+        }
       });
 
       it('a hard landing (5 m/s sink at touchdown) collapses the undercarriage', () => {

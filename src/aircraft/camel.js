@@ -6,6 +6,7 @@ export const camel = {
   id: 'camel',
   name: 'Sopwith Camel F.1',
   side: 'Allied',
+  instruments: { speed: 'mph', altitude: 'ft' }, // British instruments
   wings: 2,
   geometry: {
     wingspan: 8.53, // m, upper wing (H)

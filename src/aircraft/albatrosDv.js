@@ -6,6 +6,7 @@ export const albatrosDv = {
   id: 'albatros',
   name: 'Albatros D.V',
   side: 'Central',
+  instruments: { speed: 'kmh', altitude: 'm' }, // German instruments
   wings: 2,
   geometry: {
     wingspan: 9.0, // m (H)

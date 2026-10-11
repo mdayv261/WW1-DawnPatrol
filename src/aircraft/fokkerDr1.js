@@ -6,6 +6,7 @@ export const fokkerDr1 = {
   id: 'dr1',
   name: 'Fokker Dr.I',
   side: 'Central',
+  instruments: { speed: 'kmh', altitude: 'm' }, // German instruments
   wings: 3,
   geometry: {
     wingspan: 7.19, // m, upper wing (M)

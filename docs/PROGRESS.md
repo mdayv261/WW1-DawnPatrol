@@ -2,28 +2,33 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 2 (controls and cameras) in progress
+## Current status: Phase 2 (controls and cameras) built, waiting for the product owner's acceptance test
 
-Phase 0 and Phase 1 are signed off. The product owner approved Phase 1 on 11 Oct 2026, after testing the flight model in the browser with the F4 test panel. Phase 1 included the core flight model for all four aircraft and its validation against sourced performance data (below). Phase 2 has not been started; its scope still needs to be agreed.
+Phase 0 and Phase 1 are signed off (Phase 1 approved 11 Oct 2026). All of Phase 2 is built and checked in Chrome. Phase 3 must not start until the product owner confirms Phase 2 passes its acceptance test.
 
-## Phase 2 progress (in progress)
+## Phase 2 progress
 
-**Checkpoint 1 done:**
+**Checkpoint 1 (committed 11ce8d3):**
 - **Controls (D32):** Insert/Delete and Home/End, plus W/S and T/G; the Mac fn keys work; mouse flying with adjustable sensitivity.
 - **Ground handling with an airfield start (D33):** keys 1-4 start on the airfield, Shift+1-4 in the air.
 - **Propeller effects (D34):** slipstream swirl, P-factor and propwash.
 - **Sourced Camel behaviour tests (D35).**
-- 301 tests pass, plus 15 known deviations.
 
-**Next:**
-- cockpit, chase and free-look cameras (C cycles; V or the right mouse button to look around);
-- cockpit instruments, and a J readout in the outside views;
-- docs and browser verification.
+**Checkpoint 2 (not committed yet):**
+- **Cameras (D37):** C cycles chase, free-look and cockpit. In the cockpit, hold the right mouse button or press V to look around; the head eases back forward when you stop. Free-look orbits the aircraft with the mouse; the wheel zooms.
+- **Cockpit:** decking, twin guns and an instrument panel, built in code.
+- **Instruments (D38):** airspeed, altimeter, rev counter, compass and slip ball, in each side's period units (Camel: mph and feet; the others: km/h and metres). In the outside views, a small readout at the bottom right (J toggles it).
+- **Tyre grip fix (D39):** found in the browser check. A landing with a slight sideways drift tripped every aircraft onto a wingtip. Tyre side grip now builds with the slip angle; a new test lands each aircraft drifting 1.5 m/s either way.
+- **Results:** 320 tests pass, plus 15 known deviations. The production build works.
+- **Browser check (Chrome):** the Camel was flown entirely in the cockpit view through the real keyboard controls: take-off (about a quarter right rudder held; lift-off at about 24 m/s), climb to 50 m, glide, flare, landing and roll-out to a stop. Also checked: all three cameras, look-around, mouse capture, the J readout and the SPAD's metric instruments. No console errors.
 
-**Known issues so far:**
+**Known issues:**
 - Full power with no rudder swings the nose 28-58 degrees left in 3 s, so right rudder is needed. The strength comes from estimated propeller coefficients; judge it by feel.
-- Careless rudder on the landing roll-out ground-loops into a wingtip.
-- The Dr.I and Albatros wheel tracks are estimates.
+- The roll-out needs aileron as well as rudder. Near flying speed the wings carry most of the weight, so a wing that starts to drop keeps going unless you hold the wings level.
+- The cockpit is a placeholder: no cut-out in the upper wing (the wing hides the top of the screen), and every aircraft has the same panel layout. Period layouts come with the UI work later.
+- The altimeter reads about 5 ft / 1.5 m on the ground (the height of the centre of gravity), not zero.
+- Esc must be pressed by you to release the mouse; the browser's automated tests could not check this.
+- The Dr.I and Albatros wheel tracks, and every pilot eye position, are estimates.
 
 ## Flight model validation (11 Oct 2026)
 
@@ -91,7 +96,7 @@ Phase 0 and Phase 1 are signed off. The product owner approved Phase 1 on 11 Oct
 - Your sign-off on Phase 1, and flying feedback to tune handling.
 - Next phase (not started): your call. Candidates from the spec: ground handling, take-off and landing, structural limits.
 
-## How to test Phase 1 yourself
+## How to test it yourself
 
 Start: in Terminal, in the project folder, run `npm run dev`, open http://localhost:5173, and **click once on the game window**.
 
@@ -102,17 +107,28 @@ Start: in Terminal, in the project folder, run `npm run dev`, open http://localh
 | Down / Up arrow | Stick back (nose up) / forward (nose down). Ramps in about 0.6 s and centres on release. |
 | Left / Right arrow | Roll |
 | Q / E | Rudder left / right |
-| W / S | Throttle up / down (50% per second; stays where left) |
-| T / G | Trim nose up / down (slow; stays where left) |
-| 1 2 3 4 | Camel, SPAD, Dr.I, Albatros (normal start: 1,000 m, trimmed, 80% of top speed) |
+| Insert / Delete, or W / S | Throttle up / down (stays where left). Mac: fn+Delete is Delete. The mouse wheel works the throttle too. |
+| Home / End, or T / G | Trim nose up / down. Mac: fn+Left is Home, fn+Right is End. |
+| 1 2 3 4 | Camel, SPAD, Dr.I, Albatros on the airfield, engine idling, chocks in (they come away when you open the throttle) |
+| Shift + 1-4 | The same aircraft in the air at 1,000 m, trimmed |
+| C | Camera: chase, free-look, cockpit |
+| V, or hold the right mouse button | Look around in the cockpit |
+| J | Instrument readout on or off (outside views) |
+| Click the game / Esc | Fly with the mouse / release the mouse. X centres the mouse stick; , and . change the sensitivity. |
 | R | Restart current aircraft |
 | P | Pause |
-| F3 | Debug numbers: airspeed, altitude, angle of attack, sideslip, g, thrust, lift, drag, engine, stall % |
+| F3 | Debug numbers |
 | F4 | Flight test panel (temporary, development builds only) |
 | H | Hide or show the help |
 | I | Invert the pitch keys |
 
-You can also choose the starting aircraft in the web address: `?aircraft=camel`, `spad13`, `dr1` or `albatros`.
+### Phase 2 acceptance test
+1. Press **1** (Camel on the airfield), then **C** twice for the cockpit. Hide the help with **H**.
+2. Open the throttle fully (hold **Insert** or **W**). The nose swings left: hold a little **E** (right rudder) to keep straight. Let the tail rise slightly, then ease back on **Down** at about 50 mph.
+3. Climb to about 500 ft. Fly a rectangle: four turns using roll with a little rudder. Watch the slip ball and keep it near the middle with rudder.
+4. Turning right, the Camel's nose drops and it whips round; turning left it is slower and the nose rises. That is the sourced "pulls right" behaviour (D35).
+5. Line up, close the throttle (**Delete** or **S**), glide at about 60 mph, and just above the ground ease back into the three-point attitude. Keep the wings level with the arrows and straight with Q/E until it stops.
+6. Try the other aircraft the same way (keys 2-4).
 
 ### F4 flight test panel
 Press **F4**, then click a button in the row of the aircraft you want. A "scripted pilot" flies the set-up and the panel shows who has control. **Press any flight key to take over at once.** The panel shows airspeed, altitude, bank, pitch, turn rate, yaw rate, stall %, g and throttle.
@@ -133,14 +149,13 @@ Made on 11 Oct 2026 (see D29 in DECISIONS.md):
 - The Camel's right-turn nose-drop is enough.
 
 Still open:
-1. ~~Phase 1 sign-off~~: approved on 11 Oct 2026.
-2. **Phase 2 scope:** to be decided after sign-off. Suggestion: ground handling, take-off and landing, structural limits.
-3. **Commit:** the validation work is not committed yet.
+1. **Phase 2 acceptance** by the product owner.
+2. **Commit checkpoint 2** (permission needed).
 
 ## Phase list
 - Phase 0: Foundations and research. Done and signed off.
 - Phase 1: Core flight model, all four aircraft, plus flight-model validation. Done and signed off (11 Oct 2026), committed d710c03.
-- **Phase 2: Controls and cameras.** In progress. Brief from the product owner:
+- **Phase 2: Controls and cameras.** Built; waiting for acceptance. Brief from the product owner:
   - Keyboard: arrow keys for bank and pitch; Insert / Delete for throttle up / down; Home / End for trim up / down. W/S and T/G are also kept, because a Mac has no Insert key. Up arrow = nose down.
   - Mouse flight controls with adjustable sensitivity; throttle and trim.
   - Cockpit, chase and free-look cameras.
