@@ -5,11 +5,21 @@ import { toMph, toKmh, toFeet, toDegrees } from './units.js';
 
 const fixed = (v, n = 0) => (Number.isFinite(v) ? v.toFixed(n) : '--');
 
+// "3.2 km, bearing 270 (Allied)" for the nearest airfield, or "none within 30 km".
+export function airfieldLine(nearest) {
+  if (!nearest) return 'none within 30 km';
+  const km = nearest.distance / 1000;
+  const where = nearest.distance < 700 ? 'overhead' : `${km.toFixed(1)} km, bearing ${String(Math.round(nearest.bearing) % 360).padStart(3, '0')}`;
+  const side = nearest.airfield.side === 'german' ? 'German' : 'Allied';
+  return `${where} (${side}${nearest.airfield.start ? ', start' : ''})`;
+}
+
 export function debugLines(aircraft, diag, flags = {}) {
   const lines = [`${aircraft.name}`];
   if (flags.crashed) lines.push('CRASHED - press R to restart');
   if (flags.paused) lines.push('PAUSED');
   if (flags.joystick) lines.push(`joystick  ${flags.joystick}`);
+  if (flags.airfield) lines.push(`airfield  ${flags.airfield}`);
   if (!diag) return lines;
   lines.push(
     `airspeed  ${fixed(toMph(diag.speed))} mph  ${fixed(toKmh(diag.speed))} km/h`,

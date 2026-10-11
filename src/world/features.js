@@ -107,7 +107,7 @@ export function woodDensity(world, x, z) {
   const n = fbm(world.seed + 40, x / 900, z / 900, 3);
   let d = smoothstep(0.57, 0.67, n);
   if (d === 0) return 0;
-  if (world.inAirfield(x, z, 80)) return 0;
+  if (world.inAirfieldGrounds(x, z)) return 0;
   if (world.riverDistance(x, z) < world.riverHalfWidth(x) + 14) return 0;
   const fd = world.frontDistance(x, z);
   const af = Math.abs(fd);
@@ -138,11 +138,13 @@ export function trees(world, x0, z0, x1, z1, spacing = 14) {
       const kindRoll = hash(world.seed + 70, i, j, 4);
       const h = 7 + 9 * hash(world.seed + 70, i, j, 5);
       const broken = af < 450 && hash(world.seed + 70, i, j, 6) < 0.75;
+      // Shattered trees near the front: mostly low stumps, some tall burnt trunks.
+      const dead = broken && hash(world.seed + 70, i, j, 8) < 0.3;
       out.push({
         x, z,
-        h: broken ? h * 0.3 : h,
-        r: (kindRoll < 0.4 ? 1.8 : 3) * (0.8 + 0.4 * hash(world.seed + 70, i, j, 7)),
-        kind: broken ? 'stump' : kindRoll < 0.4 ? 'conifer' : 'broadleaf',
+        h: broken ? (dead ? 4 + h * 0.5 : 0.8 + h * 0.1) : h,
+        r: broken ? (dead ? 0.3 : 0.5) : (kindRoll < 0.4 ? 1.8 : 3) * (0.8 + 0.4 * hash(world.seed + 70, i, j, 7)),
+        kind: broken ? (dead ? 'dead' : 'stump') : kindRoll < 0.4 ? 'conifer' : 'broadleaf',
       });
     }
   }
@@ -165,7 +167,7 @@ export function roadTrees(world, x0, z0, x1, z1) {
           const x = ax + ((bx - ax) * s) / len + nx * 7 * side;
           const z = az + ((bz - az) * s) / len + nz * 7 * side;
           if (x < x0 || x >= x1 || z < z0 || z >= z1) continue;
-          if (world.riverDistance(x, z) < world.riverHalfWidth(x) + 20 || world.inAirfield(x, z, 20)) continue;
+          if (world.riverDistance(x, z) < world.riverHalfWidth(x) + 20 || world.inAirfieldGrounds(x, z)) continue;
           if (Math.abs(world.frontDistance(x, z)) < FRONT_BAND && hash(world.seed + 71, Math.round(x), Math.round(z)) < 0.7) continue;
           out.push({ x, z, h: 18 + 6 * hash(world.seed + 72, Math.round(x), Math.round(z)), r: 1.4, kind: 'poplar' });
         }
@@ -231,16 +233,6 @@ export function bridges(world, roads) {
   }
   // One bridge per crossing: drop ones closer than 40 m to another.
   return out.filter((b, i) => out.findIndex((o) => Math.hypot(o.x - b.x, o.z - b.z) < 40) === i);
-}
-
-// The airfield: hangars, tents and a windsock pole beside the mown field.
-export function airfieldBuildings(world) {
-  const a = world.airfield;
-  const out = [];
-  for (const z of [-120, 0, 120]) out.push({ type: 'hangar', x: a.x - a.halfX + 30, z, w: 20, d: 28, h: 9, rot: 0 });
-  for (let i = 0; i < 6; i++) out.push({ type: 'tent', x: a.x - a.halfX + 70, z: -200 + i * 70, w: 4, d: 6, h: 3, rot: 0 });
-  out.push({ type: 'windsock', x: a.x + 60, z: a.z + 140, w: 0.2, d: 0.2, h: 7, rot: 0 });
-  return out;
 }
 
 export { distToSegment };

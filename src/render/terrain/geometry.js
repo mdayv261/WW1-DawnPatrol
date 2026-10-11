@@ -5,7 +5,7 @@
 
 import {
   BufferGeometry, Float32BufferAttribute, InstancedMesh, MeshLambertMaterial, LineSegments, LineBasicMaterial,
-  Mesh, Matrix4, Quaternion, Vector3, Color, ConeGeometry, CylinderGeometry, OctahedronGeometry, BoxGeometry, DoubleSide,
+  Mesh, Matrix4, Quaternion, Vector3, Euler, Color, ConeGeometry, CylinderGeometry, OctahedronGeometry, BoxGeometry, TorusGeometry, DoubleSide,
 } from 'three';
 import { hash } from '../../world/noise.js';
 import { WALL_COLOURS, ROOF_COLOURS } from '../../world/features.js';
@@ -25,7 +25,7 @@ function merge(geometries) {
 }
 
 let shapes = null;
-function getShapes() {
+export function getShapes() {
   if (shapes) return shapes;
   const trunk = (h) => new CylinderGeometry(0.12, 0.16, h, 5).translate(0, h / 2, 0);
   const conifer = merge([trunk(0.25), new ConeGeometry(1, 0.85, 6).translate(0, 0.15 + 0.425, 0)]);
@@ -41,28 +41,37 @@ function getShapes() {
   roof.setAttribute('position', new Float32BufferAttribute(tris.flat().flatMap((i) => v[i]), 3));
   roof.computeVertexNormals();
   const spire = new ConeGeometry(0.5, 1, 4).rotateY(Math.PI / 4).translate(0, 0.5, 0);
-  shapes = { conifer, broadleaf, stump, wall, roof, spire };
+  // Flat triangle lying on the ground, apex toward +z: 1 wide, 1 long (airfield markers).
+  const flatTriangle = new BufferGeometry();
+  flatTriangle.setAttribute('position', new Float32BufferAttribute([-0.5, 0.06, -0.5, 0, 0.06, 0.5, 0.5, 0.06, -0.5], 3));
+  flatTriangle.computeVertexNormals();
+  // A tube along +z, 1 long and 1 across (wind sock segments).
+  const tube = new CylinderGeometry(1, 1, 1, 8, 1, true).rotateX(Math.PI / 2).translate(0, 0, 0.5);
+  // A low ring of thrown-up earth round a crater, radius 1 (instances scale it).
+  const rim = new TorusGeometry(1, 0.12, 4, 10).rotateX(Math.PI / 2);
+  shapes = { conifer, broadleaf, stump, wall, roof, spire, flatTriangle, tube, rim };
   return shapes;
 }
 
 // One material for every instanced shape; colour comes from each instance.
 let instanceMaterial = null;
-const getInstanceMaterial = () => (instanceMaterial ??= new MeshLambertMaterial({ color: 0xffffff, flatShading: true }));
+export const getInstanceMaterial = () => (instanceMaterial ??= new MeshLambertMaterial({ color: 0xffffff, flatShading: true }));
 
 const _m = new Matrix4();
 const _q = new Quaternion();
 const _p = new Vector3();
+const _e = new Euler();
 const _s = new Vector3();
 const _c = new Color();
 const UP = new Vector3(0, 1, 0);
 
 // An InstancedMesh of `geometry` with one instance per item. place(item)
-// returns { x, y, z, sx, sy, sz, rot, colour (hex) }.
-function instanced(geometry, items, place) {
-  const mesh = new InstancedMesh(geometry, getInstanceMaterial(), items.length);
+// returns { x, y, z, sx, sy, sz, rot (yaw), pitch (nose-down tilt), colour (hex) }.
+export function instanced(geometry, items, place, material = getInstanceMaterial()) {
+  const mesh = new InstancedMesh(geometry, material, items.length);
   items.forEach((item, i) => {
     const o = place(item, i);
-    _q.setFromAxisAngle(UP, o.rot ?? 0);
+    _q.setFromEuler(_e.set(o.pitch ?? 0, o.rot ?? 0, 0, 'YXZ'));
     _m.compose(_p.set(o.x, o.y ?? 0, o.z), _q, _s.set(o.sx, o.sy, o.sz));
     mesh.setMatrixAt(i, _m);
     mesh.setColorAt(i, _c.setHex(o.colour));
@@ -92,49 +101,29 @@ export function treeMeshes(trees) {
   make('broadleaf', S.broadleaf, (t) => hsl(0.24 + jitter(t, 3) * 0.06, 0.45, 0.12 + jitter(t, 2) * 0.06));
   make('poplar', S.conifer, (t) => hsl(0.27, 0.5, 0.14 + jitter(t, 2) * 0.05));
   make('stump', S.stump, (t) => hsl(0.09, 0.25, 0.1 + jitter(t, 2) * 0.05));
+  make('dead', S.stump, (t) => hsl(0.08, 0.1, 0.1 + jitter(t, 2) * 0.05)); // burnt, leafless trunks
   return out;
 }
 
 // ---- Buildings -----------------------------------------------------------------
 
-// Houses, churches, hangars, tents, bridges and the windsock pole.
-export function buildingMeshes(buildings, bridges = []) {
-  const S = getShapes();
-  const walls = [];
-  const roofs = [];
-  const spires = [];
-  const wallAt = (x, z, w, h, d, rot, colour, y = 0) => walls.push({ x, z, y, sx: w, sy: h, sz: d, rot, colour });
+// Houses and churches (any `type: 'house'` items, farms included) and bridges, added to a batch.
+export function addBuildings(batch, buildings, bridges = []) {
   for (const b of buildings) {
     const sin = Math.sin(b.rot);
     const cos = Math.cos(b.rot);
-    if (b.type === 'house' || b.type === 'church') {
-      wallAt(b.x, b.z, b.w, b.h, b.d, b.rot, WALL_COLOURS[b.wall]);
-      if (!b.ruined) roofs.push({ x: b.x, z: b.z, y: b.h, sx: b.w * 1.1, sy: b.w * 0.45, sz: b.d * 1.08, rot: b.rot, colour: ROOF_COLOURS[b.roof] });
-      if (b.type === 'church') {
-        const oz = b.d / 2 + 2.5; // the tower stands at one end
-        const tx = b.x + oz * sin;
-        const tz = b.z + oz * cos;
-        const th = b.ruined ? b.tower * 0.55 : b.tower;
-        wallAt(tx, tz, 5, th, 5, b.rot, 0xbfae8c);
-        if (!b.ruined) spires.push({ x: tx, z: tz, y: th, sx: 5.4, sy: 9, sz: 5.4, rot: b.rot, colour: 0x4a4a52 });
-      }
-    } else if (b.type === 'hangar') {
-      wallAt(b.x, b.z, b.w, b.h * 0.6, b.d, b.rot, 0xd8d2bd);
-      roofs.push({ x: b.x, z: b.z, y: b.h * 0.6, sx: b.w * 1.04, sy: b.h * 0.5, sz: b.d * 1.04, rot: b.rot, colour: 0xc9c3ad });
-    } else if (b.type === 'tent') {
-      wallAt(b.x, b.z, b.w, b.h * 0.5, b.d, b.rot, 0xe6e0c8);
-      roofs.push({ x: b.x, z: b.z, y: b.h * 0.5, sx: b.w * 1.05, sy: b.h * 0.7, sz: b.d * 1.05, rot: b.rot, colour: 0xe6e0c8 });
-    } else if (b.type === 'windsock') {
-      wallAt(b.x, b.z, 0.2, b.h, 0.2, 0, 0xdddddd);
-      wallAt(b.x, b.z + 0.8, 0.2, 0.9, 1.6, 0, 0xd9541e, b.h - 1);
+    batch.wall(b.x, b.z, b.w, b.h, b.d, b.rot, WALL_COLOURS[b.wall]);
+    if (!b.ruined) batch.roof(b.x, b.z, b.h, b.w * 1.1, b.w * 0.45, b.d * 1.08, b.rot, ROOF_COLOURS[b.roof]);
+    if (b.type === 'church') {
+      const oz = b.d / 2 + 2.5; // the tower stands at one end
+      const tx = b.x + oz * sin;
+      const tz = b.z + oz * cos;
+      const th = b.ruined ? b.tower * 0.55 : b.tower;
+      batch.wall(tx, tz, 5, th, 5, b.rot, 0xbfae8c);
+      if (!b.ruined) batch.spire(tx, tz, th, 5.4, 9, b.rot, 0x4a4a52);
     }
   }
-  for (const br of bridges) wallAt(br.x, br.z, br.length, 0.7, 5, -br.rot, 0x8a8478);
-  const out = [];
-  if (walls.length) out.push(instanced(S.wall, walls, (o) => o));
-  if (roofs.length) out.push(instanced(S.roof, roofs, (o) => o));
-  if (spires.length) out.push(instanced(S.spire, spires, (o) => o));
-  return out;
+  for (const br of bridges) batch.wall(br.x, br.z, br.length, 0.7, 5, -br.rot, 0x8a8478);
 }
 
 // ---- Trenches and wire ---------------------------------------------------------
@@ -209,7 +198,7 @@ export function disposeObject(o) {
   const shared = new Set(Object.values(shapes ?? {}));
   o.traverse((c) => {
     if (c.geometry && !shared.has(c.geometry)) c.geometry.dispose();
-    if (c.material && c.material !== instanceMaterial) {
+    if (c.material && c.material !== instanceMaterial && !c.material.userData.shared) {
       if (c.material.map) c.material.map.dispose();
       c.material.dispose();
     }

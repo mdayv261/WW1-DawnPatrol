@@ -16,7 +16,7 @@ import { attachMouse, mixJoystick } from './input/mouse.js';
 import { attachJoystick } from './input/joystick.js';
 import { createJoystickPanel } from './ui/joystickPanel.js';
 import { createDebugOverlay, createHelp, createBanner, createReadout } from './ui/overlays.js';
-import { debugLines } from './ui/debugText.js';
+import { debugLines, airfieldLine } from './ui/debugText.js';
 import { createTestPanel } from './ui/testPanel.js';
 import { startScenario, SCENARIOS } from './dev/flightScenarios.js';
 import { createWorld } from './world/layout.js';
@@ -25,6 +25,7 @@ import { deflections } from './physics/controls.js';
 import { common } from './aircraft/index.js';
 import { seedFrom } from './world/noise.js';
 import { Terrain } from './render/terrain/terrain.js';
+import { Clouds } from './render/clouds.js';
 import { QUALITY_LEVELS, qualityFromUrl } from './render/quality.js';
 
 const canvas = document.getElementById('game');
@@ -35,7 +36,9 @@ const rig = new CameraRig(camera);
 // The world: a Western Front landscape from a seed (?seed=), drawn at a quality level (?quality=).
 const params = new URLSearchParams(window.location.search);
 const world = createWorld(params.has('seed') ? seedFrom(params.get('seed')) : undefined);
-const terrain = new Terrain(scene, world, QUALITY_LEVELS[qualityFromUrl(window.location.search)], renderer.capabilities.getMaxAnisotropy());
+const quality = QUALITY_LEVELS[qualityFromUrl(window.location.search)];
+const terrain = new Terrain(scene, world, quality, renderer.capabilities.getMaxAnisotropy());
+const clouds = new Clouds(scene, world.seed, quality, scene.fog);
 const debug = createDebugOverlay();
 const help = createHelp();
 const banner = createBanner();
@@ -188,9 +191,10 @@ function draw(realDt, alpha, now) {
   // Keep the ground under the aircraft, in whole texture tiles so it never swims.
   drawPosition.x = Math.round(position.x / groundTile) * groundTile;
   drawPosition.z = Math.round(position.z / groundTile) * groundTile;
-  ground.position.set(drawPosition.x, 0, drawPosition.z);
+  ground.position.set(drawPosition.x, -4, drawPosition.z); // the fallback ground sits well below the tiles so they never share a plane
 
   terrain.update(camera.position, 3); // new ground, a few milliseconds a frame at most
+  clouds.update(camera.position, now / 1000);
   cockpit.visible = rig.mode === 'cockpit';
   for (const part of model.hideInCockpit) part.visible = !cockpit.visible;
   rig.update(sim.aircraft, position, quaternion, realDt);
@@ -206,7 +210,10 @@ function draw(realDt, alpha, now) {
       console.info(`[Dawn Patrol] ${JOYSTICK_HINT}. ${joystick.describe()}`);
       joystickHintAt = now + 30000;
     }
-    if (debug.visible) debug.set(debugLines(sim.aircraft, sim.diag, { crashed: sim.crashed, paused, joystick: stick ? stick.id : 'not detected' }));
+    if (debug.visible) {
+      const nearest = world.nearestAirfield(sim.state.position.x, sim.state.position.z);
+      debug.set(debugLines(sim.aircraft, sim.diag, { crashed: sim.crashed, paused, joystick: stick ? stick.id : 'not detected', airfield: airfieldLine(nearest) }));
+    }
     if (import.meta.env.DEV && testPanel?.visible) testPanel.update(sim, runner, scenarioLabel);
     if (joystickPanel.visible) joystickPanel.update();
     const heading = attitude(sim.state).heading;
@@ -244,6 +251,7 @@ if (import.meta.env.DEV) {
   window.__dawn = {
     sim,
     terrain,
+    clouds,
     world,
     renderer,
     keyboard,

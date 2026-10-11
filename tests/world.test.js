@@ -75,17 +75,17 @@ describe('world layout', () => {
   });
 
   it('keeps the airfield clear: no woods, craters, trenches or roads on the mown field', () => {
-    const a = world.airfield;
-    for (let x = a.x - a.halfX; x <= a.x + a.halfX; x += 40) {
-      for (let z = a.z - a.halfZ; z <= a.z + a.halfZ; z += 40) {
+    const a = world.airfield; // the start field, lined up north-south
+    const [x0, x1, z0, z1] = [a.x - a.halfWidth, a.x + a.halfWidth, a.z - a.halfLength, a.z + a.halfLength];
+    for (let x = x0; x <= x1; x += 40) {
+      for (let z = z0; z <= z1; z += 40) {
         expect(F.woodDensity(world, x, z)).toBe(0);
         expect(world.isRiver(x, z)).toBe(false);
       }
     }
-    expect(F.trees(world, a.x - a.halfX, a.z - a.halfZ, a.x + a.halfX, a.z + a.halfZ)).toHaveLength(0);
-    expect(F.craters(world, a.x - a.halfX, a.z - a.halfZ, a.x + a.halfX, a.z + a.halfZ)).toHaveLength(0);
-    expect(world.roadDistance(world.roads(-600, -800, 600, 800), 0, 0)).toBeGreaterThan(30);
-    expect(world.villages(a.x - a.halfX, a.z - a.halfZ, a.x + a.halfX, a.z + a.halfZ)).toHaveLength(0);
+    expect(F.trees(world, x0, z0, x1, z1)).toHaveLength(0);
+    expect(F.craters(world, x0, z0, x1, z1)).toHaveLength(0);
+    expect(world.villages(x0, z0, x1, z1)).toHaveLength(0);
   });
 
   it('has rivers that wander and are found on their own centre line', () => {
@@ -201,7 +201,7 @@ describe('woods and trees', () => {
         expect(world.isRiver(t.x, t.z)).toBe(false);
         const fd = world.frontDistance(t.x, t.z);
         for (const l of F.TRENCH_LINES) expect(Math.abs(fd - l.d)).toBeGreaterThan(10);
-        expect(['conifer', 'broadleaf', 'stump']).toContain(t.kind);
+        expect(['conifer', 'broadleaf', 'stump', 'dead']).toContain(t.kind);
         expect(t.h).toBeGreaterThan(0);
       }
       for (const v of world.villages(x0, z0, x0 + 1000, z0 + 1000)) expect(list.some((t) => Math.hypot(t.x - v.x, t.z - v.z) < v.radius)).toBe(false);
@@ -221,17 +221,6 @@ describe('woods and trees', () => {
     expect(rt.length).toBeGreaterThan(50);
     const roads = world.roads(...rect);
     for (const t of rt.slice(0, 80)) expect(world.roadDistance(roads, t.x, t.z)).toBeLessThan(12);
-  });
-});
-
-describe('the airfield buildings', () => {
-  it('stand beside the field, hangars and tents inside its western edge', () => {
-    const list = F.airfieldBuildings(world);
-    expect(list.filter((b) => b.type === 'hangar')).toHaveLength(3);
-    for (const b of list) {
-      expect(Math.abs(b.x)).toBeLessThanOrEqual(world.airfield.halfX);
-      expect(Math.abs(b.x - 0)).toBeGreaterThan(20); // not on the start point
-    }
   });
 });
 

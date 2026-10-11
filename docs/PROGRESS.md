@@ -2,14 +2,47 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 3 (world and visuals) in progress, checkpoint 2 committed; airfields and more detail (2b) under way
+## Current status: Phase 3 (world and visuals) in progress, checkpoints 1, 2 and 2b committed; checkpoint 3 under way
 
 Phases 0, 1 and 2 are signed off (Phase 2 on 11 Oct 2026, including the joystick). Phase 3 has three checkpoints; each is committed only with the product owner's permission:
 1. **Aircraft models**: done and committed (48df111); the product owner confirmed all four are recognisable by silhouette.
 2. **Terrain**: done and committed (fields, woods, villages, roads, a river, trench lines). Product owner's feedback: the flying model feels natural and realistic, the terrain looks OK but could be more detailed, and there should be recognisable airfields with white triangle markers, a wind sock and a control tower. That is checkpoint 2b, in progress.
 3. **Sky, clouds, quality levels and the frame-rate pass.**
 
-## Phase 3 checkpoint 2: terrain (D42)
+## Phase 3 checkpoint 2b: airfields and a more detailed landscape (D44)
+
+**Done and committed; the product owner flew it and confirmed the ground flicker is gone** (on top of checkpoint 2, committed as c3b90ec).
+
+**Airfields**
+- The start field plus about 25 more within 30 km, Allied behind the Allied line and German behind the German line. The nearest from the start: Allied at 5.3 km (bearing 026), 6.7 km (202), 6.8 km (162), 7.9 km (273); German at 7.2 km (093), 9.0 km (123), 9.3 km (062). **F3 now shows the nearest airfield, its distance, compass bearing and side.**
+- Each has a striped mown landing ground, **white triangular markers** at the corners and along the edges, a **wind sock** (orange and white, pointing downwind), a **wooden control tower** with a flag, hangars with open doors, tents, lorries and an access road. The wind is visual only (from 340 degrees; there is no wind in the physics).
+
+**More detail**
+- **Sharper ground:** a 1 m-per-pixel texture round the aircraft plus fine grain, bare field edges, muddy road verges, water in some craters.
+- **Farms:** farmhouse, barns, haystacks, windbreak trees and a track, scattered over the countryside; post windmills.
+- **War damage:** sandbags and dugouts along the trenches, wire posts, gun pits and supply dumps behind the lines, raised crater rims, rubble in ruined villages, burnt trunks in shattered woods.
+
+**Numbers:** 481 tests pass (plus 15 known deviations). At Medium, a frame has at most 175 draw calls and 382,000 triangles (at the front line). Physics is untouched.
+
+**Changes after your first flight (D45):** no trees round the hangars or inside buildings; control tower and wind sock 20% bigger; cumulus clouds of random sizes at random places and heights (bases 1,300-2,600 m); and a fix for the ground flicker (far ground tiles no longer overlap close ones, the fallback ground is lower, and the camera depth range is tighter). **Please check whether the flicker is gone, especially while banking.**
+
+**How to look at it:**
+1. `npm run dev`, open http://localhost:5173, press **1**, press **F3**. Take off and fly **north** first: the airfield you start on is the biggest; circle it and look at the markers, sock, tower and hangars (they are at the south end).
+2. Fly to a neighbouring airfield using the F3 line, then land between the white markers.
+3. Fly east to the front (about 4.3 km): low over the trenches look for sandbags, wire posts and craters with rims; fly 500 m behind the lines for gun pits and supply dumps.
+4. Fly low over the countryside for the farms, haystacks and windmills, and over the ruined villages near the front for rubble.
+
+**Known issues:**
+- **Ground flicker:** the likely cause is fixed (see D45) but I could not see flicker in the test browser, so it needs your eyes. If it is still there, I will add a logarithmic depth buffer.
+- Clouds are visual only (no lift, bumps or shadows), and a very small cloud is a few separate lumps.
+- The control tower is not a WWI feature (the first tower was at Croydon in 1920); it is a timber watch tower, as you asked.
+- Draw cost is highest at the front line (382,000 triangles); checkpoint 3 tunes it and adds the frame-rate readout.
+- Wind is visual only. The aircraft do not feel it.
+- Ground detail is painted and shaded; there are no individual 3D hedges or fences (not picked).
+- The real frame rate has not been measured on your machine yet.
+
+## Phase 3 checkpoint 2: terrain (D42), committed
+
 
 **What was done:**
 - A procedural Western Front on flat ground (`src/world/`), made of pure functions of a seed, with the airfield at the origin and the front line about 4.5 km east.

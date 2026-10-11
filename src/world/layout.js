@@ -11,6 +11,7 @@
 //     (see features.js); beyond about 2 km from it the land is farmland.
 
 import { hash, fbm } from './noise.js';
+import { addAirfields } from './airfields.js';
 
 export const DEFAULT_SEED = 1917;
 
@@ -68,9 +69,7 @@ export function createWorld(seed = DEFAULT_SEED) {
     return out;
   };
 
-  // ---- Airfield -----------------------------------------------------------
-  w.airfield = { x: 0, z: 0, halfX: 250, halfZ: 520 }; // the mown field around the start
-  w.inAirfield = (x, z, margin = 0) => Math.abs(x - w.airfield.x) < w.airfield.halfX + margin && Math.abs(z - w.airfield.z) < w.airfield.halfZ + margin;
+  // ---- Airfields: see airfields.js (added to the world at the end of createWorld) ----
 
   // ---- Farmland -----------------------------------------------------------
   // The land is cut into regions; each is laid out in strips at its own
@@ -149,10 +148,14 @@ export function createWorld(seed = DEFAULT_SEED) {
   // ---- Villages and roads -------------------------------------------------
   // One village per VILLAGE_CELL square, nudged off the river and out of the
   // fighting; the one around the airfield is left out.
+  // Where a cell's village would stand (before checking the ground allows it).
+  w.villageSite = (i, j) => ({
+    x: (i + 0.2 + 0.6 * hash(seed + 20, i, j, 1)) * VILLAGE_CELL,
+    z: (j + 0.2 + 0.6 * hash(seed + 20, i, j, 2)) * VILLAGE_CELL,
+  });
   w.village = (i, j) => {
     const h = (n) => hash(seed + 20, i, j, n);
-    const x = (i + 0.2 + 0.6 * h(1)) * VILLAGE_CELL;
-    const z = (j + 0.2 + 0.6 * h(2)) * VILLAGE_CELL;
+    const { x, z } = w.villageSite(i, j);
     const front = Math.abs(w.frontDistance(x, z));
     const live = front > 350 && w.riverDistance(x, z) > 150 && !w.inAirfield(x, z, 500);
     return {
@@ -180,17 +183,25 @@ export function createWorld(seed = DEFAULT_SEED) {
     const a = w.village(i, j);
     const b = w.village(dir === 0 ? i + 1 : i, dir === 0 ? j : j + 1);
     if (!a.live || !b.live) return null;
-    const pts = [];
+    const bend0 = (hash(seed + 30, i, j, dir) - 0.5) * 220;
     const n = 24;
-    const bend = (hash(seed + 30, i, j, dir) - 0.5) * 220;
-    for (let k = 0; k <= n; k++) {
-      const t = k / n;
-      const wobble = Math.sin(t * Math.PI) * bend + 30 * Math.sin(t * 9 + i);
-      const nx = dir === 0 ? 0 : 1;
-      const nz = dir === 0 ? 1 : 0;
-      pts.push([a.x + (b.x - a.x) * t + wobble * nx, a.z + (b.z - a.z) * t + wobble * nz]);
+    const build = (bend) => {
+      const pts = [];
+      for (let k = 0; k <= n; k++) {
+        const t = k / n;
+        const wobble = Math.sin(t * Math.PI) * bend + 30 * Math.sin(t * 9 + i);
+        const nx = dir === 0 ? 0 : 1;
+        const nz = dir === 0 ? 1 : 0;
+        pts.push([a.x + (b.x - a.x) * t + wobble * nx, a.z + (b.z - a.z) * t + wobble * nz]);
+      }
+      return pts;
+    };
+    // A road never runs across a landing ground: bend it round, or leave it out.
+    for (const extra of [0, 450, -450, 900, -900, 1400, -1400]) {
+      const pts = build(bend0 + extra);
+      if (!pts.some(([x, z]) => w.inAirfield(x, z, 30))) return { from: [i, j], to: dir === 0 ? [i + 1, j] : [i, j + 1], pts };
     }
-    return { from: [i, j], to: dir === 0 ? [i + 1, j] : [i, j + 1], pts };
+    return null;
   };
   // Roads passing through a rectangle.
   w.roads = (x0, z0, x1, z1) => {
@@ -207,6 +218,11 @@ export function createWorld(seed = DEFAULT_SEED) {
         }
       }
     }
+    // The access roads of airfields in or near the rectangle.
+    for (const af of w.airfieldsIn(x0 - 200, z0 - 200, x1 + 200, z1 + 200, 4000)) {
+      const r = w.airfieldRoad(af);
+      if (r && r.pts.some(([x, z]) => x > x0 - 100 && x < x1 + 100 && z > z0 - 100 && z < z1 + 100)) out.push(r);
+    }
     return out;
   };
   // Distance from (x, z) to the nearest of a list of road polylines.
@@ -217,6 +233,7 @@ export function createWorld(seed = DEFAULT_SEED) {
     }
     return best;
   };
+  addAirfields(w);
   return w;
 }
 

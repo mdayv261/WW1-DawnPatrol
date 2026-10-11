@@ -7,7 +7,7 @@ const HORIZON_COLOUR = 0xc9dcec; // pale haze where sky meets ground
 const ZENITH_COLOUR = 0x2f6fb5; // deeper blue straight overhead
 const GROUND_SIZE = 60000; // metres across
 const FIELD_SIZE = 150; // metres per texture tile
-const CAMERA_FAR = 80000;
+const CAMERA_FAR = 30000; // the haze hides everything beyond 25 km; a shorter depth range means finer depth precision
 
 // Sun direction as a unit vector (up and slightly toward -Z = north).
 const SUN_DIRECTION = new THREE.Vector3(0.4, 0.55, -0.7).normalize();

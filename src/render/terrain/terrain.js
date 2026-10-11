@@ -4,11 +4,22 @@
 // of building are done per frame, so flying never stutters while new ground
 // appears. Old tiles are freed. Rendering only; the physics ground is flat.
 
-import { Group, Mesh, PlaneGeometry, MeshLambertMaterial, CanvasTexture, SRGBColorSpace } from 'three';
+import { Group, Mesh, PlaneGeometry, BufferGeometry, Float32BufferAttribute, CanvasTexture, SRGBColorSpace } from 'three';
+import { groundMaterial } from './grain.js';
 import { paintTile } from './paint.js';
 import * as G from './geometry.js';
+import { addBuildings } from './geometry.js';
 import * as F from '../../world/features.js';
+import { facilities } from '../../world/airfields.js';
+import { farms as worldFarms, windmills as worldWindmills } from '../../world/farms.js';
+import { warworks, rubble } from '../../world/warworks.js';
+import { tileTrees } from '../../world/obstacles.js';
+import { Batch } from './batch.js';
+import { addAirfield } from './airfieldGeometry.js';
+import { addFarmExtras, addWarWorks } from './structures.js';
 
+// The build stages of a tile's objects, in order (the ground comes first).
+const OBJECT_STAGES = ['trenches', 'trees', 'structures'];
 const NEAR_SIZE = 1000;
 const FAR_SIZE = 2000;
 
@@ -47,7 +58,8 @@ export class Terrain {
     const wanted = [];
     for (let ix = cx - q.nearRadius; ix <= cx + q.nearRadius; ix++) {
       for (let iz = cz - q.nearRadius; iz <= cz + q.nearRadius; iz++) {
-        wanted.push({ key: `n${ix},${iz}`, level: 'near', x0: ix * NEAR_SIZE, z0: iz * NEAR_SIZE, size: NEAR_SIZE, objects: Math.max(Math.abs(ix - cx), Math.abs(iz - cz)) <= q.objectRadius });
+        const ring = Math.max(Math.abs(ix - cx), Math.abs(iz - cz));
+        wanted.push({ key: `n${ix},${iz}`, level: 'near', x0: ix * NEAR_SIZE, z0: iz * NEAR_SIZE, size: NEAR_SIZE, ring, objects: ring <= q.objectRadius });
       }
     }
     // Coarse tiles, skipping any wholly covered by the close ones.
@@ -89,8 +101,12 @@ export class Terrain {
       for (const w of this.wanted) {
         const t = this.tiles.get(w.key);
         if (!t) this.tiles.set(w.key, { ...w, group: new Group(), stage: 0, stages: [], built: new Set() });
-        else if (!w.objects && t.objects) this.dropObjects(t, w);
-        else if (w.objects && !t.objects) t.objects = true;
+        else {
+          if (!w.objects && t.objects) this.dropObjects(t, w);
+          else if (w.objects && !t.objects) t.objects = true;
+          t.ring = w.ring;
+          this.regrade(t, w.ring);
+        }
       }
     }
     const start = performance.now();
@@ -114,15 +130,77 @@ export class Terrain {
     }
   }
 
+  // A far (2 km) tile's ground as four 1 km quads sharing its texture, so any quad that a
+  // close tile already covers can be left out: two surfaces in the same plane would
+  // flicker where the depth buffer cannot tell them apart.
+  farGeometry(tile) {
+    const g = new BufferGeometry();
+    const pos = [];
+    const uv = [];
+    for (let j = 0; j < 2; j++) {
+      for (let i = 0; i < 2; i++) {
+        const [xa, xb, za, zb] = [(i - 1) * 1000, i * 1000, (j - 1) * 1000, j * 1000];
+        pos.push(xa, 0, za, xa, 0, zb, xb, 0, zb, xb, 0, za);
+        const [ua, ub, va, vb] = [i * 0.5, (i + 1) * 0.5, 1 - (j + 1) * 0.5, 1 - j * 0.5]; // image row 0 is north
+        uv.push(ua, vb, ua, va, ub, va, ub, vb);
+      }
+    }
+    g.setAttribute('position', new Float32BufferAttribute(pos, 3));
+    g.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+    g.setAttribute('normal', new Float32BufferAttribute(new Array(16).fill([0, 1, 0]).flat(), 3)); // flat ground faces straight up
+    tile.farQuads = g;
+    return g;
+  }
+
+  // Hide the quads of far tiles that close tiles already draw (and show them again when those go).
+  updateCoverage() {
+    for (const tile of this.tiles.values()) {
+      if (tile.level !== 'far' || !tile.farQuads) continue;
+      const index = [];
+      for (let j = 0; j < 2; j++) {
+        for (let i = 0; i < 2; i++) {
+          const ix = Math.floor(tile.x0 / NEAR_SIZE) + i;
+          const iz = Math.floor(tile.z0 / NEAR_SIZE) + j;
+          const near = this.tiles.get(`n${ix},${iz}`);
+          if (near?.built.has('ground2') && near.groundMesh) continue;
+          const base = (j * 2 + i) * 4;
+          index.push(base, base + 1, base + 2, base, base + 2, base + 3);
+        }
+      }
+      tile.farQuads.setIndex(index);
+      tile.groundMesh.visible = index.length > 0;
+    }
+  }
+
+  // Texture size a tile should have: sharper for the 3x3 tiles around the camera
+  // (kept until the camera is 3 tiles away, so crossing a boundary does not repaint back and forth).
+  pixelsFor(tile, ring) {
+    const q = this.quality;
+    if (tile.level === 'far') return q.farTexture;
+    const sharp = ring <= 1 || (tile.pixels === q.innerTexture && ring <= 2);
+    return sharp ? q.innerTexture : q.nearTexture;
+  }
+
+  // Repaint a tile's ground at a new texture size if it should change.
+  regrade(tile, ring) {
+    if (!tile.built.has('ground2')) return; // not painted yet: it will use the right size
+    const want = this.pixelsFor(tile, ring ?? 9);
+    if (want !== tile.pixels) {
+      tile.wantPixels = want;
+      tile.built.delete('ground');
+      tile.built.delete('ground2');
+    }
+  }
+
   // The most urgent piece of building work, or null.
   nextJob(position, within = Infinity) {
     let best = null;
     for (const t of this.tiles.values()) {
-      const stage = !t.built.has('ground') ? 'ground' : t.objects ? ['trenches', 'trees', 'buildings'].find((s) => !t.built.has(s)) : null;
+      const stage = !t.built.has('ground') ? 'ground' : !t.built.has('ground2') ? 'ground2' : t.objects ? OBJECT_STAGES.find((s) => !t.built.has(s)) : null;
       if (!stage) continue;
       const d = Math.hypot(t.x0 + t.size / 2 - position.x, t.z0 + t.size / 2 - position.z);
       if (d > within) continue;
-      const score = d + (stage === 'ground' ? 0 : 1200);
+      const score = d + (stage === 'ground' || stage === 'ground2' ? 0 : 1200);
       if (!best || score < best.score) best = { tile: t, stage, score };
     }
     return best;
@@ -135,33 +213,63 @@ export class Terrain {
     const z1 = z0 + size;
     const q = this.quality;
     if (stage === 'ground') {
-      const pixels = tile.level === 'near' ? q.nearTexture : q.farTexture;
-      const canvas = document.createElement('canvas');
-      canvas.width = pixels;
-      canvas.height = pixels;
-      paintTile(canvas.getContext('2d'), this.world, { x0, z0, size }, pixels, tile.level === 'near');
-      const texture = new CanvasTexture(canvas);
+      // First half of the painting: the land, fields, woods and the front.
+      const pixels = tile.wantPixels ?? this.pixelsFor(tile, tile.ring);
+      tile.canvas = document.createElement('canvas');
+      tile.canvas.width = pixels;
+      tile.canvas.height = pixels;
+      tile.pixels = pixels;
+      tile.wantPixels = null;
+      paintTile(tile.canvas.getContext('2d'), this.world, { x0, z0, size }, pixels, tile.level === 'near', 1);
+    } else if (stage === 'ground2') {
+      // Second half: river, roads, trenches, craters; then the texture goes on the ground.
+      paintTile(tile.canvas.getContext('2d'), this.world, { x0, z0, size }, tile.pixels, tile.level === 'near', 2);
+      const texture = new CanvasTexture(tile.canvas);
       texture.colorSpace = SRGBColorSpace;
       texture.anisotropy = this.anisotropy;
-      const offset = tile.level === 'near' ? -2 : -1; // near tiles draw over far ones, both over the fallback ground
-      const mesh = new Mesh(this.planes[tile.level], new MeshLambertMaterial({ map: texture, polygonOffset: true, polygonOffsetFactor: offset, polygonOffsetUnits: offset }));
-      mesh.position.set(x0 + size / 2, 0, z0 + size / 2);
-      tile.group.add(mesh);
-      this.group.add(tile.group);
+      tile.canvas = null;
+      if (tile.groundMesh) {
+        tile.groundMesh.material.map?.dispose();
+        tile.groundMesh.material.map = texture;
+        tile.groundMesh.material.needsUpdate = true;
+      } else {
+        const offset = tile.level === 'near' ? -2 : -1;
+        const geometry = tile.level === 'far' ? this.farGeometry(tile) : this.planes.near;
+        const mesh = new Mesh(geometry, groundMaterial(texture, offset));
+        mesh.position.set(x0 + size / 2, 0, z0 + size / 2);
+        tile.groundMesh = mesh;
+        tile.group.add(mesh);
+        this.group.add(tile.group);
+      }
+      this.updateCoverage();
     } else if (stage === 'trenches') {
       const trench = G.trenchMesh(F.trenches(this.world, x0, z0, x1, z1));
       const wire = G.wireLines(F.wire(this.world, x0, z0, x1, z1));
       for (const o of [trench, wire]) if (o) { o.userData.objects = true; tile.group.add(o); }
     } else if (stage === 'trees') {
-      const list = [...F.trees(this.world, x0, z0, x1, z1, q.treeSpacing), ...F.roadTrees(this.world, x0, z0, x1, z1)];
+      const list = tileTrees(this.world, x0, z0, x1, z1, q.treeSpacing); // none in buildings or round hangars
       for (const m of G.treeMeshes(list)) { m.userData.objects = true; tile.group.add(m); }
-    } else if (stage === 'buildings') {
-      const items = [];
-      for (const v of this.world.villages(x0, z0, x1, z1)) items.push(...F.houses(this.world, v));
-      const a = this.world.airfield;
-      if (a.x - a.halfX < x1 && a.x + a.halfX > x0 && a.z - a.halfZ < z1 && a.z + a.halfZ > z0) items.push(...F.airfieldBuildings(this.world));
-      const bridges = F.bridges(this.world, this.world.roads(x0, z0, x1, z1)).filter((b) => b.x >= x0 && b.x < x1 && b.z >= z0 && b.z < z1);
-      for (const m of G.buildingMeshes(items, bridges)) { m.userData.objects = true; tile.group.add(m); }
+    } else if (stage === 'structures') {
+      // Everything built or left standing: village houses, farms, mills, airfields, war works, rubble.
+      const batch = new Batch();
+      const world = this.world;
+      const villages = world.villages(x0, z0, x1, z1);
+      const houses = villages.flatMap((v) => F.houses(world, v));
+      const farmList = worldFarms(world, x0, z0, x1, z1);
+      const bridges = F.bridges(world, world.roads(x0, z0, x1, z1)).filter((b) => b.x >= x0 && b.x < x1 && b.z >= z0 && b.z < z1);
+      addBuildings(batch, [...houses, ...farmList.flatMap((f) => f.buildings)], bridges);
+      addFarmExtras(batch, farmList, worldWindmills(world, x0, z0, x1, z1));
+      addWarWorks(batch, warworks(world, x0, z0, x1, z1), villages.map((v) => rubble(world, v)));
+      // The parts of any airfield that stand in this tile (each object belongs to the tile it is in).
+      const inTile = (o) => o && o.x >= x0 && o.x < x1 && o.z >= z0 && o.z < z1;
+      for (const af of world.airfieldsIn(x0, z0, x1, z1)) {
+        const f = facilities(world, af);
+        addAirfield(batch, {
+          markers: f.markers.filter(inTile), hangars: f.hangars.filter(inTile), tents: f.tents.filter(inTile),
+          vehicles: f.vehicles.filter(inTile), windsock: inTile(f.windsock) ? f.windsock : null, tower: inTile(f.tower) ? f.tower : null,
+        });
+      }
+      for (const m of batch.build()) { m.userData.objects = true; tile.group.add(m); }
     }
   }
 
@@ -173,21 +281,22 @@ export class Terrain {
         G.disposeObject(child);
       }
     }
-    for (const s of ['trenches', 'trees', 'buildings']) tile.built.delete(s);
+    for (const s of OBJECT_STAGES) tile.built.delete(s);
     tile.objects = wanted.objects;
   }
 
   dropTile(tile) {
     this.group.remove(tile.group);
     G.disposeObject(tile.group);
+    if (tile.level === 'near' && this.tiles.size) setTimeout(() => this.updateCoverage(), 0);
   }
 
   stats() {
     let pending = 0;
     let objects = 0;
     for (const t of this.tiles.values()) {
-      if (!t.built.has('ground')) pending++;
-      else if (t.objects) pending += ['trenches', 'trees', 'buildings'].filter((s) => !t.built.has(s)).length;
+      if (!t.built.has('ground') || !t.built.has('ground2')) pending += (t.built.has('ground') ? 0 : 1) + (t.built.has('ground2') ? 0 : 1);
+      else if (t.objects) pending += OBJECT_STAGES.filter((s) => !t.built.has(s)).length;
       t.group.traverse((o) => { if (o.userData.objects) objects++; });
     }
     return { tiles: this.tiles.size, pending, objects };

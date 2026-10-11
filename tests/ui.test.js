@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { toKnots, toMph, toKmh, toFeet, toDegrees } from '../src/ui/units.js';
-import { debugLines } from '../src/ui/debugText.js';
+import { debugLines, airfieldLine } from '../src/ui/debugText.js';
 import { AIRCRAFT } from '../src/aircraft/index.js';
 
 describe('display units', () => {
@@ -51,5 +51,15 @@ describe('joystick status in the debug overlay', () => {
     expect(debugLines(AIRCRAFT.camel, null, { joystick: 'not detected' }).join('\n')).toContain('joystick  not detected');
     expect(debugLines(AIRCRAFT.camel, null, { joystick: 'Logitech Extreme 3D Pro' }).join('\n')).toContain('Logitech Extreme 3D Pro');
     expect(debugLines(AIRCRAFT.camel, null).join('\n')).not.toContain('joystick');
+  });
+});
+
+describe('nearest airfield line', () => {
+  it('gives distance, compass bearing and side', () => {
+    expect(airfieldLine({ distance: 3240, bearing: 270.2, airfield: { side: 'allied' } })).toBe('3.2 km, bearing 270 (Allied)');
+    expect(airfieldLine({ distance: 8000, bearing: 5, airfield: { side: 'german' } })).toBe('8.0 km, bearing 005 (German)');
+    expect(airfieldLine({ distance: 100, bearing: 90, airfield: { side: 'allied', start: true } })).toBe('overhead (Allied, start)');
+    expect(airfieldLine(null)).toBe('none within 30 km');
+    expect(debugLines(AIRCRAFT.camel, null, { airfield: '3.2 km, bearing 270 (Allied)' }).join('\n')).toContain('airfield  3.2 km');
   });
 });

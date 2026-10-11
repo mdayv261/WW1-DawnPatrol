@@ -41,7 +41,7 @@ describe('camera rig', () => {
     // The camera's up follows the aircraft's up, so the horizon tilts.
     const up = new Vector3(0, 1, 0).applyQuaternion(r.camera.quaternion);
     expect(up.distanceTo(new Vector3(0, 1, 0).applyQuaternion(q))).toBeLessThan(1e-6);
-    expect(r.camera.near).toBeLessThan(0.1);
+    expect(r.camera.near).toBeLessThanOrEqual(0.1); // close enough to see the instrument panel, no closer than the depth buffer needs
   });
 
   it('mouse moves the view only while looking around (right button or V) or in free-look', () => {
@@ -100,7 +100,7 @@ describe('camera rig', () => {
     r.cycle(); // chase
     r.update(AIRCRAFT.camel, new Vector3(0, 500, 0), q, 1 / 60);
     expect(r.camera.up.y).toBe(1);
-    expect(r.camera.near).toBe(1);
+    expect(r.camera.near).toBe(2);
   });
 });
 

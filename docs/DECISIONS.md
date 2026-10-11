@@ -458,3 +458,38 @@ The outside views show the same numbers as a one-line readout (J). All the physi
 **Throttle on axis 6:** the product owner found that the Extreme 3D Pro's slider is axis 6, not axis 3. The default is now 6. A saved mapping from before the change that still has axis 3 for the throttle is corrected automatically (anything chosen with Learn is kept).
 
 **Rudder on axis 5:** the product owner then found that the twist handle is axis 5, not axis 2. Same treatment: the default is 5, and a saved mapping that still has axis 2 for the rudder is corrected automatically (mapping version 3).
+
+## D44. Airfields and a more detailed landscape (Phase 3, checkpoint 2b)
+
+**Why:** the product owner flew the terrain: the flying model "feels natural and realistic", the terrain "looks OK but could be more detailed", and there should be recognisable airfields with visible white triangular markers, a wind sock and a control tower.
+
+**Airfields (`src/world/airfields.js`):**
+- The start field at the origin plus more in bands behind each side of the front line (one per band per 5 km of front, kept at least 3 km apart and at least 1.2 km behind the line, off rivers). Allied fields are west of the front, German fields east. From the start, the nearest fields are Allied at 5.3 km (bearing 026), 6.7 km (202), 6.8 km (162) and 7.9 km (273), and German at 7.2 km (093), 9.0 km (123) and 9.3 km (062). F3 shows the nearest field's distance, bearing and side.
+- Each field is a rotated rectangle (700-1,100 m by 300-500 m) lined up within 25 degrees of straight into a **visual wind** from 340 degrees (the physics has no wind). The start field stays north-south.
+- It has pale mown ground with lengthwise stripes, **white triangular markers** (14 by 8 m) at the corners and every 80 m or less along the edges, pointing into the field and painted into the ground texture too so they show from far away, a **14 m pole with a 7 m orange-and-white sock** pointing downwind, a **14 m wooden tower** with a window band, roof and flag, three to five canvas hangars with open doors, tents, lorries, fuel drums, a worn apron and an access road to the nearest village.
+- Roads are bent round landing grounds, and villages within 500 m of one are left out.
+
+**Sources and honesty:**
+- **Sourced:** WWI fields were grass; canvas Bessonneau hangars (nine at Bramham Moor, twelve at Swingate) and tents were typical (KipAero Bessonneau note; Swingate history). 
+- **Tower:** the first purpose-built control tower was the timber one at Croydon in 1920 (about 15 ft tall, windows all round). So the tower is a period-style timber watch tower at the product owner's request, not a historical WWI feature.
+- **Choices, not sourced:** the white triangle markers (the product owner's request), the wind sock design, sizes and layouts.
+
+**Landscape detail:**
+- **Sharper ground:** the 3x3 tiles round the aircraft use a 1,024 px texture (1 m per pixel) at Medium and High (512 px at Low); others 512 px. A tile is painted in two steps over two frames. A tiling noise texture is mixed into the ground shader at two scales (about 3 m and 48 m, fading out by 2.5 km) for soil and grass grain. Bare headlands, muddy road verges and water in about 40% of craters are painted.
+- **Farms (`src/world/farms.js`):** about 0.8 per km² in open ground: a farmhouse, one to three barns round a yard, haystacks, a windbreak of trees and a track to the nearest road, all lined up with the fields; ruined within 1.6 km of the front. Post windmills facing the wind, about one per 6 km².
+- **War works (`src/world/warworks.js`):** sandbags on the enemy-facing lip of the front (every 6 m) and support (every 24 m) trenches, dugout entrances on the support lines, wire posts every 5 m, gun pits 450-650 m behind each side's line, supply dumps behind the reserve lines, raised rims on craters of radius 4 m or more (cap 160 a tile), rubble round the ruined houses, and burnt trunks and stumps in the shattered woods. Trench line spacings, densities and sizes are estimates.
+- **Draw calls:** all small things on a tile (house walls and roofs, hangars, sandbags, crates, sock segments, markers, rims) share a handful of instanced meshes (`src/render/terrain/batch.js`).
+- **Measured** (render timing in Chrome, Medium): at most 175 draw calls and 382,000 triangles, at the front line; 97-127 draw calls and 16,000-156,000 triangles elsewhere.
+
+## D45. Changes after the product owner's flight: trees, sizes, clouds, ground flicker (Phase 3, checkpoint 2b)
+
+1. **No trees round the hangars.** An airfield's grounds are the landing ground plus the strip 260 m behind its upwind end (where the hangars, tents and vehicles stand), 80 m beyond the far end and 130 m to each side. No woods, roadside poplars or farm trees are put there (`inAirfieldGrounds`).
+2. **No trees in buildings.** Every tile's trees (woods, poplars, farm windbreaks) are checked against the footprints of village houses and churches, farm buildings and haystacks, windmills, hangars, tents, vehicles, the tower and the wind sock (`world/obstacles.js`); any tree whose spread would reach one is removed. Tests check this near a village, a farm and several airfields.
+3. **Control tower and wind sock 20% bigger:** the tower is 16.8 m tall (was 14) with every part scaled, and the sock pole is 16.8 m with an 8.4 m sock.
+4. **Cumulus clouds** (`world/clouds.js`, `render/clouds.js`): one possible cloud per 2.2 km of sky (42% of cells at Medium), at random places, with a random width from 250 m to 1,750 m (mostly smallish, a few big banks), a random base from 1,300 to 2,600 m, built from 5 to about 16 overlapping puffs with a flat base and a domed top. Puffs are soft sprites painted in code, drawn as one instanced draw, sorted far to near about twice a second, melting into the haze with distance and fading as the camera flies into them. About 490 puffs at Medium (9 km radius at Low, 20 km at High). Clouds are visual only: no lift, turbulence or shadows.
+5. **Ground flicker.** Suspected cause, not seen directly (the test browser cannot show flicker over time): the coarse 2 km "far" ground tiles overlapped the 1 km close tiles in the same plane, and the fallback ground was also at the same height, so the depth buffer could not tell them apart; the pattern changes with the view angle, which is why it was worst while banking. Fixes:
+   - a far tile now draws only the quarters not covered by a painted close tile (and shows them again if that tile goes), so no two ground surfaces share a plane;
+   - the fallback ground sits 4 m below the tiles;
+   - the camera depth range is shorter (far 30 km instead of 80 km, since the haze hides everything beyond 25 km) and the near distance larger (cockpit 0.1 m instead of 0.05, chase and free-look 2 m instead of 1), which makes depth finer.
+   If flicker remains, the next step is a logarithmic depth buffer (costs some speed).
+

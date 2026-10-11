@@ -10,7 +10,9 @@ import { eyePosition } from './cockpit.js';
 
 export const MODES = ['cockpit', 'chase', 'free'];
 const LOOK_RATE = 0.004; // radians per pixel of mouse movement
-const NEAR = { cockpit: 0.05, chase: 1, free: 1 };
+// Near clipping distance per view: as large as the view allows, because the depth
+// buffer is finest when the near plane is far (less shimmer where surfaces nearly touch).
+const NEAR = { cockpit: 0.1, chase: 2, free: 2 };
 
 const HAT_EASE = 8; // how quickly the head follows the hat (per second)
 const HAT_ORBIT_RATE = 1.5; // free-look: radians per second at full hat deflection
