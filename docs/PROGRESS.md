@@ -2,7 +2,7 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 3 (world and visuals) built, with the crash and flicker follow-ups; waiting for the product owner's acceptance test
+## Current status: Phase 3 (world and visuals) signed off by the product owner. Phase 4 (weapons and damage) not started; needs a plan in plan mode first.
 
 Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft models (48df111), terrain (c3b90ec), airfields and detail (dee316a), and checkpoint 3 (quality levels, pixel budget, frame-rate readout, cirrus). Phase 4 must not start until the product owner confirms Phase 3.
 
@@ -17,7 +17,9 @@ Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft mod
 4. **Airfield:** take off and land on the start field (heading north is clear; the hangars are behind the south end, so a low approach from the south can hit them). Landing and taxiing must not crash.
 5. Check **F3**: frames, calls and triangles should be about what you saw before.
 
-**Decisions for you:** (a) move the start field's hangars off the centre line so a landing from the south is not blocked? (b) is the crash too strict (touching a treetop with a wheel ends the flight)? A tolerance is a small change. (c) once these pass, do you sign off Phase 3?
+**Decided by the product owner:** leave the hangars where they are; crash strictness stays as is; Phase 3 signed off after the 5-minute flight test.
+
+**Decisions that were asked:** (a) move the start field's hangars off the centre line so a landing from the south is not blocked? (b) is the crash too strict (touching a treetop with a wheel ends the flight)? A tolerance is a small change. (c) once these pass, do you sign off Phase 3?
 
 **Known issues:** hands-off, the aircraft eventually dives into the ground by itself at low altitude (existing behaviour, not new). The thin sock pole and rubble are approximations. Solids exist only for built tiles (about 2 km round you at Medium).
 
