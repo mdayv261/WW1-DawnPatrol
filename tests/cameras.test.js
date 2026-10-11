@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PerspectiveCamera, Vector3, Quaternion } from 'three';
-import { CameraRig, MODES } from '../src/render/cameraRig.js';
+import { CameraRig, MODES, hatLookTarget } from '../src/render/cameraRig.js';
 import { eyePosition } from '../src/render/cockpit.js';
 import { readoutText } from '../src/ui/instrumentMath.js';
 import { AIRCRAFT, AIRCRAFT_LIST } from '../src/aircraft/index.js';
@@ -113,5 +113,45 @@ describe('outside-view readout', () => {
   });
   it('is empty before the first physics step', () => {
     expect(readoutText(AIRCRAFT.camel, null, 0)).toBe('');
+  });
+});
+
+describe('joystick hat', () => {
+  const D = Math.PI / 180;
+  it('left and right look 90 degrees, up looks up, down looks back over the shoulder', () => {
+    expect(hatLookTarget({ x: 0, y: 0 })).toBeNull();
+    expect(hatLookTarget({ x: -1, y: 0 })).toEqual({ yaw: -90 * D, pitch: 0 });
+    expect(hatLookTarget({ x: 1, y: 0 })).toEqual({ yaw: 90 * D, pitch: 0 });
+    expect(hatLookTarget({ x: 0, y: 1 }).pitch / D).toBeCloseTo(55, 0);
+    expect(hatLookTarget({ x: 0, y: -1 })).toEqual({ yaw: 180 * D, pitch: 0 });
+    expect(hatLookTarget({ x: 1, y: -1 }).yaw / D).toBeCloseTo(135);
+    expect(hatLookTarget({ x: -1, y: -1 }).yaw / D).toBeCloseTo(-135);
+    expect(hatLookTarget({ x: -1, y: 1 })).toMatchObject({ yaw: -90 * D });
+  });
+  it('in the cockpit the head follows the hat, then eases back forward when released', () => {
+    const r = rig();
+    r.mode = 'cockpit';
+    const q = new Quaternion();
+    const pos = new Vector3(0, 500, 0);
+    r.hat = { x: 0, y: -1 }; // look back
+    for (let i = 0; i < 120; i++) r.update(AIRCRAFT.camel, pos, q, 1 / 60);
+    expect(forward(r.camera).x).toBeLessThan(-0.99); // looking at the tail
+    r.hat = { x: 0, y: 0 };
+    for (let i = 0; i < 180; i++) r.update(AIRCRAFT.camel, pos, q, 1 / 60);
+    expect(forward(r.camera).x).toBeGreaterThan(0.99);
+  });
+  it('the hat does not turn the head in the chase view, and orbits in free-look', () => {
+    const r = rig();
+    r.hat = { x: 1, y: 0 };
+    r.update(AIRCRAFT.camel, new Vector3(0, 500, 0), new Quaternion(), 1 / 60);
+    expect(r.lookYaw).toBe(0);
+    r.mode = 'free';
+    const before = r.orbitYaw;
+    r.update(AIRCRAFT.camel, new Vector3(0, 500, 0), new Quaternion(), 1);
+    expect(r.orbitYaw).toBeGreaterThan(before);
+    r.hat = { x: 0, y: 1 };
+    const p = r.orbitPitch;
+    r.update(AIRCRAFT.camel, new Vector3(0, 500, 0), new Quaternion(), 0.1);
+    expect(r.orbitPitch).toBeGreaterThan(p);
   });
 });

@@ -14,7 +14,7 @@ export function keyId(e) {
 }
 
 // handlers: { onSelect(index, airStart), onRestart(), onPause(), onDebug(),
-//   onHelp(), onTestPanel(), onCamera(), onLook(), onReadout(),
+//   onHelp(), onTestPanel(), onJoystickPanel(), onCamera(), onLook(), onReadout(),
 //   onRecentre(), onSensitivity(step) }
 export function attachKeyboard(handlers) {
   const mapper = new InputMapper();
@@ -40,6 +40,9 @@ export function attachKeyboard(handlers) {
     else if (e.code === 'F3') {
       e.preventDefault();
       handlers.onDebug();
+    } else if (e.code === 'F2') {
+      e.preventDefault();
+      handlers.onJoystickPanel?.();
     } else if (e.code === 'F4') {
       e.preventDefault();
       handlers.onTestPanel?.();

@@ -52,7 +52,9 @@ Avoid forums and Reddit as sources.
 ## 5. Controls
 - Keyboard + mouse default; fully rebindable.
 - Pitch, roll, yaw, throttle, trim, fire, view controls.
-- Gamepad and joystick via the Gamepad API (Phase 7).
+- USB joystick (Logitech Extreme 3D Pro, the primary controller) via the
+  Gamepad API: Phase 2, checkpoint 3 (product owner's decision).
+  Other gamepads: Phase 7.
 - Optional assists: auto-rudder, stall warning. Off by default
   in Realistic mode.
 

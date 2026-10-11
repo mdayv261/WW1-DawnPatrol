@@ -12,7 +12,9 @@ import { FixedStepLoop } from './core/fixedStepLoop.js';
 import { Simulation } from './core/simulation.js';
 import { AIRCRAFT_LIST } from './aircraft/index.js';
 import { attachKeyboard } from './input/keyboard.js';
-import { attachMouse, mixStick } from './input/mouse.js';
+import { attachMouse, mixJoystick } from './input/mouse.js';
+import { attachJoystick } from './input/joystick.js';
+import { createJoystickPanel } from './ui/joystickPanel.js';
 import { createDebugOverlay, createHelp, createBanner, createReadout } from './ui/overlays.js';
 import { debugLines } from './ui/debugText.js';
 import { createTestPanel } from './ui/testPanel.js';
@@ -72,6 +74,7 @@ const keyboard = attachKeyboard({
   onDebug: () => debug.toggle(),
   onHelp: () => help.toggle(),
   onTestPanel: () => testPanel?.toggle(),
+  onJoystickPanel: () => joystickPanel.toggle(),
 });
 
 if (import.meta.env.DEV) testPanel = createTestPanel(AIRCRAFT_LIST, (i, id) => startFlight(i, id));
@@ -90,6 +93,20 @@ const mouse = attachMouse(canvas, {
     showNotice(captured ? 'Mouse flying on (Esc to release, X to centre stick)' : 'Mouse released (click the game to fly with the mouse)', 3000),
   invertPitch: () => keyboard.invertPitch,
 });
+
+// USB joystick: buttons call the same actions as the keys.
+const joystick = attachJoystick({
+  onNotice: (text) => showNotice(text, 3000),
+  onCamera: () => showNotice(`Camera: ${rig.cycle()}`),
+  onReadout: () => showNotice(readout.toggle() ? 'Instrument readout on' : 'Instrument readout off'),
+  onCentre: () => {
+    mouse.stick.centre();
+    showNotice('Stick centred');
+  },
+  onPause: () => { paused = !paused; },
+  onRestart: () => startFlight(aircraftIndex),
+});
+const joystickPanel = createJoystickPanel(joystick);
 
 // Start a flight; `scenario` is a test-panel scenario id (normal start if omitted).
 function startFlight(index, scenario = null) {
@@ -124,12 +141,21 @@ const drawPosition = { x: 0, z: 0 };
 // Read the keys and run as many fixed physics steps as realDt calls for.
 // Returns alpha, how far we are between the last two physics states.
 function update(realDt) {
+  const joy = joystick.poll(); // read even when paused, so the pause button can unpause
   if (paused) return 1;
-  const keys = keyboard.update(realDt);
-  // Keyboard and mouse stick combined into the controls the aircraft feels.
-  const input = { ...keys, ...mixStick(keys, mouse.stick, keyboard.pitchKeyHeld(), keyboard.rollKeyHeld()) };
-  // A flight key hands control back from a scripted test pilot.
-  if (import.meta.env.DEV && runner && keyboard.pilotActive()) runner.cancel();
+  const keys = keyboard.update(realDt); // the keyboard's own input object, so throttle and trim changes below carry on
+  if (joy) {
+    // The slider sets the throttle only while it is being moved; the trim
+    // buttons work like the trim keys; the hat turns the view.
+    if (joy.throttle !== null) keyboard.setThrottle(joy.throttle);
+    keyboard.nudgeTrim((joy.held.has('trimUp') ? 1 : 0) - (joy.held.has('trimDown') ? 1 : 0), realDt);
+  }
+  rig.hat = joy ? joy.hat : { x: 0, y: 0 };
+  // Keyboard, mouse stick and joystick combined into the controls the aircraft feels.
+  const held = { pitch: keyboard.pitchKeyHeld(), roll: keyboard.rollKeyHeld(), yaw: keyboard.rudderKeyHeld() };
+  const input = { ...keys, ...mixJoystick(keys, mouse.stick, joy, held), fire: Boolean(joy?.fire) };
+  // A flight key or stick movement hands control back from a scripted test pilot.
+  if (import.meta.env.DEV && runner && (keyboard.pilotActive() || joy?.pull || joy?.roll || joy?.yaw)) runner.cancel();
   return loop.advance(realDt, (dt) => {
     if (import.meta.env.DEV && runner) runner.apply(input, dt);
     sim.step(dt, input);
@@ -158,6 +184,7 @@ function draw(realDt, alpha, now) {
     banner.set(sim.crashed ? `CRASHED: ${sim.crashReason} - press R` : paused ? 'PAUSED' : message);
     if (debug.visible) debug.set(debugLines(sim.aircraft, sim.diag, { crashed: sim.crashed, paused }));
     if (import.meta.env.DEV && testPanel?.visible) testPanel.update(sim, runner, scenarioLabel);
+    if (joystickPanel.visible) joystickPanel.update();
     const heading = attitude(sim.state).heading;
     if (rig.mode === 'cockpit') panel.update(sim.diag, heading);
     readout.set(readoutText(sim.aircraft, sim.diag, heading), rig.mode !== 'cockpit');
@@ -182,6 +209,8 @@ if (import.meta.env.DEV) {
   window.__dawn = {
     sim,
     keyboard,
+    joystick,
+    rig,
     debug,
     testPanel,
     startFlight,

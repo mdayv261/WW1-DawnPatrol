@@ -391,3 +391,22 @@ The outside views show the same numbers as a one-line readout (J). All the physi
 
 **Still true:** with no aileron at all on the roll-out, a dropping wing can still go down to the ground. That is the realistic consequence of the wings carrying most of the weight near flying speed.
 
+## D40. Logitech Extreme 3D Pro joystick, added to Phase 2 (checkpoint 3)
+
+**Decision:** The product owner asked for the Logitech Extreme 3D Pro as the primary controller. The spec had joystick support in Phase 7; the product owner chose to do it now, inside Phase 2 (controls and cameras). Gamepads stay in Phase 7.
+
+**Mapping:**
+- Stick = pitch and roll (stick back = pull, as with the arrow keys). Twist handle = rudder.
+- Throttle slider = throttle. It is an absolute position, but the keyboard and mouse wheel also move the throttle. So the slider only sets the throttle after it has moved (more than 3%), and a slider left anywhere at the start does not slam the throttle to that setting.
+- Hat = snap views: left and right look 90 degrees, up looks 55 degrees up, down looks back over the shoulder (diagonals look 135 degrees over a shoulder). Free-look: the hat orbits.
+- Trigger = fire. It is only read for now; nothing fires until Phase 4.
+- Buttons: 2 camera, 3 and 4 trim down and up (held), 5 readout, 6 centre mouse stick, 7 pause, 8 restart.
+
+**Mixing:** per axis, a held key wins; otherwise the joystick adds to the mouse stick, clamped. The twist handle gives rudder unless Q or E is held.
+
+**Shaping (estimates):** dead zone 0.05 on the stick, 0.12 on the twist handle (twist handles are noisy), and a mild curve (0.3) that softens small movements. Adjustable on the F2 screen; they are control settings, not aircraft data.
+
+**Why a test and learn screen (F2):** the Gamepad API reports this stick's axes and hat differently in different browsers and operating systems (the hat may be one axis with eight values, two axes, or four buttons). I could not check the real stick, so the defaults are a best guess and the hat reader accepts all three layouts. The F2 screen shows what the stick really reports, and Learn reassigns controls without changing code. The mapping is saved in the browser (key `dawnPatrol.joystick`).
+
+**Tests:** fake devices cover the axes, hat layouts, throttle takeover, button edges, learning, saved-mapping repair and mixing. In Chrome, a fake device flew a take-off, circuit and landing. The real stick still needs the product owner's test.
+

@@ -56,6 +56,20 @@ export function mixStick(keyInput, stick, pitchKeyHeld, rollKeyHeld) {
   };
 }
 
+// Keyboard, mouse stick and joystick together. Per axis, a held key wins;
+// otherwise the joystick adds to the mouse stick (and the keys' centring
+// value), all clamped. The twist handle gives rudder unless Q or E is held.
+// `joy` is null when no joystick is connected.
+export function mixJoystick(keyInput, stick, joy, held) {
+  const mixed = mixStick(keyInput, stick, held.pitch, held.roll);
+  if (!joy) return { ...mixed, yaw: keyInput.yaw };
+  return {
+    pull: held.pitch ? mixed.pull : clamp(mixed.pull + joy.pull),
+    roll: held.roll ? mixed.roll : clamp(mixed.roll + joy.roll),
+    yaw: held.yaw ? keyInput.yaw : clamp(keyInput.yaw + joy.yaw),
+  };
+}
+
 function loadSensitivityIndex() {
   try {
     const v = Number(localStorage.getItem(STORE_KEY));

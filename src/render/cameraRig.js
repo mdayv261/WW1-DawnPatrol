@@ -12,6 +12,21 @@ export const MODES = ['cockpit', 'chase', 'free'];
 const LOOK_RATE = 0.004; // radians per pixel of mouse movement
 const NEAR = { cockpit: 0.05, chase: 1, free: 1 };
 
+const HAT_EASE = 8; // how quickly the head follows the hat (per second)
+const HAT_ORBIT_RATE = 1.5; // free-look: radians per second at full hat deflection
+
+// Where the head turns when the hat is held: { yaw, pitch } in radians
+// (yaw + = right, pitch + = up), or null when the hat is centred.
+// Left and right look 90 degrees, up looks up, down looks back over the
+// shoulder (diagonals: over the left or right shoulder).
+export function hatLookTarget(hat) {
+  if (!hat || (!hat.x && !hat.y)) return null;
+  const side = hat.x * (Math.PI / 2);
+  if (hat.y > 0) return { yaw: side, pitch: 0.96 }; // 55 degrees up
+  if (hat.y < 0) return { yaw: hat.x * (3 * Math.PI) / 4 || Math.PI, pitch: 0 };
+  return { yaw: side, pitch: 0 };
+}
+
 const _eye = new Vector3();
 const _dir = new Vector3();
 const _up = new Vector3();
@@ -25,6 +40,7 @@ export class CameraRig {
     this.lookPitch = 0; // + = up
     this.lookButton = false;
     this.lookToggle = false;
+    this.hat = { x: 0, y: 0 }; // joystick hat: x + = right, y + = up
     this.orbitYaw = Math.PI; // free-look: start behind
     this.orbitPitch = 0.25;
     this.orbitDistance = 18;
@@ -76,6 +92,8 @@ export class CameraRig {
       return;
     }
     if (this.mode === 'free') {
+      this.orbitYaw += this.hat.x * HAT_ORBIT_RATE * dt;
+      this.orbitPitch = Math.max(-1.2, Math.min(1.4, this.orbitPitch + this.hat.y * HAT_ORBIT_RATE * dt));
       const cp = Math.cos(this.orbitPitch);
       cam.position.set(
         position.x + this.orbitDistance * cp * Math.sin(this.orbitYaw),
@@ -88,7 +106,12 @@ export class CameraRig {
       return;
     }
     // Cockpit: at the pilot's eye, turning with the aircraft.
-    if (!this.looking) {
+    const hatTarget = hatLookTarget(this.hat);
+    if (hatTarget) {
+      const k = 1 - Math.exp(-HAT_EASE * dt); // the head follows the hat
+      this.lookYaw += (hatTarget.yaw - this.lookYaw) * k;
+      this.lookPitch += (hatTarget.pitch - this.lookPitch) * k;
+    } else if (!this.looking) {
       const k = 1 - Math.exp(-6 * dt); // ease the head back forward
       this.lookYaw -= this.lookYaw * k;
       this.lookPitch -= this.lookPitch * k;

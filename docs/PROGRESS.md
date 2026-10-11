@@ -2,9 +2,9 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 2 (controls and cameras) built, waiting for the product owner's acceptance test
+## Current status: Phase 2 (controls and cameras) signed off; Phase 3 not started
 
-Phase 0 and Phase 1 are signed off (Phase 1 approved 11 Oct 2026). All of Phase 2 is built and checked in Chrome. Phase 3 must not start until the product owner confirms Phase 2 passes its acceptance test.
+Phase 0 and Phase 1 are signed off (Phase 1 approved 11 Oct 2026). The product owner confirmed on 11 Oct 2026 that the joystick works as expected and that Phase 2 passes its acceptance test. Phase 3 (world and visuals) has not been started; it needs its own plan first.
 
 ## Phase 2 progress
 
@@ -14,7 +14,7 @@ Phase 0 and Phase 1 are signed off (Phase 1 approved 11 Oct 2026). All of Phase 
 - **Propeller effects (D34):** slipstream swirl, P-factor and propwash.
 - **Sourced Camel behaviour tests (D35).**
 
-**Checkpoint 2 (not committed yet):**
+**Checkpoint 2 (committed d686868):**
 - **Cameras (D37):** C cycles chase, free-look and cockpit. In the cockpit, hold the right mouse button or press V to look around; the head eases back forward when you stop. Free-look orbits the aircraft with the mouse; the wheel zooms.
 - **Cockpit:** decking, twin guns and an instrument panel, built in code.
 - **Instruments (D38):** airspeed, altimeter, rev counter, compass and slip ball, in each side's period units (Camel: mph and feet; the others: km/h and metres). In the outside views, a small readout at the bottom right (J toggles it).
@@ -22,7 +22,17 @@ Phase 0 and Phase 1 are signed off (Phase 1 approved 11 Oct 2026). All of Phase 
 - **Results:** 320 tests pass, plus 15 known deviations. The production build works.
 - **Browser check (Chrome):** the Camel was flown entirely in the cockpit view through the real keyboard controls: take-off (about a quarter right rudder held; lift-off at about 24 m/s), climb to 50 m, glide, flare, landing and roll-out to a stop. Also checked: all three cameras, look-around, mouse capture, the J readout and the SPAD's metric instruments. No console errors.
 
+**Checkpoint 3 (committed with the Phase 2 sign-off): the Logitech Extreme 3D Pro joystick (D40).** Added at the product owner's request, inside Phase 2.
+- **Flying:** stick = pitch and roll; twist handle = rudder; slider = throttle (it takes over only when you move it, so the keyboard and mouse wheel still work); trigger = fire (read, but nothing fires until Phase 4).
+- **Views:** the hat looks around in the cockpit: left, right, up, and down looks back over the shoulder (diagonals over a shoulder). Releasing eases the view forward. In free-look the hat orbits the aircraft.
+- **Buttons:** 2 camera, 3 and 4 trim down and up (held), 5 instrument readout, 6 centre the mouse stick, 7 pause, 8 restart. 9-12 are unassigned.
+- **F2 joystick screen:** shows every axis as a bar, every button lit while pressed and the hat direction. "Learn" assigns a control by moving it, "Flip" reverses an axis, and dead zone and curve have + and - buttons. Everything is saved in the browser.
+- **Results:** 353 tests pass, plus 15 known deviations. In Chrome, a **fake** Extreme 3D Pro was flown through a full take-off, circuit and landing in the cockpit view; the hat, buttons, pause, learn and saving all worked. No console errors.
+- **Tested on the real stick by the product owner:** it works as expected with the default mapping.
+
 **Known issues:**
+- **Joystick:** Chrome only sees the stick after the trigger is pressed once. If a control is reversed or numbered differently on another computer, use F2 (Learn and Flip).
+- A scripted pilot with a joystick-style instant rudder drifted off the runway line at the very end of the roll-out (below 10 m/s), the known tail-dragger ground-loop tendency.
 - Full power with no rudder swings the nose 28-58 degrees left in 3 s, so right rudder is needed. The strength comes from estimated propeller coefficients; judge it by feel.
 - The roll-out needs aileron as well as rudder. Near flying speed the wings carry most of the weight, so a wing that starts to drop keeps going unless you hold the wings level.
 - The cockpit is a placeholder: no cut-out in the upper wing (the wing hides the top of the screen), and every aircraft has the same panel layout. Period layouts come with the UI work later.
@@ -114,6 +124,7 @@ Start: in Terminal, in the project folder, run `npm run dev`, open http://localh
 | C | Camera: chase, free-look, cockpit |
 | V, or hold the right mouse button | Look around in the cockpit |
 | J | Instrument readout on or off (outside views) |
+| F2 | Joystick screen: test, learn, flip |
 | Click the game / Esc | Fly with the mouse / release the mouse. X centres the mouse stick; , and . change the sensitivity. |
 | R | Restart current aircraft |
 | P | Pause |
@@ -121,6 +132,14 @@ Start: in Terminal, in the project folder, run `npm run dev`, open http://localh
 | F4 | Flight test panel (temporary, development builds only) |
 | H | Hide or show the help |
 | I | Invert the pitch keys |
+
+### Joystick test (Logitech Extreme 3D Pro)
+1. Plug it in, open the game in Chrome, click the window and **press the trigger once**. A notice says "Joystick found".
+2. Press **F2**. Move the stick, twist the handle, move the slider and push the hat: the matching bar or label should move (Roll, Pitch, Rudder, Throttle, Hat). Press buttons 1-12: each lights up.
+3. If a control is wrong or reversed: click **Learn Roll** (or Pitch, Rudder, Throttle, hat), then move that control; use **Flip** to reverse one. If something else looks odd, tell me what the F2 screen shows.
+4. Press F2 again to hide it. Press **1**, then **C** twice (cockpit). Slider fully forward for full throttle; take off, keep straight with the twist handle, fly a circuit and land.
+5. Hold the hat left, right, up, down and diagonally: the view should snap round and return when released.
+6. Try buttons 2 to 8 as listed above.
 
 ### Phase 2 acceptance test
 1. Press **1** (Camel on the airfield), then **C** twice for the cockpit. Hide the help with **H**.
@@ -149,15 +168,16 @@ Made on 11 Oct 2026 (see D29 in DECISIONS.md):
 - The Camel's right-turn nose-drop is enough.
 
 Still open:
-1. **Phase 2 acceptance** by the product owner.
-2. **Commit checkpoint 2** (permission needed).
+1. ~~Phase 2 acceptance~~: approved on 11 Oct 2026, with the joystick.
+2. **Phase 3:** waiting for the product owner's go-ahead; a plan comes first.
 
 ## Phase list
 - Phase 0: Foundations and research. Done and signed off.
 - Phase 1: Core flight model, all four aircraft, plus flight-model validation. Done and signed off (11 Oct 2026), committed d710c03.
-- **Phase 2: Controls and cameras.** Built; waiting for acceptance. Brief from the product owner:
+- **Phase 2: Controls and cameras.** Done and signed off (11 Oct 2026), including the joystick. Brief from the product owner:
   - Keyboard: arrow keys for bank and pitch; Insert / Delete for throttle up / down; Home / End for trim up / down. W/S and T/G are also kept, because a Mac has no Insert key. Up arrow = nose down.
   - Mouse flight controls with adjustable sensitivity; throttle and trim.
+  - Added by the product owner during Phase 2: Logitech Extreme 3D Pro joystick (axes, slider throttle, hat views, trigger, buttons) as the primary controller.
   - Cockpit, chase and free-look cameras.
   - Acceptance: you can take off, fly a circuit and land without the debug panel; the Camel visibly pulls right under power. The product owner decided to research what the Camel really did and follow the sources.
   - This needs ground handling (take-off and landing) and basic instruments, so both are included.

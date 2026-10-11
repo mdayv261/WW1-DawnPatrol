@@ -71,6 +71,20 @@ export class InputMapper {
     this.input.throttle = clamp(this.input.throttle + amount, 0, 1);
   }
 
+  rudderKeyHeld() {
+    return this.isDown('rudderLeft') || this.isDown('rudderRight');
+  }
+
+  // Set the throttle directly (the joystick slider), kept within 0 to 1.
+  setThrottle(value) {
+    this.input.throttle = clamp(value, 0, 1);
+  }
+
+  // Move the trim for dt seconds at the keys' rate; direction is +1 (nose up) or -1.
+  nudgeTrim(direction, dt) {
+    this.input.trim = clamp(this.input.trim + direction * TRIM_RATE * dt, -1, 1);
+  }
+
   // True while the player holds any flight key (used to cancel a scripted
   // test pilot so the player can take over).
   pilotActive() {
