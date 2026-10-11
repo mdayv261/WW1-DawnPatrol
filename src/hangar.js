@@ -8,7 +8,7 @@ import {
 } from 'three';
 import { AIRCRAFT_LIST, common } from './aircraft/index.js';
 import { gearGeometry } from './physics/ground.js';
-import { createAircraftMesh } from './render/aircraftMesh.js';
+import { createAircraftMesh, setControlSurfaces } from './render/aircraftMesh.js';
 
 const SKY = 0xcfe0ee;
 const canvas = document.getElementById('view');
@@ -105,6 +105,17 @@ button('3/4', () => setView('three'));
 newRow();
 const sil = button('Silhouette: off', () => { silhouette = !silhouette; sil.textContent = `Silhouette: ${silhouette ? 'on' : 'off'}`; applyMode(); });
 const sp = button('Propeller: spinning', () => { spin = !spin; sp.textContent = `Propeller: ${spin ? 'spinning' : 'stopped'}`; });
+newRow();
+// Control surfaces at full travel (the same angles as in flight).
+const FULL = { pull: common.maxPull, roll: common.maxRoll, yaw: common.maxYaw };
+const move = (d) => models.forEach((m) => setControlSurfaces(m, { pull: 0, roll: 0, yaw: 0, ...d }));
+button('Controls neutral', () => move({}));
+button('Roll right', () => move({ roll: FULL.roll }));
+button('Roll left', () => move({ roll: -FULL.roll }));
+button('Pull back', () => move({ pull: FULL.pull }));
+button('Push forward', () => move({ pull: -FULL.pull }));
+button('Right rudder', () => move({ yaw: FULL.yaw }));
+button('Left rudder', () => move({ yaw: -FULL.yaw }));
 const hint = document.createElement('div');
 hint.textContent = 'Drag to orbit, wheel to zoom.';
 hint.style.opacity = '0.7';
@@ -147,4 +158,4 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.__hangar = { setView, get state() { return { selected, yaw, pitch, distance, silhouette }; }, select(i) { selected = i; layout(); describe(); }, silhouette(on) { silhouette = on; applyMode(); } };
+window.__hangar = { move, setView, get state() { return { selected, yaw, pitch, distance, silhouette }; }, select(i) { selected = i; layout(); describe(); }, silhouette(on) { silhouette = on; applyMode(); } };

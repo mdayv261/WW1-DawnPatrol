@@ -6,7 +6,7 @@
 import { Group } from 'three';
 import * as P from './parts.js';
 import * as M from './livery.js';
-import { anchors, wingPlan, wingY } from './layout.js';
+import { anchors, wingPlan, wingY, addSurfaces } from './layout.js';
 
 const WOOD = 0xb98c52; // natural plywood fuselage
 const GREEN = 0x3e6a38; // nose and tail (Jasta 46)
@@ -51,7 +51,10 @@ export function createAlbatros(ac) {
 
   // Sesquiplane: wide upper wing, narrow lower wing.
   const [upper, lower] = wingPlan(ac);
-  group.add(P.wing({ ...upper, thickness: 0.1, tip: 'round', colors: wingColours, material: wingMat }));
+  const controls = { ailerons: [], elevators: [], rudder: null };
+  const AILERON = { from: 0.55, to: 0.88, depth: 0.25 }; // upper wing only (an assumption: no source found)
+  group.add(P.wing({ ...upper, thickness: 0.1, tip: 'round', colors: wingColours, material: wingMat, cuts: [AILERON] }));
+  addSurfaces(group, controls.ailerons, upper, AILERON, 0.1, wingColours, wingMat, 'aileron');
   group.add(P.wing({ ...lower, thickness: 0.08, tip: 'round', colors: wingColours, material: wingMat }));
   group.add(P.box(0.5, 0.07, 0.55, metal, upper.x + 0.3, wingY(upper, 0) + 0.07, 0)); // radiator in the upper wing
   for (const s of [-1, 1]) {
@@ -65,13 +68,20 @@ export function createAlbatros(ac) {
   }
 
   // Tail: lozenge tailplane, green fin with a yellow band across fin and rudder.
-  group.add(P.wing({ span: v.tailSpan, chord: v.tailChord, thickness: 0.05, x: -0.55 * L + SPINNER, y: 0.08, tip: 'round', colors: wingColours, part: 'tail', material: wingMat }));
+  const tailPlan = { x: -0.55 * L + SPINNER, y: 0.08, span: v.tailSpan, chord: v.tailChord, dihedral: 0 };
+  const ELEVATOR = { from: 0.08, to: 0.88, depth: 0.4 };
+  group.add(P.wing({ ...tailPlan, thickness: 0.05, tip: 'round', colors: wingColours, part: 'tail', material: wingMat, cuts: [ELEVATOR] }));
+  addSurfaces(group, controls.elevators, tailPlan, ELEVATOR, 0.05, wingColours, wingMat, 'elevator');
   const fh = v.finHeight;
   const fin = [[-0.5 * L, 0.12], [-0.56 * L, fh * 0.85], [-0.6 * L, fh + 0.03], [-0.64 * L, fh * 0.8], [-0.65 * L, 0.2], [-0.645 * L, 0.08]]
     .map(([x, y]) => [x + SPINNER, y]);
-  group.add(P.profile(fin, 0.045, green));
-  const bandX = -0.6 * L + SPINNER;
-  group.add(P.box(0.3, 0.14, 0.05, P.lambert(YELLOW), bandX, fh * 0.45, 0));
+  const rudderHinge = -0.58 * L + SPINNER;
+  const tailSurfaces = P.finAndRudder(fin, rudderHinge, 0.045, green, green);
+  group.add(tailSurfaces.fin);
+  group.add(tailSurfaces.rudder);
+  controls.rudder = tailSurfaces.rudder;
+  const band = P.box(0.3, 0.14, 0.05, P.lambert(YELLOW), -0.3, fh * 0.45, 0); // yellow band across the rudder
+  controls.rudder.add(band);
 
   // Undercarriage.
   const hubY = a.contactY + a.wheelR;
@@ -97,5 +107,5 @@ export function createAlbatros(ac) {
 
   const prop = P.propeller(ac.propeller.diameter, a.propX, P.lambert(0x6b4b2a), { hub: 0.12, chord: 0.18 });
   group.add(prop);
-  return { group, prop };
+  return { group, prop, controls };
 }

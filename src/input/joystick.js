@@ -8,7 +8,7 @@
 // the page has focus, so the connect notice asks for a trigger press.
 
 import { DEFAULT_MAPPING, STORE_KEY, mergeMapping } from './joystickMapping.js';
-import { AxisLearner, HatLearner, choosePad, createMemory, decodeHat, readJoystick } from './joystickMath.js';
+import { AxisLearner, HatLearner, choosePad, createMemory, decodeHat, describePads, readJoystick } from './joystickMath.js';
 
 function load() {
   try {
@@ -23,6 +23,22 @@ function save(mapping) {
     localStorage.setItem(STORE_KEY, JSON.stringify(mapping));
   } catch {
     // storage unavailable (private window): the mapping lasts for this visit only
+  }
+}
+
+const SEEN_KEY = 'dawnPatrol.joystickSeen';
+function seenBefore() {
+  try {
+    return localStorage.getItem(SEEN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function markSeen() {
+  try {
+    localStorage.setItem(SEEN_KEY, '1');
+  } catch {
+    // storage unavailable: no hint memory, nothing else lost
   }
 }
 
@@ -75,6 +91,7 @@ export function attachJoystick(handlers, getPads = () => navigator.getGamepads?.
       if (pad.id !== padId) {
         padId = pad.id;
         memory = createMemory();
+        markSeen();
       }
       if (learner) {
         feedLearner(pad);
@@ -87,6 +104,14 @@ export function attachJoystick(handlers, getPads = () => navigator.getGamepads?.
 
     get pad() {
       return choosePad(getPads());
+    },
+    // True once a stick has been seen in this browser (so a missing one is worth a hint).
+    get seenBefore() {
+      return seenBefore();
+    },
+    // What the browser is showing the page, in words.
+    describe() {
+      return describePads(getPads());
     },
     get mapping() {
       return mapping;

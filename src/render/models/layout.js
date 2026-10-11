@@ -4,7 +4,7 @@
 
 import { gearGeometry } from '../../physics/ground.js';
 import { common } from '../../aircraft/common.js';
-import { strut } from './parts.js';
+import { strut, hinged } from './parts.js';
 
 export function anchors(ac) {
   const L = ac.geometry.length;
@@ -47,6 +47,27 @@ export function wingPlan(ac) {
 
 // Height of a wing's centre line at spanwise position z.
 export const wingY = (w, z) => w.y + Math.abs(z) * Math.tan(w.dihedral);
+
+// Hinged control surfaces (ailerons or elevators), one each side, fitted into
+// the cut-out of a wing (see wing()'s `cuts`). plan: { x, y, span, chord, dihedral };
+// cut: { from, to, depth }. The new group objects are added to `group` and to `list`.
+export function addSurfaces(group, list, plan, cut, thickness, colors, material, part) {
+  const half = plan.span / 2;
+  const zMid = ((cut.from + cut.to) / 2) * half;
+  for (const side of [-1, 1]) {
+    const pivot = hinged({
+      span: (cut.to - cut.from) * half,
+      chord: plan.chord * cut.depth,
+      thickness: thickness * 0.85,
+      hingeX: plan.x - plan.chord / 2 + plan.chord * cut.depth, // the surface is the rear `depth` of the chord
+      y: wingY(plan, zMid),
+      z: side * zMid,
+      colors, material, part, side,
+    });
+    group.add(pivot);
+    list.push(pivot);
+  }
+}
 
 // A pair of interplane struts (front and rear) between two wings at spanwise
 // position z (both sides). Returns meshes.

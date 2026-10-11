@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { Box3, Vector3 } from 'three';
 import { AIRCRAFT_LIST, AIRCRAFT, common } from '../src/aircraft/index.js';
-import { createAircraftMesh } from '../src/render/aircraftMesh.js';
+import { createAircraftMesh, setControlSurfaces } from '../src/render/aircraftMesh.js';
+import { wingPlan } from '../src/render/models/layout.js';
 import { triangleCount } from '../src/render/models/parts.js';
 import { gearGeometry } from '../src/physics/ground.js';
 
@@ -116,5 +117,80 @@ describe('aircraft models', () => {
     };
     expect(bays(AIRCRAFT.spad13)).toEqual({ count: 8, positions: 2 });
     expect(bays(AIRCRAFT.camel)).toEqual({ count: 4, positions: 1 });
+  });
+});
+
+describe('control surfaces', () => {
+  const expectedAilerons = { camel: 4, spad13: 2, dr1: 2, albatros: 2 }; // the Camel had them on both wings
+  const box = (o) => { o.updateMatrixWorld(true); return new Box3().setFromObject(o); };
+  const REST = { pull: 0, roll: 0, yaw: 0 };
+
+  for (const ac of AIRCRAFT_LIST) {
+    describe(ac.name, () => {
+      it('has the right number of ailerons, two elevators and a rudder', () => {
+        const { controls } = build(ac);
+        expect(controls.ailerons).toHaveLength(expectedAilerons[ac.id]);
+        expect(controls.elevators).toHaveLength(2);
+        expect(controls.rudder).toBeTruthy();
+      });
+
+      it('ailerons sit on the trailing edge of the wing, hinged at their leading edge', () => {
+        const m = build(ac);
+        const [upper] = wingPlan(ac);
+        const topAilerons = m.controls.ailerons.filter((a) => Math.abs(a.position.y - upper.y) < 0.05 + Math.abs(a.position.z) * 0.1);
+        expect(topAilerons.length).toBeGreaterThanOrEqual(2);
+        for (const a of topAilerons) {
+          const b = box(a);
+          expect(b.min.x).toBeCloseTo(upper.x - upper.chord / 2, 1); // the rear edge is the wing's trailing edge
+          expect(a.position.x).toBeGreaterThan(b.min.x); // the hinge is ahead of it
+          expect(Math.abs(a.position.z)).toBeGreaterThan(0.4 * upper.span / 2);
+          expect(Math.abs(a.position.z)).toBeLessThan(upper.span / 2);
+        }
+      });
+
+      it('pulling back raises both elevators\' trailing edges; pushing forward lowers them', () => {
+        const m = build(ac);
+        const rest = m.controls.elevators.map((e) => box(e));
+        setControlSurfaces(m, { ...REST, pull: 0.3 });
+        m.controls.elevators.forEach((e, i) => expect(box(e).max.y).toBeGreaterThan(rest[i].max.y + 0.05));
+        setControlSurfaces(m, { ...REST, pull: -0.3 });
+        m.controls.elevators.forEach((e, i) => expect(box(e).min.y).toBeLessThan(rest[i].min.y - 0.05));
+        setControlSurfaces(m, REST);
+        m.controls.elevators.forEach((e, i) => expect(box(e).max.y).toBeCloseTo(rest[i].max.y, 6));
+      });
+
+      it('rolling right raises the right ailerons and lowers the left ones', () => {
+        const m = build(ac);
+        const rest = m.controls.ailerons.map((a) => box(a));
+        setControlSurfaces(m, { ...REST, roll: 0.3 });
+        m.controls.ailerons.forEach((a, i) => {
+          const b = box(a);
+          if (a.userData.side > 0) expect(b.max.y).toBeGreaterThan(rest[i].max.y + 0.03);
+          else expect(b.min.y).toBeLessThan(rest[i].min.y - 0.03);
+        });
+      });
+
+      it('right rudder swings the rudder\'s trailing edge to the right', () => {
+        const m = build(ac);
+        const rest = box(m.controls.rudder);
+        setControlSurfaces(m, { ...REST, yaw: 0.3 });
+        expect(box(m.controls.rudder).max.z).toBeGreaterThan(rest.max.z + 0.1);
+        setControlSurfaces(m, { ...REST, yaw: -0.3 });
+        expect(box(m.controls.rudder).min.z).toBeLessThan(rest.min.z - 0.1);
+      });
+
+      it('does not change the overall size of the model at rest', () => {
+        const m = build(ac);
+        const before = boxOf(m.group);
+        setControlSurfaces(m, REST);
+        const after = boxOf(m.group);
+        expect(after.min.distanceTo(before.min)).toBeLessThan(1e-9);
+        expect(after.max.distanceTo(before.max)).toBeLessThan(1e-9);
+      });
+    });
+  }
+
+  it('does nothing for a model with no control surfaces', () => {
+    expect(() => setControlSurfaces({}, REST)).not.toThrow();
   });
 });

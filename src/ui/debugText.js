@@ -9,6 +9,7 @@ export function debugLines(aircraft, diag, flags = {}) {
   const lines = [`${aircraft.name}`];
   if (flags.crashed) lines.push('CRASHED - press R to restart');
   if (flags.paused) lines.push('PAUSED');
+  if (flags.joystick) lines.push(`joystick  ${flags.joystick}`);
   if (!diag) return lines;
   lines.push(
     `airspeed  ${fixed(toMph(diag.speed))} mph  ${fixed(toKmh(diag.speed))} km/h`,

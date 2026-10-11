@@ -75,6 +75,14 @@ export function choosePad(pads) {
   return list.find((p) => /extreme 3d|logitech|joystick/i.test(p.id ?? '')) ?? list.find((p) => (p.axes?.length ?? 0) >= 4) ?? null;
 }
 
+// A plain-English line about the devices the browser is showing the page,
+// for the on-screen hint and the console when no stick is found.
+export function describePads(pads) {
+  const list = Array.from(pads ?? []).filter(Boolean);
+  if (!list.length) return 'The browser is showing this page no game controllers. Chrome only lists a stick after a button is pressed while this window has focus.';
+  return `The browser shows ${list.length} game controller(s): ${list.map((p) => `"${p.id}" (${p.axes?.length ?? 0} axes, ${p.buttons?.length ?? 0} buttons)`).join('; ')}.`;
+}
+
 // What readJoystick remembers between frames.
 export function createMemory() {
   return { lastSlider: null, held: new Set() };

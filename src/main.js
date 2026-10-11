@@ -19,12 +19,23 @@ import { createDebugOverlay, createHelp, createBanner, createReadout } from './u
 import { debugLines } from './ui/debugText.js';
 import { createTestPanel } from './ui/testPanel.js';
 import { startScenario, SCENARIOS } from './dev/flightScenarios.js';
+import { createWorld } from './world/layout.js';
+import { setControlSurfaces } from './render/aircraftMesh.js';
+import { deflections } from './physics/controls.js';
+import { common } from './aircraft/index.js';
+import { seedFrom } from './world/noise.js';
+import { Terrain } from './render/terrain/terrain.js';
+import { QUALITY_LEVELS, qualityFromUrl } from './render/quality.js';
 
 const canvas = document.getElementById('game');
 const { renderer, scene, camera, ground, groundTile } = createScene(canvas);
 const loop = new FixedStepLoop();
 const sim = new Simulation();
 const rig = new CameraRig(camera);
+// The world: a Western Front landscape from a seed (?seed=), drawn at a quality level (?quality=).
+const params = new URLSearchParams(window.location.search);
+const world = createWorld(params.has('seed') ? seedFrom(params.get('seed')) : undefined);
+const terrain = new Terrain(scene, world, QUALITY_LEVELS[qualityFromUrl(window.location.search)], renderer.capabilities.getMaxAnisotropy());
 const debug = createDebugOverlay();
 const help = createHelp();
 const banner = createBanner();
@@ -130,12 +141,15 @@ function startFlight(index, scenario = null) {
   }
   mouse?.stick.centre();
   rig.reset();
+  terrain.prime(sim.state.position); // the ground around the start, built before the first frame
   paused = false;
 }
 
 startFlight(aircraftIndex);
 
 let lastOverlay = 0;
+let joystickHintAt = performance.now() + 5000; // when to remind the player to wake the joystick
+const JOYSTICK_HINT = 'Joystick not detected: click the game window and press the trigger (Chrome shows it only after a button press)';
 const drawPosition = { x: 0, z: 0 };
 
 // Read the keys and run as many fixed physics steps as realDt calls for.
@@ -167,6 +181,7 @@ function draw(realDt, alpha, now) {
   const { position, quaternion } = sim.interpolate(alpha);
   model.group.position.copy(position);
   model.group.quaternion.copy(quaternion);
+  setControlSurfaces(model, deflections(common, sim.surfaces)); // ailerons, elevators and rudder follow the controls
   const d = sim.diag;
   if (d) model.prop.rotation.x += (d.rpm / 60) * Math.PI * 2 * realDt * 0.15; // slowed so it reads on screen
 
@@ -175,6 +190,7 @@ function draw(realDt, alpha, now) {
   drawPosition.z = Math.round(position.z / groundTile) * groundTile;
   ground.position.set(drawPosition.x, 0, drawPosition.z);
 
+  terrain.update(camera.position, 3); // new ground, a few milliseconds a frame at most
   cockpit.visible = rig.mode === 'cockpit';
   for (const part of model.hideInCockpit) part.visible = !cockpit.visible;
   rig.update(sim.aircraft, position, quaternion, realDt);
@@ -183,7 +199,14 @@ function draw(realDt, alpha, now) {
     lastOverlay = now;
     const message = now < notice.until ? notice.text : '';
     banner.set(sim.crashed ? `CRASHED: ${sim.crashReason} - press R` : paused ? 'PAUSED' : message);
-    if (debug.visible) debug.set(debugLines(sim.aircraft, sim.diag, { crashed: sim.crashed, paused }));
+    const stick = joystick.pad;
+    // A joystick seen before but missing now: remind how to wake it, and say what the browser can see.
+    if (!stick && now > joystickHintAt && joystick.seenBefore) {
+      showNotice(JOYSTICK_HINT, 8000);
+      console.info(`[Dawn Patrol] ${JOYSTICK_HINT}. ${joystick.describe()}`);
+      joystickHintAt = now + 30000;
+    }
+    if (debug.visible) debug.set(debugLines(sim.aircraft, sim.diag, { crashed: sim.crashed, paused, joystick: stick ? stick.id : 'not detected' }));
     if (import.meta.env.DEV && testPanel?.visible) testPanel.update(sim, runner, scenarioLabel);
     if (joystickPanel.visible) joystickPanel.update();
     const heading = attitude(sim.state).heading;
@@ -195,11 +218,22 @@ function draw(realDt, alpha, now) {
 
 let lastTime = performance.now();
 
+let errorsShown = 0;
+function showError(err) {
+  if (errorsShown++ < 3) console.error(err);
+  banner.set(`ERROR: ${err?.message ?? err} (press F12 to see the details)`);
+}
+window.addEventListener('error', (e) => showError(e.error ?? e.message));
+
 function frame(now) {
-  const realDt = Math.min(0.1, (now - lastTime) / 1000);
-  lastTime = now;
-  draw(realDt, update(realDt), now);
-  requestAnimationFrame(frame);
+  requestAnimationFrame(frame); // keep the loop going whatever happens below
+  try {
+    const realDt = Math.min(0.1, (now - lastTime) / 1000);
+    lastTime = now;
+    draw(realDt, update(realDt), now);
+  } catch (err) {
+    showError(err);
+  }
 }
 
 requestAnimationFrame(frame);
@@ -209,6 +243,9 @@ requestAnimationFrame(frame);
 if (import.meta.env.DEV) {
   window.__dawn = {
     sim,
+    terrain,
+    world,
+    renderer,
     keyboard,
     joystick,
     rig,

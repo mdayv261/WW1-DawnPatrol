@@ -2,12 +2,37 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 3 (world and visuals) in progress, checkpoint 1 done
+## Current status: Phase 3 (world and visuals) in progress, checkpoint 2 committed; airfields and more detail (2b) under way
 
 Phases 0, 1 and 2 are signed off (Phase 2 on 11 Oct 2026, including the joystick). Phase 3 has three checkpoints; each is committed only with the product owner's permission:
-1. **Aircraft models** (built, signed off by the product owner: four recognisable models, their sourced schemes, and the hangar page.
-2. **Terrain:** fields, woods, villages, roads, a river and trench lines.
+1. **Aircraft models**: done and committed (48df111); the product owner confirmed all four are recognisable by silhouette.
+2. **Terrain**: done and committed (fields, woods, villages, roads, a river, trench lines). Product owner's feedback: the flying model feels natural and realistic, the terrain looks OK but could be more detailed, and there should be recognisable airfields with white triangle markers, a wind sock and a control tower. That is checkpoint 2b, in progress.
 3. **Sky, clouds, quality levels and the frame-rate pass.**
+
+## Phase 3 checkpoint 2: terrain (D42)
+
+**What was done:**
+- A procedural Western Front on flat ground (`src/world/`), made of pure functions of a seed, with the airfield at the origin and the front line about 4.5 km east.
+- Farmland in strips of nine crops with hedges and furrows; villages with a church and houses (ruined near the front); winding roads with poplars; woods; a river with bridges; trenches (front, support, reserve and communication), barbed wire, shell craters, shattered woods.
+- Drawn in streamed tiles: close 1 km tiles with trenches, trees and buildings, and coarse 2 km tiles farther out; quality levels via `?quality=low|medium|high`.
+- Airfield: a mown field with three hangars, tents and a windsock.
+- 402 tests pass, plus 15 known deviations. Physics is untouched.
+
+**Also added since:** the control surfaces now move (ailerons, elevators, rudder; D43) and the joystick throttle default is axis 6. The hangar page has buttons to test the surfaces.
+
+**How to look at it:**
+1. `npm run dev`, open http://localhost:5173 and start with **1**, then fly north (take off, climb).
+2. Fly **east** (to your right): after about 4.5 km you reach the front line: zigzag trenches, craters and churned ground, with shattered woods.
+3. Fly low over the villages, the poplar roads and the woods; cross the river to the south (about 2.4 km south of the airfield).
+4. Try `http://localhost:5173/?quality=high` and `?quality=low`, and `?seed=somme` for a different world.
+
+**Known issues:**
+- The ground is flat, so there are no hills or valleys (your choice for now).
+- Trees, buildings and towers are visual only: you can fly through them.
+- Far ground beyond the coarse tiles falls back to the old checked pattern under the haze.
+- There are visible seams where the field layout changes direction (every 1.5 km): intended, like different farms.
+- Triangle count is near the budget (about 300-430k at Medium); checkpoint 3 tunes it and adds the on-screen frame-rate readout.
+- Frame rate could not be measured in the automated browser (it throttles hidden tabs), so please check it on your machine; F3 will show it in checkpoint 3.
 
 ## Phase 3 checkpoint 1: aircraft models (D41)
 
@@ -54,7 +79,7 @@ Phases 0, 1 and 2 are signed off (Phase 2 on 11 Oct 2026, including the joystick
 - **Tested on the real stick by the product owner:** it works as expected with the default mapping.
 
 **Known issues:**
-- **Joystick:** Chrome only sees the stick after the trigger is pressed once. If a control is reversed or numbered differently on another computer, use F2 (Learn and Flip).
+- **Joystick:** Chrome only sees the stick after a button is pressed while the game window has focus, and forgets it on every page reload. If a stick was seen before but is missing, a hint appears 5 s after the page loads and the console says what the browser can see; F3 shows the stick's name or "not detected". If the game loop ever fails, the error is shown on screen instead of freezing silently. If a control is reversed or numbered differently on another computer, use F2 (Learn and Flip).
 - A scripted pilot with a joystick-style instant rudder drifted off the runway line at the very end of the roll-out (below 10 m/s), the known tail-dragger ground-loop tendency.
 - Full power with no rudder swings the nose 28-58 degrees left in 3 s, so right rudder is needed. The strength comes from estimated propeller coefficients; judge it by feel.
 - The roll-out needs aileron as well as rudder. Near flying speed the wings carry most of the weight, so a wing that starts to drop keeps going unless you hold the wings level.

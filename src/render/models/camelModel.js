@@ -7,7 +7,7 @@
 import { Group } from 'three';
 import * as P from './parts.js';
 import * as M from './livery.js';
-import { anchors, wingPlan, wingY, strutBay } from './layout.js';
+import { anchors, wingPlan, wingY, strutBay, addSurfaces } from './layout.js';
 
 const BROWN = 0x7a4b2c; // reddish-brown top surfaces and body (estimate, from a 1918 report on B.6290)
 const CREAM = 0xd8ccaa; // wing undersides
@@ -48,8 +48,11 @@ export function createCamel(ac) {
 
   // Wings, struts.
   const [upper, lower] = wingPlan(ac);
+  const controls = { ailerons: [], elevators: [], rudder: null };
+  const AILERON = { from: 0.5, to: 0.97, depth: 0.27 }; // the Camel had ailerons on both wings (S37); sizes are estimates
   for (const w of [upper, lower]) {
-    group.add(P.wing({ ...w, thickness: 0.08, tip: 'square', colors: wingColours, material: wingMat }));
+    group.add(P.wing({ ...w, thickness: 0.08, tip: 'square', colors: wingColours, material: wingMat, cuts: [AILERON] }));
+    addSurfaces(group, controls.ailerons, w, AILERON, 0.08, wingColours, wingMat, 'aileron');
   }
   for (const m of strutBay(upper, lower, 0.52 * (upper.span / 2), wood, { chordwise: 0.1, thin: 0.05 })) group.add(m);
   for (const s of [-1, 1]) { // cabane struts from the fuselage to the upper wing
@@ -58,9 +61,15 @@ export function createCamel(ac) {
   }
 
   // Tail.
-  group.add(P.wing({ span: v.tailSpan, chord: v.tailChord, thickness: 0.05, x: -0.55 * L, y: 0.05, colors: wingColours, part: 'tail', material: wingMat }));
+  const tailPlan = { x: -0.55 * L, y: 0.05, span: v.tailSpan, chord: v.tailChord, dihedral: 0 };
+  const ELEVATOR = { from: 0.08, to: 0.88, depth: 0.4 };
+  group.add(P.wing({ ...tailPlan, thickness: 0.05, colors: wingColours, part: 'tail', material: wingMat, cuts: [ELEVATOR] }));
+  addSurfaces(group, controls.elevators, tailPlan, ELEVATOR, 0.05, wingColours, wingMat, 'elevator');
   const fh = v.finHeight;
-  group.add(P.profile([[-0.5 * L, 0.1], [-0.55 * L, fh * 0.75], [-0.6 * L, fh + 0.05], [-0.645 * L, fh * 0.85], [-0.65 * L, 0.05]], 0.04, body));
+  const tailSurfaces = P.finAndRudder([[-0.5 * L, 0.1], [-0.55 * L, fh * 0.75], [-0.6 * L, fh + 0.05], [-0.645 * L, fh * 0.85], [-0.65 * L, 0.05]], -0.57 * L, 0.04, body, body);
+  if (tailSurfaces.fin) group.add(tailSurfaces.fin);
+  group.add(tailSurfaces.rudder);
+  controls.rudder = tailSurfaces.rudder;
 
   // Undercarriage and tailskid.
   const hubY = a.contactY + a.wheelR;
@@ -94,5 +103,5 @@ export function createCamel(ac) {
 
   const prop = P.propeller(ac.propeller.diameter, a.propX, P.lambert(0x6b4b2a), { hub: 0.14, chord: 0.17 });
   group.add(prop);
-  return { group, prop };
+  return { group, prop, controls };
 }

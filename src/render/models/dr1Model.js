@@ -7,7 +7,7 @@
 import { Group } from 'three';
 import * as P from './parts.js';
 import * as M from './livery.js';
-import { anchors, wingPlan, wingY, singleStrut } from './layout.js';
+import { anchors, wingPlan, wingY, singleStrut, addSurfaces } from './layout.js';
 
 const RED = 0xc4281c; // vermilion (NASM fabric from 425/17)
 const BLACK = 0x111111;
@@ -39,7 +39,10 @@ export function createDr1(ac) {
 
   // Three wings, top first; middle wing at the top of the fuselage.
   const [upper, middle, lower] = wingPlan(ac);
-  for (const w of [upper, middle, lower]) group.add(P.wing({ ...w, thickness: 0.09, tip: 'round', ...redWing() }));
+  const controls = { ailerons: [], elevators: [], rudder: null };
+  const AILERON = { from: 0.55, to: 0.88, depth: 0.28 }; // upper wing only (Herris and Phillips, S39)
+  for (const w of [upper, middle, lower]) group.add(P.wing({ ...w, thickness: 0.09, tip: 'round', ...redWing(), cuts: w === upper ? [AILERON] : [] }));
+  addSurfaces(group, controls.ailerons, upper, AILERON, 0.09, null, wingMat, 'aileron');
   for (const m of [...singleStrut(upper, middle, 1.9, red, { chordwise: 0.12 }), ...singleStrut(middle, lower, 1.9, red, { chordwise: 0.12 })]) group.add(m);
   for (const s of [-1, 1]) { // inverted-V cabane struts to the upper wing
     group.add(P.strut([upper.x + 0.25, middle.y + 0.05, s * 0.18], [upper.x + 0.1, wingY(upper, 0.7) - 0.05, s * 0.75], 0.06, 0.035, red));
@@ -47,9 +50,15 @@ export function createDr1(ac) {
   }
 
   // Tail: tailplane and a comma-shaped rudder (no fixed fin).
-  group.add(P.wing({ span: v.tailSpan, chord: v.tailChord, thickness: 0.05, x: -0.55 * L, y: 0.08, tip: 'round', part: 'tail', ...redWing() }));
+  const tailPlan = { x: -0.55 * L, y: 0.08, span: v.tailSpan, chord: v.tailChord, dihedral: 0 };
+  const ELEVATOR = { from: 0.08, to: 0.88, depth: 0.4 };
+  group.add(P.wing({ ...tailPlan, thickness: 0.05, tip: 'round', part: 'tail', ...redWing(), cuts: [ELEVATOR] }));
+  addSurfaces(group, controls.elevators, tailPlan, ELEVATOR, 0.05, null, wingMat, 'elevator');
   const fh = v.finHeight;
-  group.add(P.profile([[-0.55 * L, 0.1], [-0.58 * L, fh * 0.9], [-0.61 * L, fh + 0.1], [-0.645 * L, fh * 0.9], [-0.65 * L, fh * 0.4], [-0.645 * L, 0.06]], 0.04, red));
+  // No fixed fin: the whole outline is the rudder, hinged at its front edge.
+  const tailSurfaces = P.finAndRudder([[-0.55 * L, 0.1], [-0.58 * L, fh * 0.9], [-0.61 * L, fh + 0.1], [-0.645 * L, fh * 0.9], [-0.65 * L, fh * 0.4], [-0.645 * L, 0.06]], -0.545 * L, 0.04, red, red);
+  group.add(tailSurfaces.rudder);
+  controls.rudder = tailSurfaces.rudder;
 
   // Undercarriage: thin legs and the aerofoil axle.
   const hubY = a.contactY + a.wheelR;
@@ -73,5 +82,5 @@ export function createDr1(ac) {
 
   const prop = P.propeller(ac.propeller.diameter, a.propX, P.lambert(0x6b4b2a), { hub: 0.14, chord: 0.17 });
   group.add(prop);
-  return { group, prop };
+  return { group, prop, controls };
 }

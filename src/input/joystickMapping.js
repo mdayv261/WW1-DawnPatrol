@@ -2,18 +2,24 @@
 // merging a saved (learned) mapping over it. Control settings, not physics.
 //
 // Axis and button numbers are the Gamepad API's raw numbers (0-based). The
-// numbering this stick gets differs between browsers and operating systems, so
-// the defaults below are a best guess that has NOT been checked on the real
-// stick: the F2 joystick screen shows the real numbers and "Learn" changes them.
+// numbering this stick gets differs between browsers and operating systems.
+// The throttle slider (axis 6) and the twist handle (axis 5) were checked on
+// the product owner's stick; the F2 joystick screen shows the real numbers
+// and "Learn" changes any of them.
 
 export const STORE_KEY = 'dawnPatrol.joystick';
+
+// Bumped when a default changes, so a saved copy of the old default is replaced.
+// 2: the throttle slider is on axis 6 on the product owner's Extreme 3D Pro (was 3).
+// 3: the twist handle (rudder) is on axis 5 (was 2).
+export const MAPPING_VERSION = 3;
 
 export const DEFAULT_MAPPING = {
   axes: {
     roll: { index: 0, invert: false, deadzone: 0.05 }, // stick left-right
     pitch: { index: 1, invert: false, deadzone: 0.05 }, // stick forward-back (raw +1 = stick back = pull)
-    yaw: { index: 2, invert: false, deadzone: 0.12 }, // twist handle; wider dead zone, it is noisy
-    throttle: { index: 3, invert: true }, // slider; raw -1 with the slider pushed forward = full throttle
+    yaw: { index: 5, invert: false, deadzone: 0.12 }, // twist handle (axis 5 on the real stick); wider dead zone, it is noisy
+    throttle: { index: 6, invert: true }, // slider (axis 6 on the real stick); raw -1 with the slider pushed forward = full throttle
   },
   expo: 0.3, // 0 = straight response, 1 = very gentle near the centre
   // How the 8-way hat is reported: 'axis' (one axis with 8 values), 'axes2'
@@ -50,7 +56,17 @@ const index = (v, fallback) => (Number.isInteger(v) && v >= 0 && v < 64 ? v : fa
 // corrupt saved value can never break the controls.
 export function mergeMapping(saved) {
   const d = DEFAULT_MAPPING;
-  const s = saved && typeof saved === 'object' ? saved : {};
+  let s = saved && typeof saved === 'object' ? saved : {};
+  // A copy saved before a default was corrected still has the old value
+  // (throttle on axis 3 before version 2, rudder on axis 2 before version 3);
+  // drop just that value so the corrected default applies. Anything the player
+  // chose with Learn is kept.
+  const version = s.version ?? 1;
+  for (const [name, fixedIn, oldIndex] of [['throttle', 2, 3], ['yaw', 3, 2]]) {
+    if (version < fixedIn && s.axes?.[name]?.index === oldIndex) {
+      s = { ...s, axes: { ...s.axes, [name]: { ...s.axes[name], index: undefined } } };
+    }
+  }
   const axes = {};
   for (const name of Object.keys(d.axes)) {
     const a = s.axes?.[name] ?? {};
@@ -62,7 +78,7 @@ export function mergeMapping(saved) {
   }
   const buttons = {};
   for (const name of Object.keys(d.buttons)) buttons[name] = index(s.buttons?.[name], d.buttons[name]);
-  return { axes, expo: num(s.expo, d.expo, 0, 1), hat: mergeHat(s.hat), buttons };
+  return { version: MAPPING_VERSION, axes, expo: num(s.expo, d.expo, 0, 1), hat: mergeHat(s.hat), buttons };
 }
 
 function mergeHat(h) {

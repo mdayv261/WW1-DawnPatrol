@@ -45,3 +45,11 @@ describe('debug overlay text', () => {
     expect(debugLines(AIRCRAFT.camel, null)).toEqual(['Sopwith Camel F.1']);
   });
 });
+
+describe('joystick status in the debug overlay', () => {
+  it('shows what the joystick is, or that it is not detected', () => {
+    expect(debugLines(AIRCRAFT.camel, null, { joystick: 'not detected' }).join('\n')).toContain('joystick  not detected');
+    expect(debugLines(AIRCRAFT.camel, null, { joystick: 'Logitech Extreme 3D Pro' }).join('\n')).toContain('Logitech Extreme 3D Pro');
+    expect(debugLines(AIRCRAFT.camel, null).join('\n')).not.toContain('joystick');
+  });
+});

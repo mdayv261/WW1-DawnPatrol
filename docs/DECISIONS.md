@@ -423,3 +423,38 @@ The outside views show the same numbers as a one-line readout (J). All the physi
 
 **Doubts recorded:** Thetford and Gray say there is now doubt that Richthofen flew a completely scarlet Dr.I. The Dr.I's production wing gaps and stagger are estimates (also in the open research gaps).
 
+## D42. The terrain: a flat, procedural Western Front (Phase 3, checkpoint 2)
+
+**Decision:**
+- **Flat ground, all procedural.** The world is an infinite plane at y = 0 made only of pure functions of a seed and world coordinates (`src/world/`), so any piece can be built on its own and neighbouring pieces always join. The default seed is fixed; `?seed=` changes it. Physics is untouched: the ground contact model still sees a flat field.
+- **Layout.** The airfield is at the origin. The front line runs north-south about 4.5 km east of it and wanders by up to about 1 km. West of it is the Allied side, east the German side. The land is farmland in rotated strips (parcels of about 70-180 m by 140-400 m in nine crop colours, with hedges and furrows), with a village about every 2.5 km joined by winding roads lined with poplars, woods from low-frequency noise, and an east-west river every 9 km with a bridge where a road crosses it.
+- **The front.** Trenches follow the front line either side (front line at 80 m, support line at 260 m, reserve line at 560 m from it), each zigzagging in bays of 24 m, joined by communication trenches. Barbed wire lies 40 m in front of the front lines, craters are densest on the front line and thin out to nothing by 900 m, woods near it are shattered (few trees, mostly stumps), and villages within 1.6 km of it are ruined (no roofs, lower walls).
+- **Drawing.**
+  - Close 1 km tiles carry a 512-pixel ground texture painted from the layout, plus trenches (a low ribbon mesh), wire, trees and buildings (instanced low-poly shapes).
+  - Coarser 2 km tiles reach farther out with a 256-pixel texture and no objects.
+  - Tiles are built in small stages, a few milliseconds a frame, and freed when far away.
+  - Quality levels (`?quality=low|medium|high`) set the radii and texture sizes.
+- **Obstacles are visual only** (product owner's decision): flying through trees and buildings does nothing yet.
+
+**Sources and what is estimated:**
+- **Sourced:**
+  - The trench system had front-line (fire), support and reserve lines joined by communication trenches (IWM, found through a search summary because the page itself returned an access error; LER Museum, "Trench System").
+  - No-man's land was "perhaps 25 to 100 metres across" (LER Museum), which matches the 160 m between the two front lines here only loosely.
+  - Trenches were about two metres wide and deep (LER Museum).
+  - The landscape is farmland and villages, with church towers and canals (Visit Flanders Fields guide).
+- **Estimates (no source found):** the spacings of the support and reserve lines, the zigzag bay length, the wire offset, crater density and size, the village spacing and size, parcel sizes, poplar spacing, and the colour palette. The sources do not give them; they are chosen to look right and are easy to change in `layout.js` and `features.js`.
+- **A simplification to remember:** the Flanders battlefield has gentle relief ("ridges and low rises", the Visit Flanders Fields guide), and the Somme chalk is hillier. Flat ground was the product owner's choice for now.
+
+**Not done yet:** clouds and the final performance pass (checkpoint 3). Tile counts are about 150 draw calls and about 300-430k triangles at Medium, which is near the planned budget; checkpoint 3 tunes it.
+
+## D43. Moving control surfaces; throttle on axis 6 (Phase 3 / Phase 2 follow-ups)
+
+**Control surfaces (product owner's request):** every model has hinged ailerons, two elevators and a rudder that follow the same control positions as the physics (`deflections()` of `sim.surfaces`, so the trim lever moves the elevators too) at the real travel: 25 degrees of elevator and rudder, 20 degrees of aileron.
+- Roll right: the right ailerons go up and the left ones down. Pull back: the elevators' trailing edges go up. Right rudder: the rudder's trailing edge swings right.
+- **Which wings have ailerons:** the Camel on both wings (S37, from Bruce); the Dr.I on the upper wing only (Herris and Phillips, S39); the SPAD and Albatros on the upper wing only (an assumption: no source found). Sizes (about half the wing's outer span, a quarter of the chord; elevators 40% of the tailplane chord) are estimates; the cut-outs in the wings are made in code.
+- The fin is fixed and the rudder hinged; the Dr.I has no fin, so its whole tail outline is the rudder. Markings on a rudder move with it.
+- The hangar page has buttons to move the surfaces to full travel.
+
+**Throttle on axis 6:** the product owner found that the Extreme 3D Pro's slider is axis 6, not axis 3. The default is now 6. A saved mapping from before the change that still has axis 3 for the throttle is corrected automatically (anything chosen with Learn is kept).
+
+**Rudder on axis 5:** the product owner then found that the twist handle is axis 5, not axis 2. Same treatment: the default is 5, and a saved mapping that still has axis 2 for the rudder is corrected automatically (mapping version 3).

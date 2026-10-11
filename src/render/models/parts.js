@@ -110,29 +110,96 @@ const TIPS = {
 // A wing centred on the aircraft: span, chord and thickness in metres, centred
 // at (x, y) (mid-chord at the root), with dihedral (radians) and a rounded or
 // square tip. `colors` colours the six ring points (top, bottom, edges).
-export function wing({ span, chord, thickness = 0.07, dihedral = 0, tip = 'round', x = 0, y = 0, colors = null, material, part = 'wing' }) {
+export function wing({ span, chord, thickness = 0.07, dihedral = 0, tip = 'round', x = 0, y = 0, colors = null, material, part = 'wing', cuts = [] }) {
   const half = span / 2;
-  // Stations from the root outward (fraction of the half-span, chord left),
-  // then mirrored for the other side.
-  const side = [[0, 1], [0.3, 1], [0.6, 1], ...[...TIPS[tip]].reverse()];
-  const stations = [...side.slice(1).reverse().map(([f, c]) => [-f, c]), ...side];
-  const rings = stations.map(([f, c]) => {
+  // Trailing-edge cut-outs for hinged surfaces: { from, to (fractions of the
+  // half-span), depth (fraction of the chord removed) }. Each side of the
+  // wing is cut the same way.
+  const depthAt = (f) => cuts.reduce((d, c) => (f > c.from && f < c.to ? Math.max(d, c.depth) : d), 0);
+  // Stations from the root outward: [fraction of half-span, chord left, cut depth].
+  const fractions = [...new Set([0, 0.3, 0.6, ...TIPS[tip].map(([f]) => f), ...cuts.flatMap((c) => [c.from, c.to])])].sort((a, b) => a - b);
+  const chordAt = (f) => {
+    const tips = [[0.6, 1], ...[...TIPS[tip]].reverse()];
+    for (let i = 0; i < tips.length - 1; i++) {
+      if (f >= tips[i][0] && f <= tips[i + 1][0]) {
+        const t = (f - tips[i][0]) / (tips[i + 1][0] - tips[i][0] || 1);
+        return tips[i][1] + (tips[i + 1][1] - tips[i][1]) * t;
+      }
+    }
+    return 1;
+  };
+  const side = [];
+  for (const f of fractions) {
+    const before = depthAt(f - 1e-6);
+    const after = depthAt(f + 1e-6);
+    side.push([f, chordAt(f), before]);
+    if (after !== before) side.push([f, chordAt(f), after]);
+  }
+  // Mirror to the other wing: reversed order, so each step in a cut is met in the right order.
+  const stations = [...side.slice(1).reverse().map(([f, c, d]) => [-f, c, d]), ...side];
+  const rings = stations.map(([f, c, cut]) => {
     const z = f * half;
-    const ch = chord * c;
+    const full = chord * c;
+    const ch = full * (1 - cut); // chord left after the cut
+    const mid = x + (full * cut) / 2; // the leading edge stays put
     const cy = y + Math.abs(z) * Math.tan(dihedral);
     const t = thickness;
     return [
-      [x + ch * 0.5, cy, z], // leading edge
-      [x + ch * 0.25, cy + t * 0.5, z],
-      [x - ch * 0.25, cy + t * 0.35, z],
-      [x - ch * 0.5, cy, z], // trailing edge
-      [x - ch * 0.25, cy - t * 0.3, z],
-      [x + ch * 0.25, cy - t * 0.45, z],
+      [mid + ch * 0.5, cy, z], // leading edge
+      [mid + ch * 0.25, cy + t * 0.5, z],
+      [mid - ch * 0.25, cy + t * 0.35, z],
+      [mid - ch * 0.5, cy, z], // trailing edge
+      [mid - ch * 0.25, cy - t * 0.3, z],
+      [mid + ch * 0.25, cy - t * 0.45, z],
     ];
   });
   const mesh = new Mesh(loft(rings, { colors }), material);
   mesh.userData = { part, span, chord }; // for the tests
   return mesh;
+}
+
+// A hinged control surface (aileron, elevator): a small wing section whose
+// group origin is on the hinge line (the leading edge of the surface), so
+// rotating the group about Z swings the trailing edge up or down.
+// span and chord are the surface's own; (hingeX, y, z) is the middle of the hinge.
+export function hinged({ span, chord, thickness, hingeX, y, z, colors, material, part, side = 1 }) {
+  const pivot = new Group();
+  pivot.position.set(hingeX, y, z);
+  pivot.add(wing({ span, chord, thickness, tip: 'square', x: -chord / 2, y: 0, colors, material, part }));
+  pivot.userData = { part, side };
+  return pivot;
+}
+
+// Clip a polygon of [x, y] points to one side of the vertical line x = hingeX.
+export function clipPolygon(points, hingeX, keepFront) {
+  const inside = (p) => (keepFront ? p[0] >= hingeX : p[0] <= hingeX);
+  const out = [];
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i];
+    const b = points[(i + 1) % points.length];
+    if (inside(a)) out.push(a);
+    if (inside(a) !== inside(b)) {
+      const t = (hingeX - a[0]) / (b[0] - a[0]);
+      out.push([hingeX, a[1] + (b[1] - a[1]) * t]);
+    }
+  }
+  return out;
+}
+
+// A fin and rudder from one side-profile outline, split at x = hingeX: the
+// fixed fin ahead of it and the rudder behind, as a group hinged about the
+// vertical line through (hingeX, 0). With no fin (the Dr.I) pass a hingeX at
+// or ahead of the front of the outline.
+export function finAndRudder(points, hingeX, thickness, finMaterial, rudderMaterial) {
+  const frontPart = clipPolygon(points, hingeX, true);
+  const rearPart = clipPolygon(points, hingeX, false);
+  const fin = frontPart.length >= 3 ? profile(frontPart, thickness, finMaterial) : null;
+  if (fin) fin.userData.part = 'fin';
+  const rudder = new Group();
+  rudder.position.set(hingeX, 0, 0);
+  rudder.add(profile(rearPart.map(([x, y]) => [x - hingeX, y]), thickness, rudderMaterial));
+  rudder.userData.part = 'rudder';
+  return { fin, rudder };
 }
 
 // A flat side-profile shape (points in x, y) extruded across the aircraft:

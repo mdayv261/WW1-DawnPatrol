@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { shapeAxis, sliderToThrottle, decodeHat, choosePad, createMemory, readJoystick, AxisLearner, HatLearner } from '../src/input/joystickMath.js';
+import { shapeAxis, sliderToThrottle, decodeHat, choosePad, describePads, createMemory, readJoystick, AxisLearner, HatLearner } from '../src/input/joystickMath.js';
 import { DEFAULT_MAPPING, mergeMapping } from '../src/input/joystickMapping.js';
 import { mixJoystick, MouseStick } from '../src/input/mouse.js';
 import { InputMapper } from '../src/input/inputMapper.js';
@@ -17,6 +17,8 @@ function fakePad({ axes = [0, 0, 0, 0], buttons = [], id = 'Logitech Extreme 3D 
 const withAxis = (pad, i, v) => ({ ...pad, axes: pad.axes.map((a, j) => (j === i ? v : a)) });
 const withButtons = (pad, down) => ({ ...pad, buttons: pad.buttons.map((b, i) => ({ pressed: down.includes(i) })) });
 const M = mergeMapping(null);
+const T = M.axes.throttle.index; // the throttle slider axis (6 on the product owner's stick)
+const Y = M.axes.yaw.index; // the twist handle axis (5 on the product owner's stick)
 
 describe('shapeAxis', () => {
   it('is exactly zero inside the dead zone, so a resting stick never drifts', () => {
@@ -99,7 +101,7 @@ describe('choosePad', () => {
 
 describe('readJoystick', () => {
   it('maps the stick to roll, pitch and rudder, stick back being pull', () => {
-    const joy = readJoystick(fakePad({ axes: [1, 1, -1, 0] }), M, createMemory());
+    const joy = readJoystick(withAxis(fakePad({ axes: [1, 1] }), Y, -1), M, createMemory());
     expect(joy.roll).toBeCloseTo(1); // right
     expect(joy.pull).toBeCloseTo(1); // back
     expect(joy.yaw).toBeCloseTo(-1); // twist left
@@ -110,17 +112,17 @@ describe('readJoystick', () => {
   });
   it('the slider does not take over the throttle at the start, wherever it sits', () => {
     const mem = createMemory();
-    expect(readJoystick(fakePad({ axes: [0, 0, 0, -1] }), M, mem).throttle).toBeNull(); // sitting at full
-    expect(readJoystick(fakePad({ axes: [0, 0, 0, -1] }), M, mem).throttle).toBeNull();
+    expect(readJoystick(withAxis(fakePad(), T, -1), M, mem).throttle).toBeNull(); // sitting at full
+    expect(readJoystick(withAxis(fakePad(), T, -1), M, mem).throttle).toBeNull();
   });
   it('the slider takes over once moved, reports steps of 3% or more, and leaves the keyboard alone otherwise', () => {
     const mem = createMemory();
-    readJoystick(fakePad({ axes: [0, 0, 0, 1] }), M, mem); // idle position
-    expect(readJoystick(fakePad({ axes: [0, 0, 0, 0.99] }), M, mem).throttle).toBeNull(); // jitter
-    const moved = readJoystick(fakePad({ axes: [0, 0, 0, 0] }), M, mem);
+    readJoystick(withAxis(fakePad(), T, 1), M, mem); // idle position
+    expect(readJoystick(withAxis(fakePad(), T, 0.99), M, mem).throttle).toBeNull(); // jitter
+    const moved = readJoystick(withAxis(fakePad(), T, 0), M, mem);
     expect(moved.throttle).toBeCloseTo(0.5);
-    expect(readJoystick(fakePad({ axes: [0, 0, 0, 0] }), M, mem).throttle).toBeNull(); // held still
-    expect(readJoystick(fakePad({ axes: [0, 0, 0, -1] }), M, mem).throttle).toBe(1);
+    expect(readJoystick(withAxis(fakePad(), T, 0), M, mem).throttle).toBeNull(); // held still
+    expect(readJoystick(withAxis(fakePad(), T, -1), M, mem).throttle).toBe(1);
   });
   it('the trigger fires while held; other buttons count once per press', () => {
     const mem = createMemory();
@@ -147,6 +149,26 @@ describe('readJoystick', () => {
 });
 
 describe('saved mapping', () => {
+  it('the twist handle defaults to axis 5, and an old saved default (axis 2) is replaced but a deliberate choice is kept', () => {
+    expect(M.axes.yaw.index).toBe(5);
+    const old = { version: 2, axes: { yaw: { index: 2, invert: true, deadzone: 0.2 }, throttle: { index: 6, invert: true } } };
+    expect(mergeMapping(old).axes.yaw).toMatchObject({ index: 5, invert: true, deadzone: 0.2 });
+    expect(mergeMapping(old).axes.throttle.index).toBe(6);
+    expect(mergeMapping({ version: 3, axes: { yaw: { index: 2 } } }).axes.yaw.index).toBe(2); // learned on purpose
+    const veryOld = { axes: { yaw: { index: 2 }, throttle: { index: 3 } } }; // saved before either fix
+    expect(mergeMapping(veryOld).axes.yaw.index).toBe(5);
+    expect(mergeMapping(veryOld).axes.throttle.index).toBe(6);
+    expect(mergeMapping(null).version).toBe(3);
+  });
+
+  it('the throttle slider defaults to axis 6, and an old saved default (axis 3) is replaced but a deliberate choice is kept', () => {
+    expect(M.axes.throttle.index).toBe(6);
+    const old = { axes: { roll: { index: 0, invert: false }, throttle: { index: 3, invert: true } } }; // saved before version 2
+    expect(mergeMapping(old).axes.throttle.index).toBe(6);
+    expect(mergeMapping(old).axes.throttle.invert).toBe(true);
+    expect(mergeMapping({ version: 2, axes: { throttle: { index: 3, invert: false } } }).axes.throttle.index).toBe(3); // learned on purpose
+    expect(mergeMapping({ axes: { throttle: { index: 4 } } }).axes.throttle.index).toBe(4);
+  });
   it('fills in defaults, keeps good values and ignores bad ones', () => {
     const m = mergeMapping({ axes: { roll: { index: 4, invert: true }, pitch: { index: 'x' } }, expo: 9, buttons: { fire: 5, camera: -2 }, hat: { type: 'buttons', up: 1, down: 2, left: 3, right: 4 } });
     expect(m.axes.roll).toMatchObject({ index: 4, invert: true, deadzone: DEFAULT_MAPPING.axes.roll.deadzone });
@@ -239,5 +261,16 @@ describe('throttle and trim from the joystick', () => {
     expect(m.rudderKeyHeld()).toBe(false);
     m.press('KeyE');
     expect(m.rudderKeyHeld()).toBe(true);
+  });
+});
+
+describe('describePads', () => {
+  it('says plainly when the browser shows no controllers, and lists them when it does', () => {
+    expect(describePads([])).toMatch(/no game controllers/);
+    expect(describePads([null, undefined])).toMatch(/no game controllers/);
+    const text = describePads([fakePad()]);
+    expect(text).toContain('Extreme 3D Pro');
+    expect(text).toContain('10 axes');
+    expect(text).toContain('12 buttons');
   });
 });

@@ -6,7 +6,7 @@
 import { Group } from 'three';
 import * as P from './parts.js';
 import * as M from './livery.js';
-import { anchors, wingPlan, wingY, strutBay } from './layout.js';
+import { anchors, wingPlan, wingY, strutBay, addSurfaces } from './layout.js';
 
 const GREEN = 0x56633a; // upper surfaces and body (Smithsonian: green and brown camouflage)
 const GREY = 0xb3b6ae; // undersurfaces (Smithsonian: gray)
@@ -45,7 +45,11 @@ export function createSpad(ac) {
   group.add(P.nose(P.box(0.5, 0.02, 0.36, dark, -0.03 * L, D / 2 - 0.005, 0))); // cockpit opening
 
   const [upper, lower] = wingPlan(ac);
-  for (const w of [upper, lower]) group.add(P.wing({ ...w, thickness: 0.08, tip: 'round', colors: wingColours, material: wingMat }));
+  const controls = { ailerons: [], elevators: [], rudder: null };
+  const AILERON = { from: 0.5, to: 0.88, depth: 0.27 }; // upper wing only (an assumption: no source found)
+  group.add(P.wing({ ...upper, thickness: 0.08, tip: 'round', colors: wingColours, material: wingMat, cuts: [AILERON] }));
+  addSurfaces(group, controls.ailerons, upper, AILERON, 0.08, wingColours, wingMat, 'aileron');
+  group.add(P.wing({ ...lower, thickness: 0.08, tip: 'round', colors: wingColours, material: wingMat }));
   const half = upper.span / 2;
   for (const f of [0.3, 0.68]) for (const m of strutBay(upper, lower, f * half, wood, { spread: 0.2, chordwise: 0.1 })) group.add(m);
   for (const s of [-1, 1]) {
@@ -54,9 +58,16 @@ export function createSpad(ac) {
   }
 
   // Tail: rounded tailplane, fin and rudder.
-  group.add(P.wing({ span: v.tailSpan, chord: v.tailChord, thickness: 0.05, x: -0.55 * L, y: 0.05, colors: wingColours, part: 'tail', material: wingMat }));
+  const tailPlan = { x: -0.55 * L, y: 0.05, span: v.tailSpan, chord: v.tailChord, dihedral: 0 };
+  const ELEVATOR = { from: 0.08, to: 0.88, depth: 0.4 };
+  group.add(P.wing({ ...tailPlan, thickness: 0.05, colors: wingColours, part: 'tail', material: wingMat, cuts: [ELEVATOR] }));
+  addSurfaces(group, controls.elevators, tailPlan, ELEVATOR, 0.05, wingColours, wingMat, 'elevator');
   const fh = v.finHeight;
-  group.add(P.profile([[-0.5 * L, 0.1], [-0.54 * L, fh * 0.8], [-0.59 * L, fh + 0.02], [-0.635 * L, fh * 0.85], [-0.65 * L, 0.4], [-0.645 * L, 0.05]], 0.04, body));
+  const rudderHinge = -0.56 * L;
+  const tailSurfaces = P.finAndRudder([[-0.5 * L, 0.1], [-0.54 * L, fh * 0.8], [-0.59 * L, fh + 0.02], [-0.635 * L, fh * 0.85], [-0.65 * L, 0.4], [-0.645 * L, 0.05]], rudderHinge, 0.04, body, body);
+  if (tailSurfaces.fin) group.add(tailSurfaces.fin);
+  group.add(tailSurfaces.rudder);
+  controls.rudder = tailSurfaces.rudder;
 
   const hubY = a.contactY + a.wheelR;
   for (const s of [-1, 1]) {
@@ -85,11 +96,11 @@ export function createSpad(ac) {
     const name = M.text('Smith', 0.55, 0.14, '#6b3f1e');
     if (name) group.add(M.onSide(name, s, -0.34 * L, -0.03, sideZ(-0.34 * L)));
     [0x1f3a7a, 0xf2f2f2, 0xb02020].forEach((c, i) => {
-      group.add(M.onSide(M.rect(0.07, fh * 0.7, c), s, -0.615 * L + i * 0.07, 0.05 + fh * 0.45, 0.025));
+      controls.rudder.add(M.onSide(M.rect(0.07, fh * 0.7, c), s, -0.615 * L + i * 0.07 - rudderHinge, 0.05 + fh * 0.45, 0.025)); // moves with the rudder
     });
   }
 
   const prop = P.propeller(ac.propeller.diameter, a.propX, P.lambert(0x6b4b2a), { hub: 0.14, chord: 0.18 });
   group.add(prop);
-  return { group, prop };
+  return { group, prop, controls };
 }

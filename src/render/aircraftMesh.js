@@ -18,5 +18,17 @@ export function createAircraftMesh(ac) {
   const model = build(ac);
   const hideInCockpit = [];
   model.group.traverse((o) => { if (o.userData?.cockpitHide) hideInCockpit.push(o); });
-  return { ...model, hideInCockpit };
+  return { ...model, hideInCockpit, controls: model.controls };
+}
+
+// Move the model's control surfaces to the positions the physics has them at.
+// defl: { pull, roll, yaw } in radians (physics/controls.js deflections()):
+// pull = elevator trailing edge up; roll = right aileron trailing edge up
+// (the left one goes down); yaw = rudder trailing edge to the right.
+export function setControlSurfaces(model, defl) {
+  const c = model.controls;
+  if (!c) return;
+  for (const a of c.ailerons) a.rotation.z = -a.userData.side * defl.roll;
+  for (const e of c.elevators) e.rotation.z = -defl.pull;
+  if (c.rudder) c.rudder.rotation.y = defl.yaw;
 }
