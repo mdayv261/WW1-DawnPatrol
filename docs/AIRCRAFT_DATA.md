@@ -64,6 +64,9 @@ All values are stored in SI units. The original figure and unit from the source 
 | S34 | H. Cowin, Aviation Pioneers (Osprey): Camel handling, as transcribed on flyingmachines.ru | https://flyingmachines.ru/Site2/Crafts/Craft25445.htm | Reference book (transcription) |
 | S35 | Old Rhinebeck Aerodrome, Sopwith Camel (reproduction, 160 hp Gnome) | https://oldrhinebeck.org/sopwith-camel/ | Museum page |
 | S36 | flyingmachines.ru Camel page, specification section (book not named on the page): wheel track | https://flyingmachines.ru/Site2/Crafts/Craft25445.htm | Transcription, source book not identified |
+| S37 | flyingmachines.ru Camel page, specification table (Mason / King / Flight 1918 as quoted): chord, gap, stagger, dihedral, tailplane span and area; Thetford caption on Barker's B6313; German translation of Flight, Sept 1918, on B.6290 colours | https://flyingmachines.ru/Site2/Crafts/Craft25445.htm | Transcription of books and a 1918 journal |
+| S38 | Aeronautical conservancy / NASM, fabric from Fokker Dr.I 425/17 (Richthofen's aircraft): paint layers | https://www.aeroconservancy.com/fokker-dr-i-425-17-fabric-richthofe | Museum conservation record |
+| S39 | flyingmachines.ru Fokker Dr.I page: Thetford and Gray (doubt that Richthofen flew an all-scarlet Dr.I; serials), Herris and Phillips and Weyl (wing chord, markings of early aircraft) | https://flyingmachines.ru/Site2/Crafts/Craft25493.htm | Transcription of books |
 
 Transcriptions on flyingmachines.ru reproduce the named books' tables; values from them are rated medium because the transcription itself was not checked against the printed book.
 
@@ -114,6 +117,15 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Three-point ground attitude (`gear.groundAngle`) | 0.192 | rad | about 11 degrees | ASSUMPTION | estimate | Not found. Typical nose-up angle of a WWI tail-dragger at rest. |
 | Pilot's eye behind the CG (`cockpit.eyeBehind`) | 0.63 | m | — | ASSUMPTION | estimate | Not found. About 11% of the length behind the CG; used only to place the cockpit camera. |
 | Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.6 | m | — | ASSUMPTION | estimate | Not found. Sitting eye height above the fuselage centre line; camera only. |
+| Wing chord (`visual.chord`) | 1.37 | m | 4 ft 6 in | S32, S37 | medium | Both wings. S37 (Flight, 1918, quoted on the page) gives 1.37 m. |
+| Wing stagger (`visual.stagger`) | 0.457 | m | 18 in | S32, S37 | medium | Upper wing ahead of the lower, at the fuselage. |
+| Lower wing dihedral (`visual.lowerDihedral`) | 0.0873 | rad | 5 degrees | S37 | medium | The upper wing has no dihedral (S37). |
+| Tailplane span (`visual.tailSpan`) | 2.5 | m | 8 ft 2.5 in | S37 | medium | One source (the page's specification table). |
+| Tailplane chord (`visual.tailChord`) | 0.52 | m | tailplane 14 sq ft | S37 | medium | Derived: tailplane area 14 sq ft (1.30 m²) divided by its span. |
+| Fin and rudder height (`visual.finHeight`) | 0.85 | m | — | ASSUMPTION | estimate | S37 gives only the areas (fin 3 sq ft, rudder 4.9 sq ft, together 0.73 m²). 0.85 m assumes a mean chord near 0.85 m. |
+| Greatest fuselage depth (`visual.fuselageDepth`) | 1.0 | m | — | ASSUMPTION | estimate | No source gives the fuselage size. Scaled from the cockpit and the 1.0 m rotary engine (S11); camera and looks only. |
+| Greatest fuselage width (`visual.fuselageWidth`) | 0.62 | m | — | ASSUMPTION | estimate | Not found. Chosen narrower than the engine cowling and wide enough for a pilot's shoulders. |
+| Engine cowling diameter (`visual.cowlingDiameter`) | 1.1 | m | — | ASSUMPTION | estimate | The Clerget 9B is 1.021 m across (S11); 1.1 m adds an assumed cowling thickness. |
 
 ## SPAD S.XIII (Hispano-Suiza 8Be)
 
@@ -160,6 +172,14 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Three-point ground attitude (`gear.groundAngle`) | 0.192 | rad | about 11 degrees | ASSUMPTION | estimate | Not found. Typical nose-up angle of a WWI tail-dragger at rest. |
 | Pilot's eye behind the CG (`cockpit.eyeBehind`) | 0.69 | m | — | ASSUMPTION | estimate | Not found. About 11% of the length behind the CG; used only to place the cockpit camera. |
 | Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.6 | m | — | ASSUMPTION | estimate | Not found. Sitting eye height above the fuselage centre line; camera only. |
+| Wing chord (`visual.chord`) | 1.4 | m | 1.400 m | S17 | medium | Both wings, from the McCook Field test aircraft (S17). |
+| Wing stagger (`visual.stagger`) | 0.4 | m | — | ASSUMPTION | estimate | S17 gives the stagger only as an angle of 1.25 degrees, which is not a length. 0.4 m is assumed from drawings of the type; model shape only. |
+| Tailplane span (`visual.tailSpan`) | 2.6 | m | — | ASSUMPTION | estimate | Not found. About a third of the wingspan, as on the other three types. |
+| Tailplane chord (`visual.tailChord`) | 0.7 | m | — | ASSUMPTION | estimate | Not found. Assumed from the span and a typical tailplane area. |
+| Fin and rudder height (`visual.finHeight`) | 0.8 | m | — | ASSUMPTION | estimate | Not found. Assumed from the overall height of 2.41 m (S2). |
+| Greatest fuselage depth (`visual.fuselageDepth`) | 0.9 | m | — | ASSUMPTION | estimate | Not found. Sized from the V8 engine and a seated pilot. |
+| Greatest fuselage width (`visual.fuselageWidth`) | 0.62 | m | — | ASSUMPTION | estimate | Not found. Chosen to fit a seated pilot's shoulders. |
+| Engine cowling diameter (`visual.cowlingDiameter`) | 0.8 | m | — | ASSUMPTION | estimate | Not found. A V8 is a narrow engine, so a narrow nose; sized to the engine block width. |
 
 ## Fokker Dr.I (Oberursel UR.II)
 
@@ -205,6 +225,14 @@ No original Dr.I survives (S6), so all geometry and weights come from reproducti
 | Three-point ground attitude (`gear.groundAngle`) | 0.192 | rad | about 11 degrees | ASSUMPTION | estimate | Not found. Typical nose-up angle of a WWI tail-dragger at rest. |
 | Pilot's eye behind the CG (`cockpit.eyeBehind`) | 0.63 | m | — | ASSUMPTION | estimate | Not found. About 11% of the length behind the CG; used only to place the cockpit camera. |
 | Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.6 | m | — | ASSUMPTION | estimate | Not found. Sitting eye height above the fuselage centre line; camera only. |
+| Wing chord (`visual.chord`) | 1.0 | m | 980 mm, then 1000 mm | S39 | medium | All three wings. The chord was changed from 980 mm (prototype) to 1000 mm for production aircraft (S39). |
+| Wing stagger (`visual.stagger`) | 0.15 | m | — | ASSUMPTION | estimate | The production Dr.I stagger was not found; the MAG-Fokker 90.03 (a different machine) had 0.23 to 0.26 m (S28). A smaller value is used for the shorter Dr.I. |
+| Tailplane span (`visual.tailSpan`) | 2.6 | m | — | ASSUMPTION | estimate | Not found. About a third of the 7.19 m wingspan, as on the other types. |
+| Tailplane chord (`visual.tailChord`) | 0.7 | m | — | ASSUMPTION | estimate | Not found. Assumed from the span and a typical tailplane area. |
+| Rudder height (`visual.finHeight`) | 0.9 | m | — | ASSUMPTION | estimate | Not found. The Dr.I has no fixed fin, only a comma-shaped rudder (S39); the height is assumed from the overall height of 2.95 m. |
+| Greatest fuselage depth (`visual.fuselageDepth`) | 0.85 | m | — | ASSUMPTION | estimate | Not found. A short, slab-sided fuselage (S39) sized to a seated pilot. |
+| Greatest fuselage width (`visual.fuselageWidth`) | 0.62 | m | — | ASSUMPTION | estimate | Not found. Chosen to fit a seated pilot's shoulders. |
+| Engine cowling diameter (`visual.cowlingDiameter`) | 1.04 | m | engine 960 mm | ASSUMPTION | estimate | The Oberursel UR.II is 960 mm across (S39); 1.04 m adds an assumed cowling thickness. |
 
 ## Albatros D.V (Mercedes D.IIIa)
 
@@ -246,6 +274,36 @@ Dimensions and weights come from the Smithsonian's original D.Va (D.7161/17), wh
 | Three-point ground attitude (`gear.groundAngle`) | 0.192 | rad | about 11 degrees | ASSUMPTION | estimate | Not found. Typical nose-up angle of a WWI tail-dragger at rest. |
 | Pilot's eye behind the CG (`cockpit.eyeBehind`) | 0.8 | m | — | ASSUMPTION | estimate | Not found. About 11% of the length behind the CG; used only to place the cockpit camera. |
 | Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.6 | m | — | ASSUMPTION | estimate | Not found. Sitting eye height above the fuselage centre line; camera only. |
+| Upper wing chord (`visual.chord`) | 1.49 | m | 1.49 m (D.Va) | S25 | medium | Herris: 1.5 m for the D.V and 1.49 m for the D.Va; the D.Va figure is used, as the dimensions follow the Smithsonian D.Va (S3). |
+| Lower wing chord (`visual.lowerChord`) | 1.0 | m | 1.0 m | S25 | medium | The narrow lower wing makes the Albatros a sesquiplane (S3, S25). |
+| Wing stagger (`visual.stagger`) | 0.3 | m | — | ASSUMPTION | estimate | Not found for the D.V. Assumed from the small stagger of the V-strutter type. |
+| Tailplane span (`visual.tailSpan`) | 3.0 | m | — | ASSUMPTION | estimate | Not found. About a third of the 9.0 m wingspan, as on the other types. |
+| Tailplane chord (`visual.tailChord`) | 0.85 | m | — | ASSUMPTION | estimate | Not found. Assumed from the span and a typical tailplane area. |
+| Fin and rudder height (`visual.finHeight`) | 0.9 | m | — | ASSUMPTION | estimate | Not found. Assumed from the overall height of 2.8 m (S3). |
+| Greatest fuselage depth (`visual.fuselageDepth`) | 1.0 | m | — | ASSUMPTION | estimate | Not found. The D.V fuselage is a deep elliptical section (S25); the depth is assumed to suit a pilot seated inside it. |
+| Greatest fuselage width (`visual.fuselageWidth`) | 0.7 | m | — | ASSUMPTION | estimate | Not found. Assumed from the Mercedes D.IIIa engine width and the elliptical section (S25). |
+| Engine cowling diameter (`visual.cowlingDiameter`) | 0.78 | m | — | ASSUMPTION | estimate | Not found. A six-cylinder inline is a narrow engine; sized to the Mercedes block and the large spinner. |
+
+## Liveries (Phase 3)
+
+Schemes chosen by the product owner on 11 Oct 2026 from the sourced candidates. The model shows the parts the sources describe; anything they do not describe is marked as an estimate. Colours are drawn in code (no copyrighted artwork) and simplified: the Albatros lozenge fabric is one blended colour, and camouflage patterns are one colour per surface.
+
+| Aircraft | Element | What the model shows | Source | Confidence | Notes |
+|---|---|---|---|---|---|
+| Camel (Barker's B6313, No. 139 Sqn) | Fuselage markings | Seven white stripes aft of the roundel on each side | S37 | medium | Thetford caption: Barker's Camel "carried seven, rather than the unit's normal four fuselage white stripes aft of the roundel". The aircraft was repainted several times; this is one stage of its life. |
+| Camel | Serial | "B6313" on the rear fuselage | S37 | medium | Photo captions identify the aircraft as B6313 of 139 Squadron. |
+| Camel | Body and top surface colour | Reddish-brown | S37 | estimate | Taken from a 1918 report on a different Camel, B.6290 ("top surface, as well as the body fabric, painted a redish brown"). Not stated for B6313 itself. |
+| Camel | Wing undersides | Cream | S37 | estimate | Same 1918 report on B.6290 ("cream coloured underneath"); not stated for B6313. |
+| Camel | Roundels | Blue, white and red-centre roundels on the fuselage sides, upper wing top and lower wing underside | S1 | estimate | S1 shows round British insignia but does not describe their colours or positions. The standard RAF colour order and the usual wing positions are assumed. |
+| Camel | Cowling | Dark grey | ASSUMPTION | estimate | No source describes the cowling colour of B6313. |
+| SPAD (Brooks's "Smith IV", 22nd Aero Sqn) | Colours | Green upper surfaces and body, grey undersurfaces | S2 | high | Smithsonian: "Green and brown camouflage finish upper surfaces. Gray and gray-green under surfaces." The brown patches are not drawn. |
+| SPAD | Fuselage markings | Blue shooting-star roundel, red "20", "Smith" in brown, small black cross badges | S2 | medium | From the Smithsonian gallery captions: "Blue shooting star roundel and '20' in red lettering on body", "'Smith' in brown lettering", "small square black cross badges on body". The star's shape and all positions are estimates. |
+| SPAD | Tail | Red, white and blue stripes on the rudder | S2 | medium | "Red, white, and blue stripes and black numbers on tail". The stripe order and the black numbers are not drawn. |
+| Fokker Dr.I (Richthofen's 425/17) | Colour | Vermilion red overall | S38 | medium | The fabric from 425/17 at the Smithsonian is vermilion red over turquoise over light-blue dope. Which surfaces were red is not stated, and S39 (Thetford and Gray) says there is doubt that Richthofen ever flew a completely scarlet Dr.I. Painted overall red as the product owner chose. |
+| Fokker Dr.I | Crosses | Black crosses with a white border on the fuselage sides, upper wing and lower wing | ASSUMPTION | estimate | No source describes the cross style or positions on 425/17. |
+| Albatros D.Va (7161/17, Jasta 46) | Colours | Natural wood fuselage; green nose and spinner; green fin with a yellow band | S3 | medium | Smithsonian: green nose, natural wood fuselage, tail with green and yellow stripes (the caption mentioning a "yellow body" conflicts). The exact stripe layout is an estimate. |
+| Albatros D.Va | Wings and tailplane | One blended mauve-green lozenge colour on top, pale underneath | S3, S25 | estimate | S3: multicolour lozenge camouflage; S25: mauve and dark green. The pattern is not drawn; the colour is a blend. |
+| Albatros D.Va | Crosses and name | Black crosses on the wings (and, as an estimate, the fuselage sides), "Stropp" in black on the fuselage | S3 | medium | Smithsonian: black crosses appear on the wings; personal marking "Stropp" in black lettering. The fuselage crosses are assumed. |
 
 ## Common flight-model parameters
 

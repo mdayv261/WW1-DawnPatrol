@@ -51,6 +51,17 @@ export const spad13 = {
     eyeBehind: 0.69, // m behind the centre of gravity
     eyeAbove: 0.6, // m above the centre of gravity
   },
+  // Shape for the 3D model (rendering only), m unless noted. M = sourced, E = estimate.
+  visual: {
+    chord: 1.4, // wing chord, both wings (M)
+    stagger: 0.4, // upper wing ahead of the lower (E)
+    tailSpan: 2.6, // tailplane span (E)
+    tailChord: 0.7, // tailplane chord (E)
+    finHeight: 0.8, // fin and rudder height (E)
+    fuselageDepth: 0.9, // greatest fuselage depth (E)
+    fuselageWidth: 0.62, // greatest fuselage width (E)
+    cowlingDiameter: 0.8, // engine cowling (E)
+  },
   aero: {
     oswald: 0.75, // (E)
     cd0: 0.039, // (E) from the calibration speed: npm run calibrate

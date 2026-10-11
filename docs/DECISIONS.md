@@ -410,3 +410,16 @@ The outside views show the same numbers as a one-line readout (J). All the physi
 
 **Tests:** fake devices cover the axes, hat layouts, throttle takeover, button edges, learning, saved-mapping repair and mixing. In Chrome, a fake device flew a take-off, circuit and landing. The real stick still needs the product owner's test.
 
+## D41. Aircraft models: one builder per type, sourced shapes, famous schemes (Phase 3, checkpoint 1)
+
+**Decision:**
+- Each of the four aircraft has its own model builder in `src/render/models/`, built from the aircraft's documented dimensions: wingspan, length, height, the wing stack, propeller diameter and wheel track. About ten visual-only proportions per aircraft (chord, stagger, tailplane size, fuselage and cowling size) are in a `visual:` block in each aircraft file, with rows in `AIRCRAFT_DATA.md` marked sourced or estimate.
+- Model details with no source (curves of the fuselage, strut layout, fin outline) are modelling choices, not data. Strut layouts follow the type descriptions in the sources: the Camel has one bay, the SPAD two, the Dr.I a single strut each side, the Albatros a V-strut.
+- The wheels and tailskid are placed at the physics contact points (from `src/physics/ground.js`), and the propeller disc at the physics propeller plane, so a parked aircraft touches the grass where the ground model says it does. Tests check this.
+- **Schemes (the product owner's choice for famous aces' schemes):** Barker's B6313 (Camel), Brooks's "Smith IV" (SPAD, the only candidate with full museum documentation), Richthofen's red 425/17 (Dr.I) and the Smithsonian D.Va 7161/17, Jasta 46 (Albatros; the pilot is unknown, so it is documented but not an ace's aircraft). Roy Brown's B7270 Camel was rejected because no source describes its colours. Every element is rated in the "Liveries" section of `AIRCRAFT_DATA.md`; elements the sources do not describe are estimates.
+- Markings are flat geometry or canvas lettering, not image files, so nothing is copied from anyone's artwork.
+- **Cockpit view:** the model's nose parts (cowling, hump, guns, the fuselage ahead of the eye) are hidden in the cockpit view, where the cockpit draws its own decking, guns and instruments.
+- **Hangar page** (`/hangar.html`) shows the models side by side, with views and a silhouette mode, so recognisability can be judged without flying.
+
+**Doubts recorded:** Thetford and Gray say there is now doubt that Richthofen flew a completely scarlet Dr.I. The Dr.I's production wing gaps and stagger are estimates (also in the open research gaps).
+

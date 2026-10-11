@@ -2,9 +2,32 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 2 (controls and cameras) signed off; Phase 3 not started
+## Current status: Phase 3 (world and visuals) in progress, checkpoint 1 done
 
-Phase 0 and Phase 1 are signed off (Phase 1 approved 11 Oct 2026). The product owner confirmed on 11 Oct 2026 that the joystick works as expected and that Phase 2 passes its acceptance test. Phase 3 (world and visuals) has not been started; it needs its own plan first.
+Phases 0, 1 and 2 are signed off (Phase 2 on 11 Oct 2026, including the joystick). Phase 3 has three checkpoints; each is committed only with the product owner's permission:
+1. **Aircraft models** (built, signed off by the product owner: four recognisable models, their sourced schemes, and the hangar page.
+2. **Terrain:** fields, woods, villages, roads, a river and trench lines.
+3. **Sky, clouds, quality levels and the frame-rate pass.**
+
+## Phase 3 checkpoint 1: aircraft models (D41)
+
+**What was done:**
+- Four models built in code from each aircraft's data: Camel (Barker's B6313), SPAD (Brooks's "Smith IV"), Dr.I (Richthofen's red 425/17), Albatros D.Va (Jasta 46, 7161/17).
+- Visual proportions sourced where possible (Camel chord, stagger, tailplane, dihedral; Albatros chords; Dr.I chord; SPAD chord) and marked as estimates otherwise; liveries researched and rated in `AIRCRAFT_DATA.md`.
+- `hangar.html`: a page for looking at the models.
+- 377 tests pass, plus 15 known deviations. Physics is untouched (`git diff` shows no change in `src/physics/`).
+
+**How to look at them:**
+1. `npm run dev`, then open http://localhost:5173/hangar.html.
+2. Press **All four** and **Side**: the four profiles side by side. Turn **Silhouette** on to see black shapes against the sky. Try **Top** and **Front** (choose one aircraft first for the front view).
+3. Drag to orbit, wheel to zoom. Click each aircraft's name for the 3/4 view.
+4. Then fly (keys 1-4) and look at each aircraft from the chase view (C) and free-look; the cockpit view should still show the instruments and guns.
+
+**Known issues:**
+- Side profiles of WWI biplanes are naturally similar; the top and front views separate them more. The proportions marked "estimate" are the first thing to adjust if a silhouette looks wrong.
+- The wings are one colour per surface (no camouflage or lozenge patterns).
+- The Dr.I's wing gaps and stagger are estimates (production figures not found).
+- The model is now deeper than the old placeholder, so the cockpit view hides the nose parts and shows the cockpit's own decking.
 
 ## Phase 2 progress
 
@@ -169,7 +192,7 @@ Made on 11 Oct 2026 (see D29 in DECISIONS.md):
 
 Still open:
 1. ~~Phase 2 acceptance~~: approved on 11 Oct 2026, with the joystick.
-2. **Phase 3:** waiting for the product owner's go-ahead; a plan comes first.
+2. **Phase 3** is in progress (see the status at the top).
 
 ## Phase list
 - Phase 0: Foundations and research. Done and signed off.
@@ -181,6 +204,6 @@ Still open:
   - Cockpit, chase and free-look cameras.
   - Acceptance: you can take off, fly a circuit and land without the debug panel; the Camel visibly pulls right under power. The product owner decided to research what the Camel really did and follow the sources.
   - This needs ground handling (take-off and landing) and basic instruments, so both are included.
-- **Phase 3: World and visuals.** Procedurally generated Western Front terrain (fields, woods, trench lines), sky and clouds. Low-polygon aircraft models built in code, with no third-party assets. Acceptance: steady frame rate at 1080p on the product owner's machine; each aircraft is recognisable by its silhouette.
+- **Phase 3: World and visuals.** In progress (checkpoint 1 built). Procedurally generated Western Front terrain (fields, woods, trench lines), sky and clouds. Low-polygon aircraft models built in code, with no third-party assets. Acceptance: steady frame rate at 1080p on the product owner's machine; each aircraft is recognisable by its silhouette.
 - **Phase 4: Weapons and damage.** Synchronised machine guns firing through the propeller, bullet ballistics with gravity and drag, limited ammunition and gun jams. Component damage to the engine, fuel, pilot, wings and control cables; damage changes the flight model. Acceptance: tests confirm bullet drop and travel time; a damaged wing causes a measurable roll.
 - Later phases: not yet defined (Phase 7 includes gamepad and joystick support, per the spec).

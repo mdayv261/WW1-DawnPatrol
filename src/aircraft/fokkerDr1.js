@@ -53,6 +53,17 @@ export const fokkerDr1 = {
     eyeBehind: 0.63, // m behind the centre of gravity
     eyeAbove: 0.6, // m above the centre of gravity
   },
+  // Shape for the 3D model (rendering only), m unless noted. M = sourced, E = estimate.
+  visual: {
+    chord: 1.0, // wing chord, all three wings (M)
+    stagger: 0.15, // each wing ahead of the one below (E)
+    tailSpan: 2.6, // tailplane span (E)
+    tailChord: 0.7, // tailplane chord (E)
+    finHeight: 0.9, // rudder height; there is no fixed fin (E)
+    fuselageDepth: 0.85, // greatest fuselage depth (E)
+    fuselageWidth: 0.62, // greatest fuselage width (E)
+    cowlingDiameter: 1.04, // engine cowling (E)
+  },
   aero: {
     oswald: 0.75, // (E)
     cd0: 0.0356, // (E) from the calibration speed: npm run calibrate

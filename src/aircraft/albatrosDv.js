@@ -52,6 +52,18 @@ export const albatrosDv = {
     eyeBehind: 0.8, // m behind the centre of gravity
     eyeAbove: 0.6, // m above the centre of gravity
   },
+  // Shape for the 3D model (rendering only), m unless noted. M = sourced, E = estimate.
+  visual: {
+    chord: 1.49, // upper wing chord (M)
+    lowerChord: 1.0, // lower wing chord (M)
+    stagger: 0.3, // upper wing ahead of the lower (E)
+    tailSpan: 3.0, // tailplane span (E)
+    tailChord: 0.85, // tailplane chord (E)
+    finHeight: 0.9, // fin and rudder height (E)
+    fuselageDepth: 1.0, // greatest fuselage depth (E)
+    fuselageWidth: 0.7, // greatest fuselage width (E)
+    cowlingDiameter: 0.78, // engine cowling (E)
+  },
   aero: {
     oswald: 0.75, // (E)
     cd0: 0.0602, // (E) from the calibration speed: npm run calibrate

@@ -54,6 +54,18 @@ export const camel = {
     eyeBehind: 0.63, // m behind the centre of gravity
     eyeAbove: 0.6, // m above the centre of gravity
   },
+  // Shape for the 3D model (rendering only), m unless noted. M = sourced, E = estimate.
+  visual: {
+    chord: 1.37, // wing chord, both wings (M) 4 ft 6 in
+    stagger: 0.457, // upper wing ahead of the lower (M) 18 in
+    lowerDihedral: 0.0873, // rad, lower wing 5 degrees; the upper is flat (M)
+    tailSpan: 2.5, // tailplane span (M) 8 ft 2.5 in
+    tailChord: 0.52, // tailplane chord (M) from its 14 sq ft area
+    finHeight: 0.85, // fin and rudder height (E)
+    fuselageDepth: 1.0, // greatest fuselage depth (E)
+    fuselageWidth: 0.62, // greatest fuselage width (E)
+    cowlingDiameter: 1.1, // engine cowling (E)
+  },
   aero: {
     oswald: 0.75, // (E)
     cd0: 0.036, // zero-lift drag coefficient (E) from the calibration speed: npm run calibrate

@@ -176,6 +176,7 @@ function draw(realDt, alpha, now) {
   ground.position.set(drawPosition.x, 0, drawPosition.z);
 
   cockpit.visible = rig.mode === 'cockpit';
+  for (const part of model.hideInCockpit) part.visible = !cockpit.visible;
   rig.update(sim.aircraft, position, quaternion, realDt);
 
   if (now - lastOverlay > 100) {
