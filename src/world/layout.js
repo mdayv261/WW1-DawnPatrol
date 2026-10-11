@@ -31,6 +31,19 @@ export const CROPS = [
   { name: 'beet', colour: '#4f7a3a' },
 ];
 
+// The average colour of the farmland, as a hex number: what the distant ground fades to.
+export function averageCropColour() {
+  const sum = [0, 0, 0];
+  for (const c of CROPS) {
+    const n = parseInt(c.colour.slice(1), 16);
+    sum[0] += n >> 16;
+    sum[1] += (n >> 8) & 255;
+    sum[2] += n & 255;
+  }
+  const [r, g, b] = sum.map((v) => Math.round(v / CROPS.length));
+  return (r << 16) | (g << 8) | b;
+}
+
 export function createWorld(seed = DEFAULT_SEED) {
   const w = { seed };
 

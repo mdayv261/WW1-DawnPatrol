@@ -43,7 +43,7 @@ export function getShapes() {
   const spire = new ConeGeometry(0.5, 1, 4).rotateY(Math.PI / 4).translate(0, 0.5, 0);
   // Flat triangle lying on the ground, apex toward +z: 1 wide, 1 long (airfield markers).
   const flatTriangle = new BufferGeometry();
-  flatTriangle.setAttribute('position', new Float32BufferAttribute([-0.5, 0.06, -0.5, 0, 0.06, 0.5, 0.5, 0.06, -0.5], 3));
+  flatTriangle.setAttribute('position', new Float32BufferAttribute([-0.5, 0.1, -0.5, 0, 0.1, 0.5, 0.5, 0.1, -0.5], 3));
   flatTriangle.computeVertexNormals();
   // A tube along +z, 1 long and 1 across (wind sock segments).
   const tube = new CylinderGeometry(1, 1, 1, 8, 1, true).rotateX(Math.PI / 2).translate(0, 0, 0.5);

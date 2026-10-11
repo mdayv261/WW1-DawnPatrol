@@ -10,10 +10,9 @@ import { paintTile } from './paint.js';
 import * as G from './geometry.js';
 import { addBuildings } from './geometry.js';
 import * as F from '../../world/features.js';
-import { facilities } from '../../world/airfields.js';
-import { farms as worldFarms, windmills as worldWindmills } from '../../world/farms.js';
 import { warworks, rubble } from '../../world/warworks.js';
 import { tileTrees } from '../../world/obstacles.js';
+import { SolidIndex, structureLists, solidsFromStructures, treeSolid } from '../../world/solids.js';
 import { Batch } from './batch.js';
 import { addAirfield } from './airfieldGeometry.js';
 import { addFarmExtras, addWarWorks } from './structures.js';
@@ -35,6 +34,7 @@ export class Terrain {
       near: new PlaneGeometry(NEAR_SIZE, NEAR_SIZE).rotateX(-Math.PI / 2),
       far: new PlaneGeometry(FAR_SIZE, FAR_SIZE).rotateX(-Math.PI / 2),
     };
+    this.solids = new SolidIndex(); // what can be crashed into: the trees and buildings drawn here
     this.cell = null; // camera tile the wanted list was made for
     this.wanted = [];
   }
@@ -249,27 +249,19 @@ export class Terrain {
     } else if (stage === 'trees') {
       const list = tileTrees(this.world, x0, z0, x1, z1, q.treeSpacing); // none in buildings or round hangars
       for (const m of G.treeMeshes(list)) { m.userData.objects = true; tile.group.add(m); }
+      for (const t of list) this.solids.add(`${tile.key}:trees`, treeSolid(t));
     } else if (stage === 'structures') {
       // Everything built or left standing: village houses, farms, mills, airfields, war works, rubble.
       const batch = new Batch();
       const world = this.world;
-      const villages = world.villages(x0, z0, x1, z1);
-      const houses = villages.flatMap((v) => F.houses(world, v));
-      const farmList = worldFarms(world, x0, z0, x1, z1);
+      const lists = structureLists(world, x0, z0, x1, z1);
       const bridges = F.bridges(world, world.roads(x0, z0, x1, z1)).filter((b) => b.x >= x0 && b.x < x1 && b.z >= z0 && b.z < z1);
-      addBuildings(batch, [...houses, ...farmList.flatMap((f) => f.buildings)], bridges);
-      addFarmExtras(batch, farmList, worldWindmills(world, x0, z0, x1, z1));
-      addWarWorks(batch, warworks(world, x0, z0, x1, z1), villages.map((v) => rubble(world, v)));
-      // The parts of any airfield that stand in this tile (each object belongs to the tile it is in).
-      const inTile = (o) => o && o.x >= x0 && o.x < x1 && o.z >= z0 && o.z < z1;
-      for (const af of world.airfieldsIn(x0, z0, x1, z1)) {
-        const f = facilities(world, af);
-        addAirfield(batch, {
-          markers: f.markers.filter(inTile), hangars: f.hangars.filter(inTile), tents: f.tents.filter(inTile),
-          vehicles: f.vehicles.filter(inTile), windsock: inTile(f.windsock) ? f.windsock : null, tower: inTile(f.tower) ? f.tower : null,
-        });
-      }
+      addBuildings(batch, [...lists.houses, ...lists.farms.flatMap((f) => f.buildings)], bridges);
+      addFarmExtras(batch, lists.farms, lists.windmills);
+      addWarWorks(batch, warworks(world, x0, z0, x1, z1), lists.villages.map((v) => rubble(world, v)));
+      for (const parts of lists.airfields) addAirfield(batch, parts);
       for (const m of batch.build()) { m.userData.objects = true; tile.group.add(m); }
+      for (const s of solidsFromStructures(lists)) this.solids.add(`${tile.key}:structures`, s); // so they can be crashed into
     }
   }
 
@@ -282,10 +274,14 @@ export class Terrain {
       }
     }
     for (const s of OBJECT_STAGES) tile.built.delete(s);
+    this.solids.remove(`${tile.key}:trees`);
+    this.solids.remove(`${tile.key}:structures`);
     tile.objects = wanted.objects;
   }
 
   dropTile(tile) {
+    this.solids.remove(`${tile.key}:trees`);
+    this.solids.remove(`${tile.key}:structures`);
     this.group.remove(tile.group);
     G.disposeObject(tile.group);
     if (tile.level === 'near' && this.tiles.size) setTimeout(() => this.updateCoverage(), 0);

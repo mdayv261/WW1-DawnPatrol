@@ -176,6 +176,9 @@ function startFlight(index, scenario = null) {
   paused = false;
 }
 
+// Trees and buildings can be crashed into: the simulation asks the terrain what is at a point.
+sim.solidAt = (x, y, z) => terrain.solids.hit(x, y, z);
+
 startFlight(aircraftIndex);
 
 let lastOverlay = 0;

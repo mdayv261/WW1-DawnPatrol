@@ -434,7 +434,7 @@ The outside views show the same numbers as a one-line readout (J). All the physi
   - Coarser 2 km tiles reach farther out with a 256-pixel texture and no objects.
   - Tiles are built in small stages, a few milliseconds a frame, and freed when far away.
   - Quality levels (`?quality=low|medium|high`) set the radii and texture sizes.
-- **Obstacles are visual only** (product owner's decision): flying through trees and buildings does nothing yet.
+- **Obstacles were visual only** at this point (product owner's decision then); reversed after the checkpoint 3 flight, see D47.
 
 **Sources and what is estimated:**
 - **Sourced:**
@@ -501,3 +501,15 @@ The outside views show the same numbers as a one-line readout (J). All the physi
 - **Sky** (`src/render/sky.js`): the colours, sun, light, haze and cirrus strength are in one data object (`SKY`), ready for a time-of-day setting later. A high, thin **cirrus layer** (wisps drawn out along the wind) is added in the sky shader at no texture cost.
 - **Budget and measurements** (render timing in Chrome with the pixel cap on, a 2560 x 1288 window drawn at 2043 x 1028; the test browser pauses animation in hidden tabs, so these are direct render timings, not frame rates): at most about 150 draw calls and 240,000 triangles at Medium in the places measured (earlier worst case: 382,000 triangles at the front line); about 100 draw calls at Low; the first full load of Medium takes under a second and later ground arrives a few milliseconds a frame. The target is steady 60 frames per second at 1080p on the product owner's machine; **that has to be read off F3 on that machine**.
 
+
+## D47. Trees and buildings are solid; flat fallback ground (Phase 3 follow-up)
+
+Reverses the "visual only" decision in D42/D44 at the product owner's request ("the aircraft should crash when landing or flying through trees and buildings").
+
+- **Rule:** any hit point of the aircraft inside a solid ends the flight through the existing crash path ("CRASHED: Hit a tree - press R"). There is no damage model yet (Phase 4); the crash is all-or-nothing, like hitting the ground.
+- **Solid:** conifers and poplars (cones on a trunk), broadleaf trees (rounded canopy on a trunk, clear air under it), stumps and burnt trunks (thin cylinders), village houses and churches (walls, gabled roof, tower and spire), farmhouses, barns, haystacks, windmills (body, roof and sails), hangars, tents, lorries, the control tower (four legs, cabin, roof) and the wind sock pole. **Not solid:** sandbags, wire posts, rubble, bridges, crater rims, the sock cloth (small or low, and not asked for). The shapes are approximations of the drawn models, a little generous at roofs and eaves (eaves overhang by half a metre).
+- **Hit points** (`src/physics/hitpoints.js`, about 25 per aircraft, from the aircraft data files): propeller hub and four blade tips, fuselage top, every wing level's tips (front and rear) and centre leading edge, tailplane tips, tail end, fin top, wheels and tailskid. Tested every 120 Hz step, now and halfway back to the previous step, so a 0.9 m pole cannot be skipped at 60 m/s.
+- **Where it lives:** `src/world/solids.js` (pure shapes and `SolidIndex`, a 40 m grid); the terrain registers exactly the trees and structures it draws, per tile and per stage, and removes them when the tile goes, so what you can hit matches what is on screen at the current quality (Low has fewer trees). `Simulation.solidAt(x, y, z)` is an optional hook set by `main.js`; the physics never imports the world.
+- **Measured:** about 10 microseconds per physics step with about 6,700 solids loaded (under 0.2% of a frame).
+- **Start field:** landing grounds have no trees or buildings (D45), so take-offs and landings are unaffected. The start field's three hangars and tents stand on the centre line 560-590 m south of the field's middle, behind the south end. **Landing from the south (heading north) a low approach crosses the hangars (9 m high); land heading south, or clear them.** Product owner to decide whether to move them off the centre line.
+- **Ground flicker, second part:** the fallback ground (visible beyond the coarse tiles, 7 km at Medium) was a 256 px checker repeated every 150 m, which aliases into shimmer at the horizon. It is now one flat colour, the average of the crop colours (`averageCropColour`), 4 m below the tiles. Airfield marker triangles lifted from 0.06 m to 0.1 m. If flicker remains, the next step is a logarithmic depth buffer.

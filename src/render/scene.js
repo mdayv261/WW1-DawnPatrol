@@ -4,47 +4,21 @@
 import * as THREE from 'three';
 import { SKY, createSky, sunDirection } from './sky.js';
 import { pixelRatioFor } from './quality.js';
+import { averageCropColour } from '../world/layout.js';
 
 const GROUND_SIZE = 60000; // metres across
-const FIELD_SIZE = 150; // metres per texture tile
+const FIELD_SIZE = 150; // m: the fallback ground is moved in steps of this size
 const CAMERA_FAR = 30000; // the haze hides everything beyond 25 km; a shorter depth range means finer depth precision
 
-// A small canvas of green and brown patches, repeated across the ground so
-// that speed and altitude are easy to judge by eye.
-function createFieldTexture() {
-  const size = 256;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  const palette = ['#5d7f3a', '#6b8c40', '#7a9547', '#8a9a50', '#6d6a3a', '#4f7236'];
-  const cells = 4;
-  const cell = size / cells;
-  for (let y = 0; y < cells; y++) {
-    for (let x = 0; x < cells; x++) {
-      ctx.fillStyle = palette[(x * 3 + y * 5 + ((x * y) % 3)) % palette.length];
-      ctx.fillRect(x * cell, y * cell, cell, cell);
-    }
-  }
-  // Thin hedge lines between fields.
-  ctx.fillStyle = '#3d5a2a';
-  for (let i = 0; i <= cells; i++) {
-    ctx.fillRect(i * cell - 1, 0, 2, size);
-    ctx.fillRect(0, i * cell - 1, size, 2);
-  }
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(GROUND_SIZE / FIELD_SIZE, GROUND_SIZE / FIELD_SIZE);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 8;
-  return texture;
-}
-
+// The ground beyond the detailed tiles: one flat colour, the average of the
+// farmland, fading into the haze. It used to carry a fine field pattern, but a
+// regular pattern seen at 10-25 km shimmers (moire) as the view moves, worst at
+// the horizon when banking; a flat colour has nothing to shimmer. It lies well
+// below the tiles, so it only shows through cracks and past their edge.
 function createGround() {
   const geometry = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE);
   geometry.rotateX(-Math.PI / 2); // lay it flat, facing up
-  const material = new THREE.MeshLambertMaterial({ map: createFieldTexture() });
+  const material = new THREE.MeshLambertMaterial({ color: averageCropColour() });
   return new THREE.Mesh(geometry, material);
 }
 

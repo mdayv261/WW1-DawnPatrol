@@ -77,3 +77,16 @@ describe('sky definition', () => {
     expect(SKY.sunIntensity).toBeGreaterThan(0);
   });
 });
+
+describe('the ground beyond the tiles', () => {
+  it('is one flat colour: the average of the crop colours, a mid green-brown', async () => {
+    const { averageCropColour } = await import('../src/world/layout.js');
+    const c = averageCropColour();
+    const [r, g, b] = [c >> 16, (c >> 8) & 255, c & 255];
+    expect(g).toBeGreaterThan(r);
+    expect(g).toBeGreaterThan(b);
+    expect(b).toBeLessThan(r);
+    expect(r).toBeGreaterThan(90);
+    expect(r).toBeLessThan(180);
+  });
+});

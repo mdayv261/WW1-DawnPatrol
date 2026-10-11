@@ -8,10 +8,15 @@ import { trimLevel, levelState } from '../physics/trim.js';
 import { restingPose } from '../physics/ground.js';
 import { createState, copyState } from '../physics/rigidBody.js';
 import { createInput, createSurfaces } from '../physics/controls.js';
+import { hitPoints } from '../physics/hitpoints.js';
 
 export const START_ALTITUDE = 1000; // m
 export const START_SPEED_FRACTION = 0.8; // of the documented top speed
 const FUSELAGE_FLOOR = 0.3; // m; the centre of gravity this low means the aircraft is on its belly
+
+const _w = new Vector3();
+const _pMid = new Vector3();
+const _qMid = new Quaternion();
 
 export class Simulation {
   constructor() {
@@ -23,6 +28,9 @@ export class Simulation {
     this.crashed = false;
     this.crashReason = null;
     this.time = 0;
+    // Optional: solidAt(x, y, z) returns a label such as "Hit a tree" if that point is inside a
+    // tree or building (set by the game; with none set, nothing but the ground can be hit).
+    this.solidAt = null;
     // The neutral controls the flight starts with (throttle and trim from the trim solver).
     this.startInput = createInput();
   }
@@ -78,6 +86,23 @@ export class Simulation {
     this.time += dt;
     if (this.diag.crash) this.crash(this.diag.crash);
     else if (this.state.position.y < FUSELAGE_FLOOR) this.crash('Hit the ground');
+    else if (this.solidAt) this.checkSolids();
+  }
+
+  // Test the aircraft's hit points, now and halfway back to the last step (so a thin
+  // pole cannot be slipped past between two steps), against trees and buildings.
+  checkSolids() {
+    const points = hitPoints(this.aircraft, common);
+    const q = this.state.quaternion;
+    _qMid.slerpQuaternions(this.previous.quaternion, q, 0.5);
+    _pMid.lerpVectors(this.previous.position, this.state.position, 0.5);
+    for (const p of points) {
+      for (const [rotation, origin] of [[_qMid, _pMid], [q, this.state.position]]) {
+        _w.copy(p).applyQuaternion(rotation).add(origin);
+        const label = this.solidAt(_w.x, _w.y, _w.z);
+        if (label) return this.crash(label);
+      }
+    }
   }
 
   crash(reason) {

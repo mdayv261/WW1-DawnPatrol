@@ -2,13 +2,28 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 3 (world and visuals) built; waiting for the product owner's acceptance test
+## Current status: Phase 3 (world and visuals) built, with the crash and flicker follow-ups; waiting for the product owner's acceptance test
 
 Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft models (48df111), terrain (c3b90ec), airfields and detail (dee316a), and checkpoint 3 (quality levels, pixel budget, frame-rate readout, cirrus). Phase 4 must not start until the product owner confirms Phase 3.
 
+## Phase 3 follow-up: crashes on trees and buildings, flat horizon (D47)
+
+**Done:** the aircraft now crashes when any part of it touches a tree or a building (banner says what: "CRASHED: Hit a tree", "Hit a house", "Hit a hangar", ...). The far fallback ground is a flat colour instead of a fine checker pattern (the likely cause of the remaining shimmer). 556 tests pass (plus 15 known deviations); `npm run build` works; physics unchanged. In Chrome I flew the real game into a tree, house, farmhouse, hangar, control tower and windmill (each crashed with the right name) and across open fields (no crash).
+
+**Please test (about 5 minutes):**
+1. **Flicker:** press **1**, climb to 1,500 m and bank hard left and right over the countryside; watch the far horizon and the ground for shimmer.
+2. **Trees:** fly low into a wood (e.g. about 600 m north-east of the start, or any dark green block): it should say "CRASHED: Hit a tree - press R". Press **R**.
+3. **Houses:** a village is about 1 km north-east of the start: skim the rooftops (clear), then fly into a wall (crash).
+4. **Airfield:** take off and land on the start field (heading north is clear; the hangars are behind the south end, so a low approach from the south can hit them). Landing and taxiing must not crash.
+5. Check **F3**: frames, calls and triangles should be about what you saw before.
+
+**Decisions for you:** (a) move the start field's hangars off the centre line so a landing from the south is not blocked? (b) is the crash too strict (touching a treetop with a wheel ends the flight)? A tolerance is a small change. (c) once these pass, do you sign off Phase 3?
+
+**Known issues:** hands-off, the aircraft eventually dives into the ground by itself at low altitude (existing behaviour, not new). The thin sock pole and rubble are approximations. Solids exist only for built tiles (about 2 km round you at Medium).
+
 ## Phase 3 checkpoint 3: quality, frame rate and sky (D46)
 
-**Built and tested by the product owner: 75 fps maximum, 65 fps 1% low, worst frame 14 ms at 2059x1020 pixels on Medium (116 calls, 290,000 triangles), so the frame-rate acceptance is met. Still to do for Phase 3: the last of the ground flicker and crashes on trees and buildings.**
+**Built and tested by the product owner: 75 fps maximum, 65 fps 1% low, worst frame 14 ms at 2059x1020 pixels on Medium (116 calls, 290,000 triangles), so the frame-rate acceptance is met. Both follow-ups (flicker, crashes) are now built, see above.**
 - **L cycles graphics quality** Low, Medium, High (remembered in the browser; `?quality=low|medium|high` in the address overrides it). The terrain and clouds rebuild at once.
 - **Pixel budget:** the picture is drawn with about 2.1 million pixels (about 1920 x 1080) at Medium, even on a retina screen, then scaled to fit; High draws at the screen's own resolution; Low about 1 million.
 - **F3 shows the performance:** frames per second, the 1% low, the worst frame in the last two seconds, draw calls, triangles, quality level, pixels drawn, and terrain tiles.
