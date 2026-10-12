@@ -597,4 +597,4 @@ The propeller's turning angle is followed from the engine speed the flight model
 - **Skill measured:** against Camel drones flying a weave or a straight path (four starts each, three minutes), a Dr.I flown by an Ace shot down 16 of 18 in a larger run, a Regular 11, a Novice 1; the test (`tests/aiSkill.test.js`) checks Ace > Regular > Novice.
 - **Known issue (accepted by the product owner):** two AI pilots who both fight back mostly circle for minutes without a kill, at every pairing of skills. Fighting the player or a drone they shoot and kill. A deeper dogfighting redesign (energy fighting, lag pursuit) is left for a later polish phase.
 - **An agent whose wing, tail, engine or pilot fails for any reason** (for example wings shot through and then overstressed in the dive that follows) now counts as down, not as a crash.
-
+- **Product owner's answer:** Phase 5 passes the acceptance test.
