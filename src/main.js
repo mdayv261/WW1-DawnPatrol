@@ -33,6 +33,7 @@ import { Combat } from './game/combat.js';
 import { TracerView, EffectsView } from './render/bullets.js';
 import { TargetViews } from './render/targetViews.js';
 import { createCombatHud, combatText, combatLines } from './ui/combatHud.js';
+import { SKILLS, SKILL_ORDER, stepSkill } from './aircraft/aiData.js';
 import { applyTestDamage, damagedDeflections, damageLines, pilotDead } from './physics/damage.js';
 import { showDamage } from './render/damageView.js';
 
@@ -64,6 +65,10 @@ const effects = new EffectsView(scene);
 const targetViews = new TargetViews(scene);
 const combatHud = createCombatHud();
 const sightPoint = new Vector3();
+// Enemies of an air start: ?enemies=3 and ?skill=drone|novice|regular|ace in the address (until the mission screen).
+const startEnemies = Math.min(4, Math.max(0, Number.parseInt(new URLSearchParams(window.location.search).get('enemies') ?? '2', 10) || 0));
+const askedSkill = new URLSearchParams(window.location.search).get('skill');
+if (SKILL_ORDER.includes(askedSkill)) combat.skill = askedSkill;
 const debug = createDebugOverlay();
 const help = createHelp();
 const banner = createBanner();
@@ -112,7 +117,9 @@ const keyboard = attachKeyboard({
   onReadout: () => showNotice(readout.toggle() ? 'Instrument readout on' : 'Instrument readout off'),
   onQuality: () => applyQuality(nextQuality(qualityName)),
   onClearJam: () => clearJam(),
-  onTarget: () => newTarget(),
+  onTarget: () => newAgent(),
+  onSkill: (step) => changeSkill(step),
+  onPractice: () => togglePractice(),
   onPause: () => { paused = !paused; },
   onDebug: () => debug.toggle(),
   onHelp: () => help.toggle(),
@@ -176,10 +183,22 @@ function clearJam() {
   if (jammed) showNotice('Clearing the jam...', 1500);
 }
 
-// Put a new target aircraft ahead of the player.
-function newTarget() {
-  const t = combat.spawnTarget(sim);
-  showNotice(t ? `Target: ${t.aircraft.name} (${t.pattern})` : 'Three targets are already up', 2500);
+// Put a new enemy in the fight (a drone ahead of you, or an AI pilot on patrol round you).
+function newAgent() {
+  const a = combat.spawnAgent(sim);
+  showNotice(a ? `Enemy: ${a.aircraft.name} (${SKILLS[a.skill].name}${a.isDrone ? `, ${a.pattern}` : ''})` : 'Four enemies are already up', 2500);
+}
+
+// [ and ] step the skill that new enemies get: Drone, Novice, Regular, Ace.
+function changeSkill(step) {
+  combat.skill = stepSkill(combat.skill, step);
+  showNotice(`New enemies: ${SKILLS[combat.skill].name} (N adds one)`, 2500);
+}
+
+// Y: practice mode, where enemy fire cannot hurt you.
+function togglePractice() {
+  combat.practice = !combat.practice;
+  showNotice(combat.practice ? 'Practice mode: enemy fire cannot hurt you' : 'Practice mode off: enemy fire is real', 2500);
 }
 
 // Start a flight; `scenario` is a test-panel scenario id (normal start if omitted).
@@ -205,12 +224,9 @@ function startFlight(index, scenario = null) {
   mouse?.stick.centre();
   rig.reset();
   terrain.prime(sim.state.position); // the ground around the start, built before the first frame
-  combat.reset(ac); // full belts, no targets
+  combat.reset(ac); // full belts, no enemies
   targetViews.clear();
-  if (airStart && !scenario) {
-    combat.spawnTarget(sim);
-    combat.spawnTarget(sim);
-  }
+  if (airStart && !scenario) for (let i = 0; i < startEnemies; i++) combat.spawnAgent(sim); // an air start brings the enemies
   paused = false;
 }
 
@@ -271,7 +287,7 @@ function draw(realDt, alpha, now) {
   rig.update(sim.aircraft, position, quaternion, realDt);
 
   // The fight: tracers, strikes, target aircraft, the gun sight and the gun status.
-  targetViews.update(combat.targets, alpha, realDt);
+  targetViews.update(combat.agents, alpha, realDt);
   tracers.update(combat.bullets, camera, alpha, 1 / 120);
   effects.update(combat.events, realDt);
   for (const text of combat.messages.splice(0)) showNotice(text, 3000);

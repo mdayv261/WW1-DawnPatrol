@@ -15,7 +15,7 @@ export function keyId(e) {
 
 // handlers: { onSelect(index, airStart), onRestart(), onPause(), onDebug(),
 //   onHelp(), onTestPanel(), onJoystickPanel(), onCamera(), onLook(), onReadout(), onQuality(),
-//   onRecentre(), onSensitivity(step), onClearJam(), onTarget() }
+//   onRecentre(), onSensitivity(step), onClearJam(), onTarget(), onSkill(step), onPractice() }
 export function attachKeyboard(handlers) {
   const mapper = new InputMapper();
   const heldAs = new Map(); // physical key -> id it was pressed as
@@ -55,6 +55,9 @@ export function attachKeyboard(handlers) {
     else if (e.code === 'KeyX') handlers.onRecentre?.();
     else if (e.code === 'KeyB') handlers.onClearJam?.();
     else if (e.code === 'KeyN') handlers.onTarget?.();
+    else if (e.code === 'BracketLeft') handlers.onSkill?.(-1);
+    else if (e.code === 'BracketRight') handlers.onSkill?.(1);
+    else if (e.code === 'KeyY') handlers.onPractice?.();
     else if (e.code === 'Comma') handlers.onSensitivity?.(-1);
     else if (e.code === 'Period') handlers.onSensitivity?.(1);
   });

@@ -2,9 +2,24 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 4 (weapons and damage) signed off by the product owner. Phases 0-4 are done. Phase 5 (AI opponents) is next; it needs a plan in plan mode first.
+## Current status: Phase 5 (AI opponents), checkpoint 1 built (pilots that can fly); waiting for the product owner's test. Phases 0-4 are signed off.
 
 Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft models (48df111), terrain (c3b90ec), airfields and detail (dee316a), and checkpoint 3 (quality levels, pixel budget, frame-rate readout, cirrus). Phase 4 must not start until the product owner confirms Phase 3.
+
+## Phase 5 checkpoint 1: AI pilots that can fly (D54)
+
+**Done:** AI pilots (`src/ai/`) fly the same aircraft with the same flight model and controls as you: they look at the others with a reaction delay and a sight range (Novice 0.6 s and 2 km, Regular 0.35 s and 3 km, Ace 0.15 s and 4 km), and fly a patrol circuit of 1,500 m radius round where you were when they appeared, at a height and speed that depend on skill. The pilot's hands turn, climb, hold speed and recover from dives and inverted flight, and never stall, over-speed or hit the ground (tests on all four aircraft). The old scripted targets are now the **Drone** skill. They do **not fight yet** (checkpoint 2). 880 tests pass (plus 15 known deviations); `npm run build` works; the flight model is unchanged.
+
+**Please test (about 5 minutes):**
+1. Run `npm run dev` and open http://localhost:5173/?skill=regular&enemies=2 then press **Shift+1** (air start). Two enemy aircraft appear on circuits about 1.5 km ahead, above you. Press **F3**: each enemy shows its skill, "patrol", whether it can see you and how far, its speed and height.
+2. Press **]** and **[** to change the skill of *new* enemies (Drone, Novice, Regular, Ace) and **N** to add one (up to 4). Compare heights and speeds: Novice 1,200 m and slower, Ace 1,800 m and faster.
+3. Watch them for a few minutes (or fly near): they go round smoothly, do not stall, dive into the ground or break up, in all four enemy types (try Shift+2, 3, 4).
+4. Shoot at one (Space): it does not yet dodge or shoot back. Drones (the old targets) behave exactly as in Phase 4. **Y** toggles practice mode (a message appears; it matters from checkpoint 2).
+5. With 4 enemies up read F3 (frames, calls, triangles): each enemy model adds about 50 draw calls.
+
+**Decisions for you:** (a) the default skill is Drone until the AI fights; checkpoint 2 will make Regular the default. OK? (b) the skill numbers are first guesses (reaction time, sight range, height, speed); you can only judge them by flying, so tell me which feel too easy or hard once they fight.
+
+**Known issues:** the AI does not fight yet. A patrol circuit stays where you were at spawn; if you fly more than 6 km away the enemies are removed.
 
 ## Phase 4 checkpoint 3 and acceptance test (D53)
 
@@ -16,7 +31,7 @@ Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft mod
 
 **Everything in Phase 4 to try (all keys):** **Space** fire, **B** clear a jam (joystick: trigger fires, button 9 clears), **N** new target (up to three), **F4** damage buttons for your own aircraft, **F3** numbers (guns, hits, targets, damage, fuel, worst g). The checkpoint 1 and 2 test lists above still apply.
 
-**After your sign-off:** commit the checkpoint and say whether to start Phase 5. The phase list needs your brief for Phase 5 (AI opponents); the targets already use the same flight model and control inputs as the player, so the AI can replace the scripted pilot without changing the physics.
+**Signed off by the product owner; Phase 5 (AI opponents) started.**
 
 **Known issues (unchanged):** no fire; fuel does not change the mass; enemy aircraft do not shoot back; gun convergence is not modelled; a shot-down target with a failed wing takes a minute or more to reach the ground; each target model adds about 50 draw calls (check F3 with three targets up).
 
@@ -347,6 +362,6 @@ Still open:
   - Cockpit, chase and free-look cameras.
   - Acceptance: you can take off, fly a circuit and land without the debug panel; the Camel visibly pulls right under power. The product owner decided to research what the Camel really did and follow the sources.
   - This needs ground handling (take-off and landing) and basic instruments, so both are included.
-- **Phase 3: World and visuals.** Built; waiting for acceptance. Procedurally generated Western Front terrain (fields, woods, trench lines), sky and clouds. Low-polygon aircraft models built in code, with no third-party assets. Acceptance: steady frame rate at 1080p on the product owner's machine; each aircraft is recognisable by its silhouette.
+- **Phase 3: World and visuals.** Done and signed off. Procedurally generated Western Front terrain (fields, woods, trench lines), sky and clouds. Low-polygon aircraft models built in code, with no third-party assets. Acceptance: steady frame rate at 1080p on the product owner's machine; each aircraft is recognisable by its silhouette.
 - **Phase 4: Weapons and damage.** Done and signed off. Synchronised machine guns firing through the propeller, bullet ballistics with gravity and drag, limited ammunition and gun jams. Component damage to the engine, fuel, pilot, wings and control cables; damage changes the flight model. Acceptance: tests confirm bullet drop and travel time; a damaged wing causes a measurable roll.
 - Later phases: not yet defined (Phase 7 includes gamepad and joystick support, per the spec).

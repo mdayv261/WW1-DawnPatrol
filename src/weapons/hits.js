@@ -63,8 +63,9 @@ export function aircraftImpact(ac, now, before, x0, y0, z0, x1, y1, z1) {
 
 // The first thing the bullet's step from (x0,y0,z0) to (x1,y1,z1) runs into.
 //   targets: [{ id, aircraft, state, previous }]    solidAt(x, y, z) -> label | null (optional)
+//   exclude: one of the targets to leave out (the shooter)
 // Returns { kind: 'aircraft' | 'ground' | 'solid', t (0 to 1 along the step), target?, zone?, label? } or null.
-export function findImpact(x0, y0, z0, x1, y1, z1, targets, solidAt = null) {
+export function findImpact(x0, y0, z0, x1, y1, z1, targets, solidAt = null, exclude = null) {
   let best = null;
   const consider = (hit) => {
     if (hit && (best === null || hit.t < best.t)) best = hit;
@@ -88,6 +89,7 @@ export function findImpact(x0, y0, z0, x1, y1, z1, targets, solidAt = null) {
   }
 
   for (const target of targets) {
+    if (target === exclude) continue; // a bullet never hits the aircraft that fired it
     const hit = aircraftImpact(target.aircraft, target.state, target.previous, x0, y0, z0, x1, y1, z1);
     if (hit) consider({ kind: 'aircraft', t: hit.t, target, zone: hit.zone, level: hit.level, zones: hit.zones });
   }

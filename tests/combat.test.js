@@ -4,7 +4,7 @@ import { Simulation } from '../src/core/simulation.js';
 import { AIRCRAFT, AIRCRAFT_LIST } from '../src/aircraft/index.js';
 import { TARGETS, BULLETS, SIGHT, CARTRIDGES } from '../src/aircraft/weapons.js';
 import { Combat } from '../src/game/combat.js';
-import { Target, enemiesOf } from '../src/game/targets.js';
+import { Agent, enemiesOf } from '../src/game/agents.js';
 import { seededRandom } from '../src/weapons/guns.js';
 import { DAMAGE } from '../src/aircraft/damageModel.js';
 import { attitude } from '../src/dev/flightScenarios.js';
@@ -55,17 +55,17 @@ describe('a new flight', () => {
       c.reset(ac);
       expect(c.gunBank.roundsLeft).toEqual([ac.guns.rounds, ac.guns.rounds]);
       expect(c.bullets.length).toBe(0);
-      expect(c.targets.length).toBe(0);
+      expect(c.agents.length).toBe(0);
       expect(c.kills).toBe(0);
     }
   });
 
   it('reset forgets the last flight', () => {
     const { sim, combat } = setup();
-    combat.spawnTarget(sim);
+    combat.spawnAgent(sim);
     run(combat, sim, 1);
     combat.reset(AIRCRAFT.spad13);
-    expect(combat.targets.length).toBe(0);
+    expect(combat.agents.length).toBe(0);
     expect(combat.bullets.length).toBe(0);
     expect(combat.shotsFired).toBe(0);
     expect(combat.gunBank.roundsLeft).toEqual([400, 400]);
@@ -76,7 +76,7 @@ describe('target aircraft', () => {
   it('are the other side\'s aircraft, ahead of the player and flying the same way', () => {
     for (const ac of AIRCRAFT_LIST) {
       const { sim, combat } = setup(ac);
-      const t = combat.spawnTarget(sim);
+      const t = combat.spawnAgent(sim);
       expect(t.aircraft.side).not.toBe(ac.side);
       expect(enemiesOf(ac).every((e) => e.side !== ac.side)).toBe(true);
       const d = t.state.position.clone().sub(sim.state.position);
@@ -94,17 +94,17 @@ describe('target aircraft', () => {
     const { sim, combat } = setup();
     // Turn the player to face east (heading 90 degrees).
     sim.state.quaternion.premultiply(new Quaternion(0, Math.sin(-Math.PI / 4), 0, Math.cos(-Math.PI / 4)));
-    const t = combat.spawnTarget(sim);
+    const t = combat.spawnAgent(sim);
     const d = t.state.position.clone().sub(sim.state.position);
     expect(d.x).toBeGreaterThan(400);
     expect(Math.abs(d.z)).toBeLessThan(1);
     expect(attitude(t.state).heading).toBeCloseTo(Math.PI / 2, 2);
   });
 
-  it('are limited to three, side by side', () => {
+  it('are limited to four: three side by side, the fourth back in the middle', () => {
     const { sim, combat } = setup();
-    const ts = [combat.spawnTarget(sim), combat.spawnTarget(sim), combat.spawnTarget(sim)];
-    expect(combat.spawnTarget(sim)).toBeNull();
+    const ts = [combat.spawnAgent(sim), combat.spawnAgent(sim), combat.spawnAgent(sim), combat.spawnAgent(sim)];
+    expect(combat.spawnAgent(sim)).toBeNull();
     expect(ts.every(Boolean)).toBe(true);
     const laterals = ts.map((t) => t.state.position.x);
     expect(new Set(laterals.map((x) => Math.round(x))).size).toBe(3);
@@ -115,7 +115,7 @@ describe('target aircraft', () => {
     for (const pattern of TARGETS.patterns) {
       it(`flying the ${pattern} pattern against a ${player.name}: they keep their height and speed for 40 s without crashing`, () => {
         for (const ac of enemiesOf(player)) {
-          const t = new Target(ac, pattern);
+          const t = new Agent(ac, 'drone', { pattern });
           const start = new Simulation();
           start.start(player, 1000);
           t.place(start.state);
@@ -126,7 +126,7 @@ describe('target aircraft', () => {
           let last = attitude(t.state).heading;
           for (let i = 0; i < 40 / DT; i++) {
             t.step(DT);
-            worst = Math.max(worst, Math.abs(t.state.position.y - t.altitude));
+            worst = Math.max(worst, Math.abs(t.state.position.y - t.brain.altitude));
             const speed = t.state.velocity.length();
             slowest = Math.min(slowest, speed);
             fastest = Math.max(fastest, speed);
@@ -136,8 +136,8 @@ describe('target aircraft', () => {
           }
           expect(t.crashed, `${ac.name} ${pattern}`).toBe(false);
           expect(worst, `${ac.name} ${pattern} height`).toBeLessThan(40);
-          expect(slowest).toBeGreaterThan(0.8 * t.speed);
-          expect(fastest).toBeLessThan(1.25 * t.speed);
+          expect(slowest).toBeGreaterThan(0.8 * t.brain.speed);
+          expect(fastest).toBeLessThan(1.25 * t.brain.speed);
           if (pattern === 'circle') expect(Math.abs(turned)).toBeGreaterThan(2);
           if (pattern === 'straight') expect(Math.abs(turned)).toBeLessThan(0.35);
           if (pattern === 'weave') expect(Math.abs(turned)).toBeLessThan(1.5);
@@ -207,7 +207,7 @@ describe('firing', () => {
   it('a tree or building stops bullets before they reach a target behind it', () => {
     const wall = (x, y, z) => (z < sim.state.position.z - 100 && y < 40 ? 'Hit a tree' : null);
     const { sim, combat } = setup(AIRCRAFT.camel, { altitude: 25, combat: { solidAt: wall } });
-    const t = combat.spawnTarget(sim);
+    const t = combat.spawnAgent(sim);
     onSightPoint(combat, sim, t);
     const log = run(combat, sim, 0.5);
     expect(log.solid).toBeGreaterThan(3);
@@ -218,7 +218,7 @@ describe('firing', () => {
 describe('hitting and shooting down', () => {
   it('shots on the sight point hit a target there; the hit is counted and a spark event made', () => {
     const { sim, combat } = setup();
-    const t = combat.spawnTarget(sim);
+    const t = combat.spawnAgent(sim);
     onSightPoint(combat, sim, t);
     const log = run(combat, sim, 0.3);
     expect(combat.hitsOnTargets).toBeGreaterThan(0);
@@ -230,7 +230,7 @@ describe('hitting and shooting down', () => {
 
   it('shots well to the side miss', () => {
     const { sim, combat } = setup();
-    const t = combat.spawnTarget(sim);
+    const t = combat.spawnAgent(sim);
     onSightPoint(combat, sim, t, new Vector3(40, 0, 0));
     run(combat, sim, 0.5);
     expect(combat.hitsOnTargets).toBe(0);
@@ -238,7 +238,7 @@ describe('hitting and shooting down', () => {
 
   it('a burst from astern kills the pilot: one message and one kill, the burst effect, and the target tumbles out of the sky', () => {
     const { sim, combat } = setup();
-    const t = combat.spawnTarget(sim);
+    const t = combat.spawnAgent(sim);
     onSightPoint(combat, sim, t);
     for (let i = 0; i < 4 / DT && !t.down; i++) {
       run(combat, sim, DT);
@@ -260,7 +260,7 @@ describe('hitting and shooting down', () => {
   });
 
   it('hits take effect by part: an engine hit hurts the engine, a wing hit the wing, and a bullet goes through a wing to what is behind it', () => {
-    const t = new Target(AIRCRAFT.albatros, 'straight');
+    const t = new Agent(AIRCRAFT.albatros, 'drone', { pattern: 'straight' });
     t.takeHit('engine', 1800 * 3);
     expect(t.sim.damage.engine).toBeCloseTo(3 / 15, 9);
     t.takeHit('wingR', 1800 * 2);
@@ -270,7 +270,7 @@ describe('hitting and shooting down', () => {
 
   it('a hit from the side on a wing passes through both wings of a biplane before it stops', () => {
     const { sim, combat } = setup();
-    const t = combat.spawnTarget(sim);
+    const t = combat.spawnAgent(sim);
     // Fire straight down at the right wing from above: through the upper wing and the lower one.
     const ac = t.aircraft;
     const half = ac.wingStack[0].span / 2;
@@ -295,20 +295,20 @@ describe('hitting and shooting down', () => {
 
   it('a crashed target is taken away a few seconds later', () => {
     const { sim, combat } = setup();
-    const t = combat.spawnTarget(sim);
+    const t = combat.spawnAgent(sim);
     t.sim.crashed = true;
     run(combat, sim, 1, false);
-    expect(combat.targets.length).toBe(1);
+    expect(combat.agents.length).toBe(1);
     run(combat, sim, 5, false);
-    expect(combat.targets.length).toBe(0);
+    expect(combat.agents.length).toBe(0);
   });
 
   it('a target far away is dropped', () => {
     const { sim, combat } = setup();
-    const t = combat.spawnTarget(sim);
+    const t = combat.spawnAgent(sim);
     t.state.position.x += TARGETS.dropRange + 100;
     run(combat, sim, 0.1, false);
-    expect(combat.targets.length).toBe(0);
+    expect(combat.agents.length).toBe(0);
   });
 
 });

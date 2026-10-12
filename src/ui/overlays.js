@@ -44,7 +44,7 @@ const HELP = [
   '  Joystick: stick = pitch/roll, twist = rudder, slider = throttle, hat = look',
   '            trigger fire, 2 camera, 3/4 trim, 5 readout, 7 pause, 8 restart, 9 clear jam',
   '            F2 joystick screen (test, learn, flip); press the trigger once if it is not found',
-  '  Space fire (hold)   B clear a gun jam   N new target aircraft (up to 3)',
+  '  Space fire (hold)   B clear a gun jam   N new enemy (up to 4)   [ ] enemy skill   Y practice (enemy fire cannot hurt you)',
   '  C camera (cockpit / chase / free)   V or right mouse: look around',
   '  J instruments readout   L graphics quality   R restart   P pause   F3 debug   I invert pitch',
   '  H hide this   F4 flight test panel (development builds only; its buttons also damage your own aircraft)',

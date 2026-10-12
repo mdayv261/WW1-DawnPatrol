@@ -65,7 +65,7 @@ export const TARGETS = {
   speedFraction: 0.65, // of the target type's top speed, so the player can catch up (E)
   startRange: 450, // m ahead of the player at spawn (E)
   startAbove: 20, // m above the player at spawn (E)
-  maxAlive: 3,
+  maxAlive: 4, // agents at once (drones and AI pilots)
   dropRange: 6000, // m, a target farther than this is removed
   patterns: ['straight', 'circle', 'weave'],
   circleBank: (20 * Math.PI) / 180, // rad (E)

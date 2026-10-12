@@ -2,6 +2,7 @@
 // at 200 m, and a status line with rounds left, stoppages and the score.
 
 import { Vector3 } from 'three';
+import { SKILLS } from '../aircraft/aiData.js';
 
 const _p = new Vector3();
 
@@ -42,7 +43,7 @@ export function createCombatHud() {
   };
 }
 
-// "GUNS 250 | 250   FUEL 87%   TARGETS 2   DOWN 1" for the status line, with warnings
+// "GUNS 250 | 250   FUEL 87%   ENEMIES 2 (Regular)   DOWN 1" for the status line, with warnings
 // ("ENGINE SEIZED", "FUEL LEAK") when the player's own aircraft is hurt.
 export function combatText(combat, damage = null) {
   if (!combat.gunBank) return '';
@@ -61,7 +62,8 @@ export function combatText(combat, damage = null) {
     if (Object.values(damage.cables).some((c) => c !== null)) warnings.push('CABLE CUT');
     if (warnings.length) parts.push(warnings.join(', '));
   }
-  if (combat.targets.length || combat.kills) parts.push(`TARGETS ${combat.targets.filter((t) => !t.crashed).length}`, `DOWN ${combat.kills}`);
+  if (combat.agents.length || combat.kills) parts.push(`ENEMIES ${combat.agents.filter((t) => !t.crashed).length}`, `DOWN ${combat.kills}`);
+  parts.push(`NEW ENEMIES: ${SKILLS[combat.skill].name.toUpperCase()}${combat.practice ? '     PRACTICE MODE' : ''}`);
   return parts.join('     ');
 }
 
@@ -72,6 +74,7 @@ export function combatLines(combat) {
   return [
     `guns      ${combat.gunBank.statusText()}`,
     `fired     ${combat.shotsFired}   hits ${combat.hitsOnTargets} (${acc}%)   in flight ${combat.bullets.length}`,
-    `targets   ${combat.targets.length}   shot down ${combat.kills}`,
+    `enemies   ${combat.agents.length}   shot down ${combat.kills}   (new: ${SKILLS[combat.skill].name}${combat.practice ? ', practice mode' : ''})`,
+    ...combat.agents.map((a, i) => `  ${i + 1}. ${a.describe()}`),
   ];
 }

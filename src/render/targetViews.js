@@ -1,4 +1,4 @@
-// The 3D models of the target aircraft: one per Target, made when it appears,
+// The 3D models of the agent aircraft: one per Agent, made when it appears,
 // moved to its physics pose every frame, and taken away when it is gone.
 
 import { createAircraftMesh, setControlSurfaces } from './aircraftMesh.js';
