@@ -73,11 +73,13 @@ export class Combat {
   // Put a new agent in the fight (up to TARGETS.maxAlive) at `skill` (default: the current one).
   // A Drone appears ahead of the player; an AI pilot on a patrol circuit round where the player is.
   // Returns it, or null.
-  spawnAgent(player, skill = this.skill) {
+  // options: { aircraft (a type to use; default the enemy types in turn), centre ({ x, z } of an AI's
+  // patrol circuit; default round the player), altitude (of the circuit; default the skill's) }.
+  spawnAgent(player, skill = this.skill, options = {}) {
     if (this.agents.length >= TARGETS.maxAlive) return null;
     const types = enemiesOf(player.aircraft);
     const n = this.spawned++;
-    const aircraft = types[n % types.length];
+    const aircraft = options.aircraft ?? types[n % types.length];
     const agent = new Agent(aircraft, skill, { pattern: TARGETS.patterns[n % TARGETS.patterns.length], solidAt: this.solidAt, rng: this.rng });
     if (skill === 'drone') {
       agent.place(player.state, [0, -90, 90, 0][this.agents.length % 4]);
@@ -86,7 +88,7 @@ export class Combat {
       const heading = attitude(player.state).heading;
       const ahead = Math.atan2(-Math.cos(heading), Math.sin(heading));
       const spread = [0, -0.7, 0.7, 1.4][this.agents.length % 4];
-      agent.placeOnCircuit({ x: player.state.position.x, z: player.state.position.z }, ahead + spread);
+      agent.placeOnCircuit(options.centre ?? { x: player.state.position.x, z: player.state.position.z }, ahead + spread, options.altitude);
     }
     this.agents.push(agent);
     return agent;

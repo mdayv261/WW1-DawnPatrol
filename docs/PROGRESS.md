@@ -2,9 +2,25 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 5 (AI opponents) signed off by the product owner. Phases 0-5 are done. Phase 6 is next; it needs the product owner's brief and a plan in plan mode first.
+## Current status: Phase 6 (game loop, HUD and audio): checkpoint 1 (menus, missions, results) built; waiting for the product owner's test. Phases 0-5 are signed off.
 
 Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft models (48df111), terrain (c3b90ec), airfields and detail (dee316a), and checkpoint 3 (quality levels, pixel budget, frame-rate readout, cirrus). Phase 4 must not start until the product owner confirms Phase 3.
+
+## Phase 6 checkpoint 1: menus, missions and results (D57)
+
+**Done:** the game now opens on a main menu. **Fly a mission** opens the mission orders: your aircraft, enemy aircraft (a type or mixed), number of enemies (0 to 4), skill (Drone, Novice, Regular, Ace), start (airfield or 1,000 / 2,000 / 3,000 m) and time of day (dawn, day, dusk). A mission ends with victory, the enemy withdrawing, being shot down or crashing, landing at one of your own airfields, or End mission from the pause menu (Esc or P), and the results screen shows what happened. From there: Fly again, Change mission or Main menu, all without reloading the page. 987 tests pass (plus 15 known deviations), including the acceptance test in code (two missions in a row, nothing left over); `npm run build` works. The flight model and AI are unchanged.
+
+**Please test (about 10 minutes):**
+1. Run `npm run dev` and open http://localhost:5173. The main menu shows over your aircraft on the airfield. Click **Fly a mission**.
+2. Choose a Camel, 1 Novice, start at 1,000 m, **Dusk**, and **Take off**. Fight; when the enemy goes down, the results appear a few seconds later. Click **Main menu**.
+3. Fly again with a different aircraft, start **on the airfield**, **Dawn**: the enemies are over the front (east for the Allies, F3 shows them), so take off and find them, or fly a circuit and **land back on your airfield**: stop on it and the results say "Safe return".
+4. In a mission press **Esc** or **P**: try Resume, Options (volume, graphics, HUD, practice), Restart mission and End mission. Quit to main menu.
+5. Get shot down (try an Ace) or fly into the ground: the results say so, and the points go down.
+6. Look at the points, rank and victories on the results screen and on the main menu; fly a few missions to be promoted.
+
+**Decided:** cream screens OK; with an airfield start the enemy stays about 4 km away over the front; the results now give **points and a period rank** (D58): points for each enemy shot down (by skill), accuracy and coming home, minus for being shot down or crashing; ranks from Second Lieutenant to Major (Allied) or Leutnant to Rittmeister (German), and Ace at five victories. Practice missions earn nothing. The main menu shows your rank and record for each side.
+
+**Known issues:** sound and the new cockpit panels and HUD come in checkpoints 2 and 3 (the HUD option does nothing yet). With mouse flying on, the first Esc releases the mouse and pauses.
 
 ## Phase 5 checkpoint 3 and acceptance test (D56)
 
@@ -393,4 +409,5 @@ Still open:
 - **Phase 3: World and visuals.** Done and signed off. Procedurally generated Western Front terrain (fields, woods, trench lines), sky and clouds. Low-polygon aircraft models built in code, with no third-party assets. Acceptance: steady frame rate at 1080p on the product owner's machine; each aircraft is recognisable by its silhouette.
 - **Phase 4: Weapons and damage.** Done and signed off. Synchronised machine guns firing through the propeller, bullet ballistics with gravity and drag, limited ammunition and gun jams. Component damage to the engine, fuel, pilot, wings and control cables; damage changes the flight model. Acceptance: tests confirm bullet drop and travel time; a damaged wing causes a measurable roll.
 - **Phase 5: AI opponents.** Done and signed off. AI pilots on the player's flight model and controls, with patrol, engage, attack, evade and disengage; the six manoeuvres of the spec; Novice, Regular and Ace skill levels plus the Drone. Acceptance: see "Phase 5 checkpoint 3 and acceptance test" above.
+- **Phase 6: Game loop, HUD and audio.** In progress. Start menu, mission setup, pause and results; period cockpit instruments and an optional modern HUD; engine, gun, wind and hit sounds. Acceptance: a full mission runs from menu to result screen and back without reloading the page.
 - Later phases: not yet defined (Phase 7 includes gamepad and joystick support, per the spec).

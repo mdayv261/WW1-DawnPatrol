@@ -598,3 +598,25 @@ The propeller's turning angle is followed from the engine speed the flight model
 - **Known issue (accepted by the product owner):** two AI pilots who both fight back mostly circle for minutes without a kill, at every pairing of skills. Fighting the player or a drone they shoot and kill. A deeper dogfighting redesign (energy fighting, lag pursuit) is left for a later polish phase.
 - **An agent whose wing, tail, engine or pilot fails for any reason** (for example wings shot through and then overstressed in the dive that follows) now counts as down, not as a crash.
 - **Product owner's answer:** Phase 5 passes the acceptance test.
+
+## D57. Menus, missions and results (Phase 6, checkpoint 1)
+
+- **Flow** (`src/game/flow.js`): main menu, mission setup, options, flying, paused, results, with only the sensible moves allowed (no flying straight from the menu; options returns to where it was opened). The screens (`src/ui/screens/`) are plain page elements over the 3D view, styled like a squadron order sheet (cream card, serif type), built in code with no assets.
+- **Mission settings:** your aircraft; enemy aircraft (one type of the other side, or mixed); 0 to 4 enemies (0 = free flight); skill (Drone, Novice, Regular, Ace); start (on the airfield, or in the air at 1,000, 2,000 or 3,000 m); time of day. Remembered in the browser; bad saved values fall back to the defaults.
+- **Where the enemy is** (`src/game/mission.js`): in an air start the AI patrols round the player at the start height (an Ace 300 m above, a Novice 300 m below); in an airfield start it patrols 4 km toward the front (east for an Allied player, west for a German one), so the player takes off and goes to find it; drones fly ahead as before. In a mission, enemies are only removed when 12 km away.
+- **A mission ends** on: all enemies down (victory) or gone without a loss (the enemy withdrew), 4 s later so the player can watch; the player shot down (pilot killed, a wing, the tail or the engine finished) or crashed, 4 s later; landing and stopping (under 2 m/s) on a landing ground of the player's own side after having flown (a safe return), 1 s later; or End mission from the pause menu. The results show the outcome, time, enemies shot down, rounds fired, hits and accuracy, hits taken, damage and fuel used.
+- **Pause:** Esc or P (or the joystick's pause button) opens the pause menu: Resume, Restart mission, Options, End mission, Quit to main menu. With mouse flying on, the first Esc also releases the mouse (the browser's rule).
+- **Behind the menus** the player's aircraft stands on the airfield in the chosen light; the physics does not run while a menu is up. The keys help appears only in flight.
+- **Times of day** (`src/render/sky.js`): dawn (sun low in the east, warm and dim), day (as before), dusk (sun low in the west, orange). Sky, haze, sun, sky light and cloud colour all change. Design choices, not sourced.
+- **Options:** sound volume (used in checkpoint 3), graphics quality, modern HUD on/off (checkpoint 2), practice mode.
+- **Development only:** number keys and Shift+number quick starts, N, `[`/`]`, F4 test panel, `?seed=`, `?enemies=`, `?skill=`. R restarts the mission in any build; Y toggles practice mode.
+- **Code:** `main.js` now only builds the page and runs the loop; the flight on screen is `src/game/session.js`.
+- **Product owner's answers:** the cream screens are OK; with an airfield start the enemy stays about 4 km away over the front; the results should carry a ranking (D58).
+
+## D58. Career points and period ranks (Phase 6, checkpoint 1)
+
+- **Points for a mission** (`src/game/career.js`): each enemy shot down by its skill (Drone 5, Novice 20, Regular 35, Ace 60), half a point per percent of accuracy if at least 20 rounds were fired, and the ending (safe return +30, victory +20, the enemy withdrew +5, shot down -40, crashed -30). Practice mode earns nothing and is not recorded. Design choices: landing safely is worth the most, because a pilot who comes home fights again.
+- **The career** adds up points, victories, missions and losses, remembered in the browser, separately for an Allied and a German pilot (the ranks differ). Points never go below zero.
+- **Ranks** at 0, 150, 400 and 900 points: Second Lieutenant, Lieutenant, Captain, Major (Royal Flying Corps / Royal Air Force); Leutnant, Oberleutnant, Hauptmann, Rittmeister (German air service; Richthofen's rank was Rittmeister). The names are period ranks; the thresholds are design choices. "Ace" at five victories, the common usage of the time.
+- The results screen shows how the points were earned, the career total, the rank, victories, and a promotion or "now an Ace" line; the main menu shows each side's rank and record.
+

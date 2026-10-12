@@ -136,10 +136,9 @@ export class Agent {
 
   // Start an AI pilot on its patrol circuit around `centre` ({ x, z }), `angle` radians round it,
   // flying round the circuit at its patrol height and speed.
-  placeOnCircuit(centre, angle) {
+  placeOnCircuit(centre, angle, altitude = SKILLS[this.skill].patrolAltitude) {
     const skill = SKILLS[this.skill];
     const speed = skill.patrolSpeed * this.aircraft.documented.maxSpeed;
-    const altitude = skill.patrolAltitude;
     this.sim.start(this.aircraft, altitude, speed);
     const s = this.sim.state;
     // The circuit is flown with increasing angle, so the aircraft heads along (-sin a, +cos a) in (x, z).
@@ -153,6 +152,7 @@ export class Agent {
     this.sim.previous.position.copy(s.position);
     this.sim.previous.quaternion.copy(s.quaternion);
     this.brain = new AiBrain(this.aircraft, this.skill, centre, this.rng);
+    this.brain.patrolAltitude = altitude;
   }
 
   // Move the controls for one step and advance the aircraft. others: [{ id, side, state }] the

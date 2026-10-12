@@ -46,6 +46,7 @@ export class AiBrain {
     this.trigger = new Trigger(this.skill, rng);
     this.cartridge = CARTRIDGES[GUN_TYPES[aircraft.guns.type].cartridge];
     this.centre = { x: centre.x, z: centre.z };
+    this.patrolAltitude = this.skill.patrolAltitude; // the height of its circuit (a mission may set another)
     this.state = 'patrol';
     this.stateTime = 0;
     this.manoeuvre = null; // the named manoeuvre in progress
@@ -137,7 +138,7 @@ export class AiBrain {
     const aim = { x: this.centre.x + PATROL.radius * Math.cos(ahead), z: this.centre.z + PATROL.radius * Math.sin(ahead) };
     _to.set(aim.x - position.x, 0, aim.z - position.z);
     const run = Math.max(_to.length(), 1);
-    const slope = Math.max(-PATROL.climbSlope, Math.min(PATROL.climbSlope, (this.skill.patrolAltitude - position.y) / (run * 0.5)));
+    const slope = Math.max(-PATROL.climbSlope, Math.min(PATROL.climbSlope, (this.patrolAltitude - position.y) / (run * 0.5)));
     return new Vector3(_to.x / run, slope, _to.z / run).normalize();
   }
 

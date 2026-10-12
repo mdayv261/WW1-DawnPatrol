@@ -84,13 +84,14 @@ const VERTEX = `
 const FRAGMENT = `
   uniform sampler2D atlas;
   uniform vec3 fogColor;
+  uniform vec3 tint;
   varying vec2 vUv;
   varying float vShade;
   varying float vFade;
   varying float vFog;
   void main() {
     vec4 t = texture2D(atlas, vUv);
-    vec3 col = t.rgb * vShade;
+    vec3 col = t.rgb * vShade * tint;
     col = mix(col, fogColor, vFog * 0.75);
     float a = t.a * vFade * (1.0 - vFog * 0.5);
     if (a < 0.01) discard;
@@ -122,6 +123,7 @@ export class Clouds {
       uniforms: {
         atlas: { value: paintAtlas() },
         fogColor: { value: new Color(fog?.color ?? 0xc9dcec) },
+        tint: { value: new Color(1, 1, 1) },
         fogNear: { value: fog?.near ?? 3000 },
         fogFar: { value: fog?.far ?? 25000 },
       },
@@ -137,6 +139,15 @@ export class Clouds {
   }
 
   // Change how far and how thickly the sky is filled (graphics quality).
+  // The haze colour and distances the clouds melt into (a new time of day).
+  setHaze(colour, near, far, tint = 0xffffff) {
+    const u = this.material.uniforms;
+    u.tint.value.set(tint);
+    u.fogColor.value.set(colour);
+    u.fogNear.value = near;
+    u.fogFar.value = far;
+  }
+
   setQuality(quality) {
     this.quality = quality;
     this.last = null; // rebuild on the next update

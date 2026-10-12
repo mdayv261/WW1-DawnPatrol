@@ -15,7 +15,7 @@ export function keyId(e) {
 
 // handlers: { onSelect(index, airStart), onRestart(), onPause(), onDebug(),
 //   onHelp(), onTestPanel(), onJoystickPanel(), onCamera(), onLook(), onReadout(), onQuality(),
-//   onRecentre(), onSensitivity(step), onClearJam(), onTarget(), onSkill(step), onPractice() }
+//   onRecentre(), onSensitivity(step), onClearJam(), onTarget(), onSkill(step), onPractice(), onEscape(), onHud() }
 export function attachKeyboard(handlers) {
   const mapper = new InputMapper();
   const heldAs = new Map(); // physical key -> id it was pressed as
@@ -36,6 +36,8 @@ export function attachKeyboard(handlers) {
       const n = Number(e.code.slice(5));
       if (n >= 1 && n <= 9) handlers.onSelect(n - 1, e.shiftKey);
     } else if (e.code === 'KeyR') handlers.onRestart();
+    else if (e.code === 'Escape') handlers.onEscape?.();
+    else if (e.code === 'KeyU') handlers.onHud?.();
     else if (e.code === 'KeyP') handlers.onPause();
     else if (e.code === 'F3') {
       e.preventDefault();

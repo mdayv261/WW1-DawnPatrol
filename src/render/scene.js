@@ -34,14 +34,16 @@ export function createScene(canvas, maxPixels = Infinity) {
   // Haze: distant ground fades into the horizon colour.
   scene.fog = new THREE.Fog(SKY.horizon, SKY.hazeNear, SKY.hazeFar);
 
-  scene.add(createSky(CAMERA_FAR * 0.9));
+  const sky = createSky(CAMERA_FAR * 0.9);
+  scene.add(sky);
   const ground = createGround();
   scene.add(ground);
 
   const sun = new THREE.DirectionalLight(SKY.sunColour, SKY.sunIntensity);
   sun.position.copy(sunDirection()).multiplyScalar(1000);
   scene.add(sun);
-  scene.add(new THREE.HemisphereLight(SKY.skyLight, SKY.groundLight, SKY.ambientIntensity));
+  const hemisphere = new THREE.HemisphereLight(SKY.skyLight, SKY.groundLight, SKY.ambientIntensity);
+  scene.add(hemisphere);
 
   // Placeholder viewpoint: 300 m up, looking toward the horizon.
   const camera = new THREE.PerspectiveCamera(60, 1, 1, CAMERA_FAR);
@@ -63,7 +65,7 @@ export function createScene(canvas, maxPixels = Infinity) {
   resize();
 
   return {
-    renderer, scene, camera, ground, groundTile: FIELD_SIZE, view,
+    renderer, scene, camera, ground, groundTile: FIELD_SIZE, view, sun, hemisphere, sky,
     setMaxPixels(n) {
       pixelBudget = n;
       resize();

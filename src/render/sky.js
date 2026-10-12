@@ -17,9 +17,53 @@ export const SKY = {
   hazeFar: 25000, // m: where it hides everything
   cirrus: 0.8, // 0 = none, 1 = a lot of high wispy cloud
   cirrusWind: [0.7, 0.2], // which way the wisps are drawn out
+  cloudTint: 0xffffff, // the colour the clouds are lit with
 };
 
 export const sunDirection = () => new Vector3(...SKY.sunDirection).normalize();
+
+// Times of day: each replaces the SKY values it names. Design choices (no source: the look of a
+// low morning or evening sun over the Western Front), recorded in docs/DECISIONS.md. The front
+// runs north-south with the Germans to the east, so dawn sun is in the east and dusk sun in the west.
+export const TIME_OF_DAY = {
+  day: {},
+  dawn: {
+    horizon: 0xe6c3a6, zenith: 0x4b6ea3, sunDirection: [0.92, 0.14, -0.2], sunColour: 0xffc890, sunIntensity: 1.6,
+    skyLight: 0xc8b8c4, groundLight: 0x4e5a34, ambientIntensity: 0.75, hazeNear: 2200, hazeFar: 21000, cirrus: 0.6, cloudTint: 0xf2d6c2,
+  },
+  dusk: {
+    horizon: 0xe2a47c, zenith: 0x34507e, sunDirection: [-0.9, 0.12, 0.3], sunColour: 0xff9c5c, sunIntensity: 1.4,
+    skyLight: 0xb89ca8, groundLight: 0x46502c, ambientIntensity: 0.65, hazeNear: 2500, hazeFar: 22000, cirrus: 0.7, cloudTint: 0xe8b090,
+  },
+};
+
+// The sky values for a time of day (the day values with the preset's changes).
+export function skyFor(time) {
+  return { ...SKY, ...(TIME_OF_DAY[time] ?? {}) };
+}
+
+// Change the lighting to a time of day. parts: { scene, sun, hemisphere, sky, clouds } from createScene().
+export function applyTimeOfDay(parts, time) {
+  const s = skyFor(time);
+  parts.scene.background.set(s.horizon);
+  parts.scene.fog.color.set(s.horizon);
+  parts.scene.fog.near = s.hazeNear;
+  parts.scene.fog.far = s.hazeFar;
+  const dir = new Vector3(...s.sunDirection).normalize();
+  parts.sun.color.set(s.sunColour);
+  parts.sun.intensity = s.sunIntensity;
+  parts.sun.position.copy(dir).multiplyScalar(1000);
+  parts.hemisphere.color.set(s.skyLight);
+  parts.hemisphere.groundColor.set(s.groundLight);
+  parts.hemisphere.intensity = s.ambientIntensity;
+  const u = parts.sky.material.uniforms;
+  u.horizon.value.set(s.horizon);
+  u.zenith.value.set(s.zenith);
+  u.sunDir.value.copy(dir);
+  u.cirrus.value = s.cirrus;
+  parts.clouds?.setHaze(s.horizon, s.hazeNear, s.hazeFar, s.cloudTint);
+  return s;
+}
 
 const FRAGMENT = `
   uniform vec3 horizon;

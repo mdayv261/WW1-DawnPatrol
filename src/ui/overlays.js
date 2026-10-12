@@ -35,16 +35,15 @@ const HELP = [
   '  Down / Up      pull back (nose up) / push forward',
   '  Left / Right   roll',
   '  Q / E          rudder left / right',
-  '  1-4            Camel, SPAD, Dr.I, Albatros',
   '  Insert/Delete or W/S   throttle up / down (mouse wheel too)',
   '  Home/End or T/G        trim nose up / down',
-  '  1-4 airfield start      Shift+1-4 air start at 1,000 m',
+  '  R restart the mission   U modern HUD   (development builds: 1-4 / Shift+1-4 quick starts, N enemy, [ ] skill)',
   '  Mouse: click to fly with the mouse, Esc to release, X centre stick,',
   '         , and . sensitivity',
   '  Joystick: stick = pitch/roll, twist = rudder, slider = throttle, hat = look',
   '            trigger fire, 2 camera, 3/4 trim, 5 readout, 7 pause, 8 restart, 9 clear jam',
   '            F2 joystick screen (test, learn, flip); press the trigger once if it is not found',
-  '  Space fire (hold)   B clear a gun jam   N new enemy (up to 4)   [ ] enemy skill   Y practice (enemy fire cannot hurt you)',
+  '  Space fire (hold)   B clear a gun jam   Y practice mode   Esc or P pause (end the mission, options)',
   '  C camera (cockpit / chase / free)   V or right mouse: look around',
   '  J instruments readout   L graphics quality   R restart   P pause   F3 debug   I invert pitch',
   '  H hide this   F4 flight test panel (development builds only; its buttons also damage your own aircraft)',
@@ -53,7 +52,19 @@ const HELP = [
 export function createHelp() {
   const el = panel('bottom: 10px; left: 10px;');
   el.textContent = HELP;
-  return { toggle() { el.style.display = el.style.display === 'none' ? 'block' : 'none'; } };
+  let wanted = true; // H turns it on and off; it is hidden anyway while a menu is up
+  let allowed = true;
+  const apply = () => { el.style.display = wanted && allowed ? 'block' : 'none'; };
+  return {
+    toggle() {
+      wanted = !wanted;
+      apply();
+    },
+    allow(yes) {
+      allowed = yes;
+      apply();
+    },
+  };
 }
 
 // Short status line top-right: aircraft name and a crash notice.
