@@ -35,6 +35,8 @@ export const albatrosDv = {
   },
   propeller: {
     diameter: 2.7, // m (E)
+    blades: 2, // (H) two-bladed wooden propeller
+    chord: 0.18, // m, blade width at the gun's radius (E) as drawn on the model
     gearRatio: 1, // direct drive
   },
   // Undercarriage (body axes, from the centre of gravity). The main wheels'
@@ -70,6 +72,16 @@ export const albatrosDv = {
     clMax: 1.3, // (E)
     staticMargin: 0.08, // (E)
     cnBeta: 0.12, // (E)
+  },
+  // Guns (body axes, from the centre of gravity). Parallel to the thrust line, as the
+  // synchroniser lets them fire only between propeller blades. Positions: on top of the fuselage ahead of the cockpit; the museum record places a gun mount on the right (M).
+  guns: {
+    type: 'lmg0815',
+    rounds: 500, // per gun, 500 rounds per gun (E: copied from the Dr.I; not found for the D.V)
+    synchroniser: 'mechanical interrupter gear (the maker and type were not found in an allowed source)',
+    muzzleX: 2.19, // m ahead of the centre of gravity: about 0.30 of the length, just behind the propeller plane (E)
+    muzzleY: 0.5, // m above the centre of gravity: on top of the cowling (E)
+    muzzleZ: 0.18, // m each side of the centre line: the two guns sit this far left and right (E)
   },
   documented: {
     maxSpeed: 47.78, // m/s, 172 km/h (D.Va, 937 kg, 170 hp), Herris; altitude not stated, taken as sea level (M)

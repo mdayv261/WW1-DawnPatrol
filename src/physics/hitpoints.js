@@ -8,6 +8,7 @@
 
 import { Vector3 } from 'three';
 import { gearGeometry } from './ground.js';
+import { wingLevels } from './wingLevels.js';
 
 const cache = new WeakMap();
 
@@ -32,21 +33,13 @@ export function hitPoints(ac, common) {
     new Vector3(0.2 * L, 0.5, 0), new Vector3(0, 0.55, 0), // top of the fuselage
   ];
 
-  // Wings, top first: the stack gives spans and heights, the visual block the chord and stagger.
-  const n = ac.wingStack.length;
-  const upperY = g.contactY + ac.geometry.height - 0.1;
-  const topX = 0.12 + (v.stagger * (n - 1)) / 2;
-  ac.wingStack.forEach((w, i) => {
-    const chord = i === n - 1 && v.lowerChord ? v.lowerChord : v.chord;
-    const dihedral = i === n - 1 ? v.lowerDihedral ?? 0 : 0;
-    const x = topX - i * v.stagger;
-    const root = upperY - (ac.wingStack[0].height - w.height) - (w.span / 4) * Math.tan(dihedral);
-    const tip = root + (w.span / 2) * Math.tan(dihedral);
+  // Wings, top first.
+  for (const w of wingLevels(ac, common)) {
     for (const side of [-1, 1]) {
-      pts.push(new Vector3(x + chord / 2, tip, (side * w.span) / 2), new Vector3(x - chord / 2, tip, (side * w.span) / 2));
+      pts.push(new Vector3(w.x + w.chord / 2, w.tip, (side * w.span) / 2), new Vector3(w.x - w.chord / 2, w.tip, (side * w.span) / 2));
     }
-    pts.push(new Vector3(x + chord / 2, root, 0)); // the wing's centre leading edge
-  });
+    pts.push(new Vector3(w.x + w.chord / 2, w.root, 0)); // the wing's centre leading edge
+  }
 
   // Tail.
   for (const side of [-1, 1]) pts.push(new Vector3(-0.55 * L, 0.05, (side * v.tailSpan) / 2));

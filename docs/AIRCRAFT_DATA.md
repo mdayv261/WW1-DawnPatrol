@@ -67,6 +67,12 @@ All values are stored in SI units. The original figure and unit from the source 
 | S37 | flyingmachines.ru Camel page, specification table (Mason / King / Flight 1918 as quoted): chord, gap, stagger, dihedral, tailplane span and area; Thetford caption on Barker's B6313; German translation of Flight, Sept 1918, on B.6290 colours | https://flyingmachines.ru/Site2/Crafts/Craft25445.htm | Transcription of books and a 1918 journal |
 | S38 | Aeronautical conservancy / NASM, fabric from Fokker Dr.I 425/17 (Richthofen's aircraft): paint layers | https://www.aeroconservancy.com/fokker-dr-i-425-17-fabric-richthofe | Museum conservation record |
 | S39 | flyingmachines.ru Fokker Dr.I page: Thetford and Gray (doubt that Richthofen flew an all-scarlet Dr.I; serials), Herris and Phillips and Weyl (wing chord, markings of early aircraft) | https://flyingmachines.ru/Site2/Crafts/Craft25493.htm | Transcription of books |
+| S40 | Vickers MG Collection and Research Association blog, ".303 inch Mk I": cyclic rate 450-550 rpm, 250-round belt, weight | https://vickersmg.blog/the-guns/303-inch-mk-i/ | Specialist reference site (not a forum) |
+| S41 | Royal Armouries, Vickers-Maxim Mk I record (rate of fire 550 rpm) and IWM record that the Vickers was fitted to Allied aircraft from 1916 once synchronisation was developed | https://collections.royalarmouries.org/object/rac-object-50943 and https://www.iwm.org.uk/collections/item/object/30034908 | Museum records (read through search-result summaries only; the pages themselves could not be opened) |
+| S42 | The Vintage Aviator (NZ), "The Spandau LMG 08/15": 400-500 rpm depending on synchroniser and engine speed, 2,821 ft/s, 7.92 x 57 mm | https://thevintageaviator.co.nz/projects/reproduction-guns/luftgekult-maschinen-gewehr-08-15-machine-gun | Museum-quality reproduction maker's page |
+| S43 | Royal Armouries, Maxim MG 08/15 (rate 450 rpm) and Australian War Memorial MG 08/15 record (up to 450 rpm) | https://collections.royalarmouries.org/first-world-war/type/rac-narrative-63.html and https://www.awm.gov.au/collection/C154473 | Museum records (read through search-result summaries only) |
+| S44 | Western Front Association, "The .303 Cartridge" (2008): 174 grains, about 2,400 ft/s | https://www.westernfrontassociation.com/world-war-i-articles/2008/may/the-303-cartridge/ | Society article |
+| S45 | JBM Ballistics: G1 drag function tabulated by R. McCoy (mcg1.txt), from E. Lowry, Exterior Ballistics of Small Arms Projectiles (Winchester-Western, 1965) | https://jbmballistics.com/downloads.html | Published standard drag table |
 
 Transcriptions on flyingmachines.ru reproduce the named books' tables; values from them are rated medium because the transcription itself was not checked against the printed book.
 
@@ -101,6 +107,12 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Maximum speed | 52.3 | m/s | 117 mph at sea level | S22 | medium | Mason, at 1,453 lb (659 kg): 117 mph at sea level, 113 mph at 10,000 ft. The drag (CD0) is calibrated to this figure. S4 gives 112 mph with no altitude; S15 115 mph; King (S23) lower figures at a heavier weight (see Validation data). |
 | Service ceiling | 5,791 | m | 19,000 ft | S4, S15, S22 | medium | Three sources agree, but none gives the conditions (load, engine state). King (S23) gives 18,000 ft. |
 | Armament | 2 x Vickers .303 in (7.7 mm), synchronised | — | two Vickers .303 | S1, S4 | high | Ballistics are not recorded yet (see gaps). |
+| Rounds carried per gun (`guns.rounds`) | 250 | rounds | — | S23 | medium | King (S23): 250 rounds per gun at first, "later increased"; the same page gives a total of 600 for the two guns. The first figure is used. |
+| Gun muzzle ahead of the CG (`guns.muzzleX`) | 1.72 | m | — | ASSUMPTION | estimate | Not found. About 0.30 of the length, just behind the propeller plane; places the guns on top of the nose as the sources describe. Shots are timed so they pass between the propeller blades. |
+| Gun muzzle above the CG (`guns.muzzleY`) | 0.56 | m | — | ASSUMPTION | estimate | Not found. On top of the cowling, above the engine, as drawn on the model. |
+| Gun muzzle each side of the centre line (`guns.muzzleZ`) | 0.13 | m | — | ASSUMPTION | estimate | Not found. The two guns are mounted on top of the nose, a few inches apart (S22, S23 for the Camel); the guns are parallel to the aircraft's axis. |
+| Propeller blades (`propeller.blades`) | 2 | — | two-bladed | S1, S2 | high | All four aircraft had two-bladed wooden propellers (museum records). |
+| Propeller blade chord at the guns (`propeller.chord`) | 0.17 | m | — | ASSUMPTION | estimate | Not found. As drawn on the model (0.17 to 0.18 m, a typical blade width at a third of the radius); used by the synchroniser to know when a blade covers a gun. |
 | Zero-lift drag coefficient CD0 | 0.036 | — | — | ASSUMPTION | estimate | Fitted (`npm run calibrate`) so the model's full-throttle level top speed at sea level and 659 kg equals Mason's 117 mph, using the multiplane induced drag (S29), measured propeller curve (S30) and power-altitude law (S31). The Phase 1 value (0.036, from 112 mph with a fixed 0.70 propeller efficiency) happens to come out the same. |
 | Oswald efficiency e | 0.75 | — | — | ASSUMPTION | estimate | No measured value located. A typical biplane value with gap/chord near 1. Refine with Munk biplane theory (NACA TR-151) in Phase 1. |
 | Maximum lift coefficient CLmax | 1.3 | — | — | ASSUMPTION | estimate | No measured value located. Typical of a thin cambered 1917 wing section. Tune against a documented stall speed once found. |
@@ -157,6 +169,12 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Climb time to 4,572 m (15,000 ft), 8Ba | 1,380 | s | 23 min | S17 | medium | Same test. |
 | Service ceiling | 5,608 | m | 18,400 ft | S17 | medium | Same test. Absolute ceiling 20,000 ft (6,096 m). |
 | Armament | 2 x Vickers .303 in (7.7 mm), synchronised, 400 rounds per gun | — | two Vickers, 400 rounds each | S5, S17 | high | |
+| Rounds carried per gun (`guns.rounds`) | 400 | rounds | — | S5, S17 | high | As in the Armament row. |
+| Gun muzzle ahead of the CG (`guns.muzzleX`) | 1.89 | m | — | ASSUMPTION | estimate | Not found. About 0.30 of the length, just behind the propeller plane; places the guns on top of the nose as the sources describe. Shots are timed so they pass between the propeller blades. |
+| Gun muzzle above the CG (`guns.muzzleY`) | 0.5 | m | — | ASSUMPTION | estimate | Not found. On top of the cowling, above the engine, as drawn on the model. |
+| Gun muzzle each side of the centre line (`guns.muzzleZ`) | 0.16 | m | — | ASSUMPTION | estimate | Not found. Position chosen to look right on the model and to cross the propeller disc, so the synchroniser matters; the guns are parallel to the aircraft's axis. |
+| Propeller blades (`propeller.blades`) | 2 | — | two-bladed | S1, S2 | high | All four aircraft had two-bladed wooden propellers (museum records). |
+| Propeller blade chord at the guns (`propeller.chord`) | 0.18 | m | — | ASSUMPTION | estimate | Not found. As drawn on the model (0.17 to 0.18 m, a typical blade width at a third of the radius); used by the synchroniser to know when a blade covers a gun. |
 | Zero-lift drag coefficient CD0 | 0.039 | — | — | ASSUMPTION | estimate | Fitted (`npm run calibrate`) so the model's full-throttle level top speed at 1,981 m, 924 kg and 220 hp equals the McCook 213 km/h. With the 197 hp alternative it would be 0.0343 (see FLIGHT_VALIDATION.md). Phase 1 value: 0.0365. |
 | Oswald efficiency e | 0.75 | — | — | ASSUMPTION | estimate | No measured value located. A typical biplane value with gap/chord near 1. Refine with Munk biplane theory (NACA TR-151) in Phase 1. |
 | Maximum lift coefficient CLmax | 1.3 | — | — | ASSUMPTION | estimate | No measured value located. Typical of a thin cambered 1917 wing section. Tune against a documented stall speed once found. |
@@ -209,6 +227,12 @@ No original Dr.I survives (S6), so all geometry and weights come from reproducti
 | Service ceiling | 6,000 | m | 19,685 ft | S6, S26 | medium | One source only (a reproduction's fact sheet). Conditions not stated. |
 | Rate of climb | 5.7 | m/s | 5.7 m/s | S7 | medium | Altitude not stated. |
 | Armament | 2 x 7.92 mm LMG 08/15, synchronised | — | two 7.92 mm Spandau LMG 08/15 | S6, S10 | high | S7 says "LMG 08". |
+| Rounds carried per gun (`guns.rounds`) | 500 | rounds | — | S26 | medium | Herris and Phillips (S26): each LMG 08/15 "carried 500 rounds" on the prototype V.5; taken to apply to production aircraft. |
+| Gun muzzle ahead of the CG (`guns.muzzleX`) | 1.73 | m | — | ASSUMPTION | estimate | Not found. About 0.30 of the length, just behind the propeller plane; places the guns on top of the nose as the sources describe. Shots are timed so they pass between the propeller blades. |
+| Gun muzzle above the CG (`guns.muzzleY`) | 0.52 | m | — | ASSUMPTION | estimate | Not found. On top of the cowling, above the engine, as drawn on the model. |
+| Gun muzzle each side of the centre line (`guns.muzzleZ`) | 0.14 | m | — | ASSUMPTION | estimate | Not found. Position chosen to look right on the model and to cross the propeller disc, so the synchroniser matters; the guns are parallel to the aircraft's axis. |
+| Propeller blades (`propeller.blades`) | 2 | — | two-bladed | S1, S2 | high | All four aircraft had two-bladed wooden propellers (museum records). |
+| Propeller blade chord at the guns (`propeller.chord`) | 0.17 | m | — | ASSUMPTION | estimate | Not found. As drawn on the model (0.17 to 0.18 m, a typical blade width at a third of the radius); used by the synchroniser to know when a blade covers a gun. |
 | Zero-lift drag coefficient CD0 | 0.0356 | — | — | ASSUMPTION | estimate | Fitted (`npm run calibrate`) so the model's full-throttle level top speed at sea level equals 185 km/h. The Phase 1 value 0.043 was wrong because 103 mph, a 4,000 m figure, was treated as a sea-level speed. |
 | Oswald efficiency e | 0.75 | — | — | ASSUMPTION | estimate | No measured value located. A typical biplane value with gap/chord near 1. Refine with Munk biplane theory (NACA TR-151) in Phase 1. A triplane may be somewhat higher. |
 | Maximum lift coefficient CLmax | 1.4 | — | — | ASSUMPTION | estimate | No measured value located. Slightly above the biplanes because the Dr.I used thicker, cantilever wing sections. |
@@ -259,6 +283,12 @@ Dimensions and weights come from the Smithsonian's original D.Va (D.7161/17), wh
 | Maximum speed | 47.78 | m/s | 172 km/h | S25 | medium | Herris: D.Va with the 170 hp Mercedes D.IIIa at 937 kg; altitude not stated, taken as sea level. The drag (CD0) is calibrated to this at those conditions. S16's 170 km/h belongs to the D.V with the 160 hp D.III (also in S25). |
 | Service ceiling | 5,800 | m | 5,800 m | S25 | medium | Herris, D.Va. S16 gives 5,000 m (a compilation pairing it with the D.III engine). |
 | Armament | 2 x synchronised machine guns | — | machine guns, calibre not stated | S3 | medium | S3 says bullet damage passed through the right gun mount. Calibre and gun type to be confirmed in Phase 5. |
+| Rounds carried per gun (`guns.rounds`) | 500 | rounds | — | ASSUMPTION | estimate | Not found for the D.V (S25 says only that all were armed with two machine guns). Copied from the Dr.I, which used the same gun and a similar belt box. |
+| Gun muzzle ahead of the CG (`guns.muzzleX`) | 2.19 | m | — | ASSUMPTION | estimate | Not found. About 0.30 of the length, just behind the propeller plane; places the guns on top of the nose as the sources describe. Shots are timed so they pass between the propeller blades. |
+| Gun muzzle above the CG (`guns.muzzleY`) | 0.5 | m | — | ASSUMPTION | estimate | Not found. On top of the cowling, above the engine, as drawn on the model. |
+| Gun muzzle each side of the centre line (`guns.muzzleZ`) | 0.18 | m | — | ASSUMPTION | estimate | Not found. Position chosen to look right on the model and to cross the propeller disc, so the synchroniser matters; the guns are parallel to the aircraft's axis. |
+| Propeller blades (`propeller.blades`) | 2 | — | two-bladed | S1, S2 | high | All four aircraft had two-bladed wooden propellers (museum records). |
+| Propeller blade chord at the guns (`propeller.chord`) | 0.18 | m | — | ASSUMPTION | estimate | Not found. As drawn on the model (0.17 to 0.18 m, a typical blade width at a third of the radius); used by the synchroniser to know when a blade covers a gun. |
 | Zero-lift drag coefficient CD0 | 0.0602 | — | — | ASSUMPTION | estimate | Fitted (`npm run calibrate`) so the model's full-throttle level top speed at sea level, 937 kg and 170 hp equals Herris's 172 km/h. High compared with the others; the source speed's altitude is not stated. Phase 1 value: 0.0505. |
 | Oswald efficiency e | 0.75 | — | — | ASSUMPTION | estimate | No measured value located. A typical biplane value with gap/chord near 1. Refine with Munk biplane theory (NACA TR-151) in Phase 1. |
 | Maximum lift coefficient CLmax | 1.3 | — | — | ASSUMPTION | estimate | No measured value located. Typical of a thin cambered 1917 wing section. Tune against a documented stall speed once found. |
@@ -449,6 +479,29 @@ Sourced performance figures the model is tested against (`src/aircraft/validatio
 
 ---
 
+## Weapons (Phase 4)
+
+Shared by the four aircraft. The code is in `src/aircraft/weapons.js` and `src/aircraft/g1Table.js`; `tests/aircraftCode.test.js` checks the numbers against these rows.
+
+| Parameter | Value | Unit | Original figure | Source | Confidence | Notes |
+|---|---|---|---|---|---|---|
+| .303 Mk VII bullet mass (`CARTRIDGES.mk7.mass`) | 0.011275 | kg | 174 grains | S44 | medium | One source for the weight; the figure is the standard Mark VII ball load. |
+| .303 Mk VII muzzle velocity (`CARTRIDGES.mk7.muzzleVelocity`) | 731.5 | m/s | about 2,400 ft/s | S44 | medium | Other quotations of the 1929 Textbook of Small Arms give 2,440 ft/s (744 m/s), 2% higher. The article's rounded figure is used. |
+| .303 bullet diameter (`CARTRIDGES.mk7.diameter`) | 0.00786 | m | 0.3095 in | ASSUMPTION | estimate | Not found in an allowed source. The bore of the .303 in rifle is 0.303 in; British bullets were about 0.311 in across the grooves. Used only to turn the form factor into a drag. |
+| .303 bullet form factor (`CARTRIDGES.mk7.formFactor`) | 0.56 | — | — | ASSUMPTION | estimate | No measured WWI ballistic coefficient found. G1 form factors of spitzer rifle bullets of the period are about 0.5 to 0.65 (ballistic coefficient = mass / (form factor x diameter squared)); 0.56 gives a coefficient near 0.46 in lb/in² for this bullet, the usual quoted value. Bullet drop at 400 m depends on it by a few percent. |
+| 7.92 mm S bullet mass (`CARTRIDGES.smk.mass`) | 0.0099 | kg | about 153 grains | ASSUMPTION | estimate | Not found in an allowed source (the Imperial War Museum records opened gave no weights). The S (spitzer) bullet of 1905-1915 is commonly given as about 9.9 g; heavier 12.8 g bullets came in 1915 and are not modelled. |
+| 7.92 mm bullet diameter (`CARTRIDGES.smk.diameter`) | 0.00792 | m | 7.92 mm | S42 | high | The cartridge is 7.92 x 57 mm. |
+| 7.92 mm S muzzle velocity (`CARTRIDGES.smk.muzzleVelocity`) | 859.9 | m/s | 2,821 ft/s | S42 | medium | The Royal Armouries gives 878 m/s (2,881 ft/s) for the Gewehr 98 rifle, whose barrel is longer; the machine gun figure is used. |
+| 7.92 mm bullet form factor (`CARTRIDGES.smk.formFactor`) | 0.56 | — | — | ASSUMPTION | estimate | No measured value found, same reasoning as the .303: a spitzer rifle bullet of the period, form factor 0.5 to 0.65. |
+| Vickers cyclic rate (`GUN_TYPES.vickers.cyclicRate`) | 500 | rounds/min | 450 to 550 | S40, S41 | medium | The gun's own rate. The Royal Armouries gives 550 for the ground Mk I. Synchronised, the rate is lower and follows the engine speed (the model does this: shots wait for a gap between blades). |
+| LMG 08/15 cyclic rate (`GUN_TYPES.lmg0815.cyclicRate`) | 450 | rounds/min | 400 to 500, 450 | S42, S43 | medium | Two museum records say 450; one reproduction maker says 400 to 500 depending on the synchroniser and engine speed. |
+| Chance of a stoppage per round (`GUN_TYPES.vickers.jamPerRound`) | 0.0025 | per round | — | ASSUMPTION | estimate | No rate was found. Period accounts say stoppages were common, and that the synchronised gun could not be cleared normally because it was out of reach (S42). About one per 400 rounds is noticeable but not constant. Same value for both guns. |
+| Time to clear a stoppage (`GUN_TYPES.vickers.clearTime`) | 3 | s | — | ASSUMPTION | estimate | Not found. The pilot hammers the cocking handle and re-cocks; a few seconds is a gameplay choice. Same for both guns. |
+| Chance one clearing attempt works (`GUN_TYPES.vickers.clearSuccess`) | 0.7 | — | — | ASSUMPTION | estimate | Not found; many stoppages (a bulged case, a broken belt) could not be cleared in the air. A gameplay choice. Same for both guns. |
+| Synchroniser safety margin (`SYNC.bladeMargin`) | 0.08 | rad | — | ASSUMPTION | estimate | Not found. The angle each side of the blade where the gear will not fire; the real gears fired in a window between blades. About 4.6 degrees. |
+| Tracer spacing (`BULLETS.tracerEvery`) | 3 | rounds | — | ASSUMPTION | estimate | Period belts mixed ball, tracer and incendiary rounds; the mix is not documented. Every third round is drawn, so the stream can be seen. |
+| G1 standard drag function | 79 points | Mach 0 to 5 | table | S45 | high | The standard small-arms drag curve (drag coefficient 0.2629 at Mach 0, 0.4805 at Mach 1, 0.6625 at Mach 1.4, 0.4988 at Mach 5). Copied unchanged into `src/aircraft/g1Table.js`. |
+
 ## Open research gaps (no value recorded; nothing invented)
 
 Updated after the flight-model validation (see `docs/FLIGHT_VALIDATION.md`).
@@ -464,7 +517,8 @@ Updated after the flight-model validation (see `docs/FLIGHT_VALIDATION.md`).
 | Airfoil sections for each aircraft | Lift and drag curves | NACA and RAE reports on WWI sections |
 | Fuel and oil capacities, fuel consumption | Endurance and weight change | Museum object records. S17 gives 83 kg fuel for the SPAD but the wording is ambiguous. |
 | Camel and Dr.I range or endurance (sources disagree) | Fuel model | As above |
-| Vickers Mk.I and LMG 08/15: rate of fire (synchronised), muzzle velocity, bullet mass, jam rates | Weapons | Royal Armouries, Imperial War Museum, Australian War Memorial |
+| Vickers and LMG 08/15: synchronised rate of fire at a given engine speed, 7.92 mm S bullet mass, ballistic coefficients, jam rates, type of interrupter gear on each aircraft | Weapons | Royal Armouries and Imperial War Museum catalogue pages could not be opened (blocked); try the printed Textbook of Small Arms 1929 and the Constantinesco gear booklet at the IWM |
+| Fuel tank capacity and consumption of the Camel, SPAD and Albatros; strength (load factor) limits of all four | Fuel leaks and structural limits (Phase 4 checkpoint 2) | Dr.I prototype: 75 l tank (S26). Strength: ultimate load factor 7.92 for the Dr.I V.4 prototype (Weyl, as transcribed on the Dr.I page); nothing else found. Estimates will be marked |
 | Measured stability and control data (damping, control power, inertia) | Handling | Eberhardt, AIAA 2005-119 (Museum of Flight WWI fighters), not yet accessible |
 | Printed originals of the transcribed book tables (S22-S28) | Raising those values from medium confidence | Library copies of the books |
 

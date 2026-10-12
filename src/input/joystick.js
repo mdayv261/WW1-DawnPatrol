@@ -42,10 +42,10 @@ function markSeen() {
   }
 }
 
-const ONE_SHOTS = { camera: 'onCamera', readout: 'onReadout', centre: 'onCentre', pause: 'onPause', restart: 'onRestart' };
+const ONE_SHOTS = { camera: 'onCamera', readout: 'onReadout', centre: 'onCentre', pause: 'onPause', restart: 'onRestart', clearJam: 'onClearJam' };
 const AXIS_NAMES = { roll: 'Roll', pitch: 'Pitch', yaw: 'Rudder', throttle: 'Throttle' };
 
-// handlers: { onNotice(text), onCamera(), onReadout(), onCentre(), onPause(), onRestart() }
+// handlers: { onNotice(text), onCamera(), onReadout(), onCentre(), onPause(), onRestart(), onClearJam() }
 // getPads defaults to the browser's; tests and dev automation can pass their own.
 export function attachJoystick(handlers, getPads = () => navigator.getGamepads?.() ?? []) {
   let mapping = load();

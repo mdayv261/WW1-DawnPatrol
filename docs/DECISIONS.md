@@ -514,3 +514,31 @@ Reverses the "visual only" decision in D42/D44 at the product owner's request ("
 - **Start field:** landing grounds have no trees or buildings (D45), so take-offs and landings are unaffected. The start field's three hangars and tents stand on the centre line 560-590 m south of the field's middle, behind the south end. **Landing from the south (heading north) a low approach crosses the hangars (9 m high); land heading south, or clear them.** Product owner to decide whether to move them off the centre line.
 - **Ground flicker, second part:** the fallback ground (visible beyond the coarse tiles, 7 km at Medium) was a 256 px checker repeated every 150 m, which aliases into shimmer at the horizon. It is now one flat colour, the average of the crop colours (`averageCropColour`), 4 m below the tiles. Airfield marker triangles lifted from 0.06 m to 0.1 m. If flicker remains, the next step is a logarithmic depth buffer.
 - **Product owner's answers:** hangars stay where they are (land heading south or clear them); crash strictness stays as is (a wheel on a treetop ends the flight); Phase 3 signed off.
+
+## D48. Weapons data and sources (Phase 4, checkpoint 1)
+
+- Gun, cartridge and sight data are in `src/aircraft/weapons.js`; each aircraft file has a `guns` block (type, rounds per gun, muzzle position). Every value has a row in the "Weapons" section of `AIRCRAFT_DATA.md` (new sources S40-S45) and `tests/weaponsData.test.js` checks the code against it.
+- **Sourced:** Vickers cyclic rate 450-550 per minute (middle, 500); LMG 08/15 450 (400-500 when synchronised); .303 Mk VII bullet 174 grains at about 2,400 ft/s; 7.92 mm at 2,821 ft/s; belt sizes 250 (Camel), 400 (SPAD), 500 (Dr.I, prototype figure). The standard **G1 drag table** (79 points, published, copied unchanged).
+- **Estimates, each with its reason in the data file:** bullet form factor (so the ballistic coefficient), 7.92 mm bullet mass, Albatros belt (copied from the Dr.I), gun positions, propeller blade width at the guns, synchroniser margin, jam chance (1 in 400), time to clear (3 s) and clearing success (70%), tracer spacing.
+- **Not found (listed as gaps):** which interrupter gear each aircraft used (except the Camel), measured synchronised rates, fuel tank sizes, strength limits. The Royal Armouries and IWM catalogue pages could not be opened, so two sources are read from search-result summaries only (marked in the source list).
+- Guns are parallel to the thrust line (no convergence), so the nose must be pointed with the drop in mind; the gun sight mark shows where a bullet lands at 200 m.
+
+## D49. The synchroniser (Phase 4, checkpoint 1)
+
+The propeller's turning angle is followed from the engine speed the flight model reports. A round may leave only when no blade covers the muzzle (the blade's width at that radius plus a margin each side). Each gun fires at its cyclic rate when it can and otherwise waits for the next gap, so the real rate is a little below the gun's rate and falls with engine speed, and no round ever goes through the disc. The angle is checked eight times a physics step, and a round that left earlier in the step is carried on that far. Tested: never above the cyclic rate, exactly the cyclic rate with the propeller between blades, no rounds with a blade stopped in front, and every shot checked at the moment it leaves.
+
+## D50. Ballistics and hit detection (Phase 4, checkpoint 1)
+
+- Bullets step at the 120 Hz physics rate with the midpoint method: deceleration = air density x speed squared x G1 drag (at the Mach number from the same atmosphere as the flight model) x pi / (8 x ballistic coefficient). A 20-times-finer step changes the position by less than 3 cm after 0.6 s.
+- **Numbers (with the estimated form factor):** the .303 bullet takes about 0.30 s and drops about 0.41 m over 200 m, and 0.64 s and 1.83 m over 400 m, arriving at 530 m/s. Thinner air at 5,000 m means less drag.
+- **Hit boxes** (`src/weapons/zones.js`): engine, fuel tank, pilot, fuselage, each wing on each side (every level of a biplane or triplane), tailplane and fin, as boxes in the aircraft's own axes from its documented dimensions. Struts and wires are not modelled.
+- **A bullet's step is a line,** tested against the boxes at the aircraft's pose at the start and end of the step, so a bullet 6 m a step cannot jump through a 0.4 m wing and a crossing target is not missed. The earliest of ground, tree or building, and aircraft wins, so a wood shields what is behind it.
+
+## D51. Targets, the fight module and the controls (Phase 4, checkpoint 1)
+
+- **Targets are full `Simulation`s** (same flight model, same control inputs) flown by a scripted pilot: straight, a 20 degree circle or a weave of up to 25 degrees. They fly at 65% of their top speed so the player can catch up, hold their height and speed, and never pull into a stall (found necessary for the heavy Albatros). They do not shoot back. Enemies are the other side's aircraft; up to three, 450 m ahead, 90 m apart.
+- **Shot down (checkpoint 1 only):** 30 weighted hits (pilot and engine 4, fuel 3, wing or tail 1, fuselage 0.5; an estimate). Then the pilot lets go (stick back, rudder over, no power) and the aircraft falls. Checkpoint 2 replaces this with real component damage.
+- **`src/game/combat.js`** owns the guns, bullets and targets so `main.js` does not grow. Bullets are drawn as camera-facing ribbons (every third round is a tracer), strikes as sparks, dust or chips.
+- **Keys:** Space fires (held), B clears a jam, N brings a new target. Joystick: trigger fires, button 9 clears a jam. A sight mark (pipper) is drawn where a bullet lands at 200 m; not in the original plan, but without it aiming is guesswork.
+- **Cost:** each target model adds about 50 draw calls (three targets: 146 to 308 calls in my measurement); to be read off F3 on the product owner's machine.
+

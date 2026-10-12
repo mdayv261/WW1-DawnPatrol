@@ -36,6 +36,8 @@ export const fokkerDr1 = {
   },
   propeller: {
     diameter: 2.6, // m (E)
+    blades: 2, // (H) two-bladed wooden propeller
+    chord: 0.17, // m, blade width at the gun's radius (E) as drawn on the model
     gearRatio: 1,
   },
   // Undercarriage (body axes, from the centre of gravity). The main wheels'
@@ -70,6 +72,16 @@ export const fokkerDr1 = {
     clMax: 1.4, // (E)
     staticMargin: 0.04, // (E)
     cnBeta: 0.08, // (E)
+  },
+  // Guns (body axes, from the centre of gravity). Parallel to the thrust line, as the
+  // synchroniser lets them fire only between propeller blades. Positions: on top of the fuselage ahead of the cockpit (E).
+  guns: {
+    type: 'lmg0815',
+    rounds: 500, // per gun, Herris and Phillips: 500 rounds per gun on the prototype V.5 (M)
+    synchroniser: 'mechanical interrupter gear (the maker and type were not found in an allowed source)',
+    muzzleX: 1.73, // m ahead of the centre of gravity: about 0.30 of the length, just behind the propeller plane (E)
+    muzzleY: 0.52, // m above the centre of gravity: on top of the cowling (E)
+    muzzleZ: 0.14, // m each side of the centre line: the two guns sit this far left and right (E)
   },
   documented: {
     maxSpeed: 51.39, // m/s, 185 km/h at sea level (M); drag is calibrated to this. 103 mph is the 4,000 m figure

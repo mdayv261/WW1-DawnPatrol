@@ -28,6 +28,11 @@ import { Terrain } from './render/terrain/terrain.js';
 import { Clouds } from './render/clouds.js';
 import { QUALITY_LEVELS, QUALITY_KEY, chooseQuality, nextQuality } from './render/quality.js';
 import { FrameStats, perfLines } from './ui/perfStats.js';
+import { Vector3 } from 'three';
+import { Combat } from './game/combat.js';
+import { TracerView, EffectsView } from './render/bullets.js';
+import { TargetViews } from './render/targetViews.js';
+import { createCombatHud, combatText, combatLines } from './ui/combatHud.js';
 
 const canvas = document.getElementById('game');
 // Graphics quality: ?quality= in the address, else the level saved in this browser, else Medium; L changes it.
@@ -49,6 +54,14 @@ const params = new URLSearchParams(window.location.search);
 const world = createWorld(params.has('seed') ? seedFrom(params.get('seed')) : undefined);
 const terrain = new Terrain(scene, world, QUALITY_LEVELS[qualityName], renderer.capabilities.getMaxAnisotropy());
 const clouds = new Clouds(scene, world.seed, QUALITY_LEVELS[qualityName], scene.fog);
+// The fight: guns, bullets and target aircraft. Trees and buildings stop bullets too.
+const solidAt = (x, y, z) => terrain.solids.hit(x, y, z);
+const combat = new Combat({ solidAt });
+const tracers = new TracerView(scene);
+const effects = new EffectsView(scene);
+const targetViews = new TargetViews(scene);
+const combatHud = createCombatHud();
+const sightPoint = new Vector3();
 const debug = createDebugOverlay();
 const help = createHelp();
 const banner = createBanner();
@@ -61,6 +74,7 @@ let airStart = false; // false: start parked on the airfield; true: in the air a
 let model = null; // { group, prop } for the current aircraft
 let paused = false;
 let notice = { text: '', until: 0 }; // short on-screen message
+let wasJammed = false; // for the one-off "gun jammed" message
 
 function showNotice(text, ms = 2000) {
   notice = { text, until: performance.now() + ms };
@@ -95,6 +109,8 @@ const keyboard = attachKeyboard({
   },
   onReadout: () => showNotice(readout.toggle() ? 'Instrument readout on' : 'Instrument readout off'),
   onQuality: () => applyQuality(nextQuality(qualityName)),
+  onClearJam: () => clearJam(),
+  onTarget: () => newTarget(),
   onPause: () => { paused = !paused; },
   onDebug: () => debug.toggle(),
   onHelp: () => help.toggle(),
@@ -147,8 +163,22 @@ const joystick = attachJoystick({
   },
   onPause: () => { paused = !paused; },
   onRestart: () => startFlight(aircraftIndex),
+  onClearJam: () => clearJam(),
 });
 const joystickPanel = createJoystickPanel(joystick);
+
+function clearJam() {
+  if (!combat.gunBank) return;
+  const jammed = combat.gunBank.guns.some((g) => g.jammed);
+  combat.clearJam();
+  if (jammed) showNotice('Clearing the jam...', 1500);
+}
+
+// Put a new target aircraft ahead of the player.
+function newTarget() {
+  const t = combat.spawnTarget(sim);
+  showNotice(t ? `Target: ${t.aircraft.name} (${t.pattern})` : 'Three targets are already up', 2500);
+}
 
 // Start a flight; `scenario` is a test-panel scenario id (normal start if omitted).
 function startFlight(index, scenario = null) {
@@ -173,11 +203,17 @@ function startFlight(index, scenario = null) {
   mouse?.stick.centre();
   rig.reset();
   terrain.prime(sim.state.position); // the ground around the start, built before the first frame
+  combat.reset(ac); // full belts, no targets
+  targetViews.clear();
+  if (airStart && !scenario) {
+    combat.spawnTarget(sim);
+    combat.spawnTarget(sim);
+  }
   paused = false;
 }
 
 // Trees and buildings can be crashed into: the simulation asks the terrain what is at a point.
-sim.solidAt = (x, y, z) => terrain.solids.hit(x, y, z);
+sim.solidAt = solidAt;
 
 startFlight(aircraftIndex);
 
@@ -201,12 +237,13 @@ function update(realDt) {
   rig.hat = joy ? joy.hat : { x: 0, y: 0 };
   // Keyboard, mouse stick and joystick combined into the controls the aircraft feels.
   const held = { pitch: keyboard.pitchKeyHeld(), roll: keyboard.rollKeyHeld(), yaw: keyboard.rudderKeyHeld() };
-  const input = { ...keys, ...mixJoystick(keys, mouse.stick, joy, held), fire: Boolean(joy?.fire) };
+  const input = { ...keys, ...mixJoystick(keys, mouse.stick, joy, held), fire: Boolean(joy?.fire) || keyboard.isDown('fire') };
   // A flight key or stick movement hands control back from a scripted test pilot.
   if (import.meta.env.DEV && runner && (keyboard.pilotActive() || joy?.pull || joy?.roll || joy?.yaw)) runner.cancel();
   return loop.advance(realDt, (dt) => {
     if (import.meta.env.DEV && runner) runner.apply(input, dt);
     sim.step(dt, input);
+    combat.step(dt, sim, input.fire);
   }).alpha;
 }
 
@@ -230,6 +267,17 @@ function draw(realDt, alpha, now) {
   for (const part of model.hideInCockpit) part.visible = !cockpit.visible;
   rig.update(sim.aircraft, position, quaternion, realDt);
 
+  // The fight: tracers, strikes, target aircraft, the gun sight and the gun status.
+  targetViews.update(combat.targets, alpha, realDt);
+  tracers.update(combat.bullets, camera, alpha, 1 / 120);
+  effects.update(combat.events, realDt);
+  for (const text of combat.messages.splice(0)) showNotice(text, 3000);
+  const jammed = Boolean(combat.gunBank?.guns.some((g) => g.jammed));
+  if (jammed && !wasJammed) showNotice('Gun jammed: press B (joystick button 9) to clear it', 3500);
+  wasJammed = jammed;
+  camera.updateMatrixWorld();
+  combatHud.update(combat.sightPoint(sim, sightPoint), camera, !sim.crashed && !paused, combatText(combat));
+
   if (now - lastOverlay > 100) {
     lastOverlay = now;
     const message = now < notice.until ? notice.text : '';
@@ -245,7 +293,7 @@ function draw(realDt, alpha, now) {
       const nearest = world.nearestAirfield(sim.state.position.x, sim.state.position.z);
       debug.set(debugLines(sim.aircraft, sim.diag, {
         crashed: sim.crashed, paused, joystick: stick ? stick.id : 'not detected', airfield: airfieldLine(nearest),
-        extra: perfLines(frameStats, renderer.info.render, qualityName, view, terrain.stats()),
+        extra: [...perfLines(frameStats, renderer.info.render, qualityName, view, terrain.stats()), ...combatLines(combat)],
       }));
     }
     if (import.meta.env.DEV && testPanel?.visible) testPanel.update(sim, runner, scenarioLabel);
@@ -294,6 +342,7 @@ if (import.meta.env.DEV) {
     keyboard,
     joystick,
     rig,
+    combat,
     debug,
     testPanel,
     startFlight,

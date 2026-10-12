@@ -37,6 +37,8 @@ export const camel = {
   },
   propeller: {
     diameter: 2.59, // m (E)
+    blades: 2, // (H) two-bladed wooden propeller
+    chord: 0.17, // m, blade width at the gun's radius (E) as drawn on the model
     gearRatio: 1, // propeller turns with the engine
   },
   // Undercarriage (body axes, from the centre of gravity). The main wheels'
@@ -72,6 +74,16 @@ export const camel = {
     clMax: 1.3, // (E)
     staticMargin: 0.03, // fraction of chord (E)
     cnBeta: 0.07, // weathercock stability per rad (E)
+  },
+  // Guns (body axes, from the centre of gravity). Parallel to the thrust line, as the
+  // synchroniser lets them fire only between propeller blades. Positions: on top of the fuselage ahead of the cockpit, a few inches apart (M position; the figures are E).
+  guns: {
+    type: 'vickers',
+    rounds: 250, // per gun, King, 250 rounds per gun at first (M)
+    synchroniser: 'Sopwith-Kauper rod gear on early aircraft, Constantinesco hydraulic gear later (M)',
+    muzzleX: 1.72, // m ahead of the centre of gravity: about 0.30 of the length, just behind the propeller plane (E)
+    muzzleY: 0.56, // m above the centre of gravity: on top of the cowling (E)
+    muzzleZ: 0.13, // m each side of the centre line: the two guns sit this far left and right (E)
   },
   documented: {
     maxSpeed: 52.3, // m/s, 117 mph at sea level, Mason (M); drag is calibrated to this

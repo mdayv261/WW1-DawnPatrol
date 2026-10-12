@@ -35,6 +35,7 @@ export const DEFAULT_MAPPING = {
     centre: 5,
     pause: 6,
     restart: 7,
+    clearJam: 8, // button 9 on the stick
   },
 };
 
@@ -47,6 +48,7 @@ export const BUTTON_LABELS = {
   centre: 'Centre mouse stick',
   pause: 'Pause',
   restart: 'Restart',
+  clearJam: 'Clear gun jam',
 };
 
 const num = (v, fallback, lo, hi) => (typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : fallback);

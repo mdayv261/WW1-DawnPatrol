@@ -1,0 +1,315 @@
+import { describe, it, expect } from 'vitest';
+import { Vector3, Quaternion } from 'three';
+import { Simulation } from '../src/core/simulation.js';
+import { AIRCRAFT, AIRCRAFT_LIST } from '../src/aircraft/index.js';
+import { TARGETS, BULLETS, SIGHT, CARTRIDGES } from '../src/aircraft/weapons.js';
+import { Combat } from '../src/game/combat.js';
+import { Target, enemiesOf } from '../src/game/targets.js';
+import { seededRandom } from '../src/weapons/guns.js';
+import { attitude } from '../src/dev/flightScenarios.js';
+
+// The fight: the player's guns, bullets, targets, hits and shooting down.
+
+const DT = 1 / 120;
+
+// A player parked in the air (never stepped), so the geometry is exact.
+function player(ac = AIRCRAFT.camel, altitude = 1000) {
+  const sim = new Simulation();
+  sim.start(ac, altitude);
+  sim.diag = { rpm: 1100 };
+  return sim;
+}
+
+function setup(ac = AIRCRAFT.camel, opts = {}) {
+  const sim = player(ac, opts.altitude ?? 1000);
+  const combat = new Combat({ rng: seededRandom(11), ...opts.combat });
+  combat.reset(ac);
+  return { sim, combat };
+}
+
+// Run steps with the player held where it is.
+function run(combat, sim, seconds, trigger = true) {
+  const pos = sim.state.position.clone();
+  const log = {};
+  for (let i = 0; i < seconds / DT; i++) {
+    sim.state.position.copy(pos);
+    sim.previous.position.copy(pos);
+    combat.step(DT, sim, trigger);
+    for (const e of combat.events) log[e.kind] = (log[e.kind] ?? 0) + 1;
+    combat.events.length = 0;
+  }
+  return log;
+}
+
+const onSightPoint = (combat, sim, target, offset = new Vector3()) => {
+  const p = combat.sightPoint(sim).add(offset);
+  target.state.position.copy(p);
+  target.sim.previous.position.copy(p);
+};
+
+describe('a new flight', () => {
+  it('has full belts, nothing in the air and no targets', () => {
+    for (const ac of AIRCRAFT_LIST) {
+      const c = new Combat();
+      c.reset(ac);
+      expect(c.gunBank.roundsLeft).toEqual([ac.guns.rounds, ac.guns.rounds]);
+      expect(c.bullets.length).toBe(0);
+      expect(c.targets.length).toBe(0);
+      expect(c.kills).toBe(0);
+    }
+  });
+
+  it('reset forgets the last flight', () => {
+    const { sim, combat } = setup();
+    combat.spawnTarget(sim);
+    run(combat, sim, 1);
+    combat.reset(AIRCRAFT.spad13);
+    expect(combat.targets.length).toBe(0);
+    expect(combat.bullets.length).toBe(0);
+    expect(combat.shotsFired).toBe(0);
+    expect(combat.gunBank.roundsLeft).toEqual([400, 400]);
+  });
+});
+
+describe('target aircraft', () => {
+  it('are the other side\'s aircraft, ahead of the player and flying the same way', () => {
+    for (const ac of AIRCRAFT_LIST) {
+      const { sim, combat } = setup(ac);
+      const t = combat.spawnTarget(sim);
+      expect(t.aircraft.side).not.toBe(ac.side);
+      expect(enemiesOf(ac).every((e) => e.side !== ac.side)).toBe(true);
+      const d = t.state.position.clone().sub(sim.state.position);
+      expect(Math.hypot(d.x, d.z)).toBeCloseTo(TARGETS.startRange, 3);
+      expect(d.y).toBeCloseTo(TARGETS.startAbove, 3);
+      const fwd = new Vector3(0, 0, -1); // the player faces north
+      expect(Math.atan2(d.x, -d.z)).toBeCloseTo(attitude(sim.state).heading, 3);
+      expect(fwd.dot(d.clone().setY(0).normalize())).toBeGreaterThan(0.999);
+      expect(attitude(t.state).heading).toBeCloseTo(attitude(sim.state).heading, 2);
+      expect(t.state.velocity.length()).toBeCloseTo(TARGETS.speedFraction * t.aircraft.documented.maxSpeed, 0);
+    }
+  });
+
+  it('are placed ahead whichever way the player is facing', () => {
+    const { sim, combat } = setup();
+    // Turn the player to face east (heading 90 degrees).
+    sim.state.quaternion.premultiply(new Quaternion(0, Math.sin(-Math.PI / 4), 0, Math.cos(-Math.PI / 4)));
+    const t = combat.spawnTarget(sim);
+    const d = t.state.position.clone().sub(sim.state.position);
+    expect(d.x).toBeGreaterThan(400);
+    expect(Math.abs(d.z)).toBeLessThan(1);
+    expect(attitude(t.state).heading).toBeCloseTo(Math.PI / 2, 2);
+  });
+
+  it('are limited to three, side by side', () => {
+    const { sim, combat } = setup();
+    const ts = [combat.spawnTarget(sim), combat.spawnTarget(sim), combat.spawnTarget(sim)];
+    expect(combat.spawnTarget(sim)).toBeNull();
+    expect(ts.every(Boolean)).toBe(true);
+    const laterals = ts.map((t) => t.state.position.x);
+    expect(new Set(laterals.map((x) => Math.round(x))).size).toBe(3);
+    expect(new Set(ts.map((t) => t.pattern)).size).toBe(3);
+  });
+
+  for (const player of [AIRCRAFT.camel, AIRCRAFT.dr1]) {
+    for (const pattern of TARGETS.patterns) {
+      it(`flying the ${pattern} pattern against a ${player.name}: they keep their height and speed for 40 s without crashing`, () => {
+        for (const ac of enemiesOf(player)) {
+          const t = new Target(ac, pattern);
+          const start = new Simulation();
+          start.start(player, 1000);
+          t.place(start.state);
+          let worst = 0;
+          let slowest = Infinity;
+          let fastest = 0;
+          let turned = 0;
+          let last = attitude(t.state).heading;
+          for (let i = 0; i < 40 / DT; i++) {
+            t.step(DT);
+            worst = Math.max(worst, Math.abs(t.state.position.y - t.altitude));
+            const speed = t.state.velocity.length();
+            slowest = Math.min(slowest, speed);
+            fastest = Math.max(fastest, speed);
+            const h = attitude(t.state).heading;
+            turned += ((h - last + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+            last = h;
+          }
+          expect(t.crashed, `${ac.name} ${pattern}`).toBe(false);
+          expect(worst, `${ac.name} ${pattern} height`).toBeLessThan(40);
+          expect(slowest).toBeGreaterThan(0.8 * t.speed);
+          expect(fastest).toBeLessThan(1.25 * t.speed);
+          if (pattern === 'circle') expect(Math.abs(turned)).toBeGreaterThan(2);
+          if (pattern === 'straight') expect(Math.abs(turned)).toBeLessThan(0.35);
+          if (pattern === 'weave') expect(Math.abs(turned)).toBeLessThan(1.5);
+        }
+      });
+    }
+  }
+});
+
+describe('firing', () => {
+  it('bullets leave the muzzles at the muzzle velocity plus the aircraft\'s own speed', () => {
+    const { sim, combat } = setup();
+    run(combat, sim, 0.12);
+    expect(combat.bullets.length).toBeGreaterThan(0);
+    const b = combat.bullets[combat.bullets.length - 1]; // the newest has hardly lost any speed
+    const speed = Math.hypot(b.vx, b.vy, b.vz);
+    expect(speed).toBeGreaterThan(CARTRIDGES.mk7.muzzleVelocity); // 731 + 42 m/s of aircraft, less a little drag
+    expect(speed).toBeLessThan(CARTRIDGES.mk7.muzzleVelocity + sim.state.velocity.length());
+    expect(b.vz).toBeLessThan(0); // north is -Z
+  });
+
+  it('the stream is two guns about 0.3 m apart, left and right', () => {
+    const { sim, combat } = setup();
+    run(combat, sim, 0.05);
+    const xs = combat.bullets.map((b) => b.x);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(0.2);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeLessThan(0.6);
+  });
+
+  it('nothing fires without the trigger, or when the player has crashed', () => {
+    const { sim, combat } = setup();
+    run(combat, sim, 1, false);
+    expect(combat.shotsFired).toBe(0);
+    sim.crashed = true;
+    run(combat, sim, 1, true);
+    expect(combat.shotsFired).toBe(0);
+  });
+
+  it('runs out of ammunition and then stops', () => {
+    const { sim, combat } = setup();
+    combat.gunBank.type = { ...combat.gunBank.type, jamPerRound: 0 };
+    run(combat, sim, 70);
+    expect(combat.gunBank.roundsLeft).toEqual([0, 0]);
+    expect(combat.shotsFired).toBe(500);
+    run(combat, sim, 2);
+    expect(combat.shotsFired).toBe(500);
+  });
+
+  it('bullets that hit the ground are removed and make a dust event', () => {
+    const { sim, combat } = setup(AIRCRAFT.camel, { altitude: 60 });
+    // Point the nose steeply down: the bullets reach the ground within a second.
+    sim.state.quaternion.multiply(new Quaternion(0, 0, Math.sin(-0.15), Math.cos(0.15))); // 0.3 rad about the pitch axis, nose down
+    sim.state.velocity.set(0, 0, 0);
+    const log = run(combat, sim, 1.2);
+    expect(log.ground).toBeGreaterThan(5);
+    expect(combat.bullets.every((b) => b.y > 0)).toBe(true);
+  });
+
+  it('bullets are dropped after their time limit or when too slow, and the number in flight is capped', () => {
+    const { sim, combat } = setup(AIRCRAFT.camel, { altitude: 5000 });
+    combat.gunBank.type = { ...combat.gunBank.type, jamPerRound: 0 };
+    run(combat, sim, 10);
+    expect(combat.bullets.every((b) => b.age <= BULLETS.maxLife + DT)).toBe(true);
+    expect(combat.bullets.length).toBeLessThanOrEqual(BULLETS.maxAlive);
+  });
+
+  it('a tree or building stops bullets before they reach a target behind it', () => {
+    const wall = (x, y, z) => (z < sim.state.position.z - 100 && y < 40 ? 'Hit a tree' : null);
+    const { sim, combat } = setup(AIRCRAFT.camel, { altitude: 25, combat: { solidAt: wall } });
+    const t = combat.spawnTarget(sim);
+    onSightPoint(combat, sim, t);
+    const log = run(combat, sim, 0.5);
+    expect(log.solid).toBeGreaterThan(3);
+    expect(combat.hitsOnTargets).toBe(0);
+  });
+});
+
+describe('hitting and shooting down', () => {
+  it('shots on the sight point hit a target there; the hit is counted and a spark event made', () => {
+    const { sim, combat } = setup();
+    const t = combat.spawnTarget(sim);
+    onSightPoint(combat, sim, t);
+    const log = run(combat, sim, 0.3);
+    expect(combat.hitsOnTargets).toBeGreaterThan(0);
+    expect(log.hit).toBe(combat.hitsOnTargets);
+    expect(t.hits).toBe(combat.hitsOnTargets);
+    expect(t.score).toBeGreaterThan(0);
+  });
+
+  it('shots well to the side miss', () => {
+    const { sim, combat } = setup();
+    const t = combat.spawnTarget(sim);
+    onSightPoint(combat, sim, t, new Vector3(40, 0, 0));
+    run(combat, sim, 0.5);
+    expect(combat.hitsOnTargets).toBe(0);
+  });
+
+  it('enough hits shoot the target down once: a message, a kill, a burst, and it falls out of the sky', () => {
+    const { sim, combat } = setup();
+    const t = combat.spawnTarget(sim);
+    onSightPoint(combat, sim, t);
+    let downs = 0;
+    for (let i = 0; i < 4 / DT && !t.down; i++) {
+      run(combat, sim, DT);
+      onSightPoint(combat, sim, t); // keep it on the sight
+    }
+    expect(t.down).toBe(true);
+    expect(combat.kills).toBe(1);
+    expect(combat.messages).toEqual([`SHOT DOWN: ${t.aircraft.name}`]);
+    expect(t.score).toBeGreaterThanOrEqual(TARGETS.shotDownHits);
+    // More hits do not count another kill.
+    run(combat, sim, 0.3);
+    expect(combat.kills).toBe(1);
+    downs = combat.messages.length;
+    expect(downs).toBe(1);
+    // Left alone it loses its pilot's control and goes down.
+    combat.targets[0].state.position.y = 600;
+    const y0 = t.state.position.y;
+    run(combat, sim, 25, false);
+    expect(t.state.position.y).toBeLessThan(y0 - 50);
+  });
+
+  it('a crashed target is taken away a few seconds later', () => {
+    const { sim, combat } = setup();
+    const t = combat.spawnTarget(sim);
+    t.sim.crashed = true;
+    run(combat, sim, 1, false);
+    expect(combat.targets.length).toBe(1);
+    run(combat, sim, 5, false);
+    expect(combat.targets.length).toBe(0);
+  });
+
+  it('a target far away is dropped', () => {
+    const { sim, combat } = setup();
+    const t = combat.spawnTarget(sim);
+    t.state.position.x += TARGETS.dropRange + 100;
+    run(combat, sim, 0.1, false);
+    expect(combat.targets.length).toBe(0);
+  });
+
+  it('hits count by zone: the pilot and engine four times a wing hit', () => {
+    const t = new Target(AIRCRAFT.albatros, 'straight');
+    t.takeHit('wingL');
+    expect(t.score).toBe(1);
+    t.takeHit('pilot');
+    expect(t.score).toBe(5);
+    t.takeHit('engine');
+    expect(t.score).toBe(9);
+    t.takeHit('fuselage');
+    expect(t.score).toBe(9.5);
+    expect(t.hits).toBe(4);
+  });
+});
+
+describe('the gun sight', () => {
+  it('is about 200 m ahead of the guns, a little below the line of the barrels (drop) and inherits the aircraft\'s speed', () => {
+    const { sim, combat } = setup();
+    const p = combat.sightPoint(sim);
+    const g = sim.aircraft.guns;
+    const muzzle = new Vector3(g.muzzleX, g.muzzleY, 0).applyQuaternion(sim.state.quaternion).add(sim.state.position);
+    expect(p.distanceTo(muzzle)).toBeCloseTo(SIGHT.range, 6);
+    // Along the barrels, with the drop (about 0.4 m at 200 m) below the line.
+    const dir = new Vector3(1, 0, 0).applyQuaternion(sim.state.quaternion);
+    const line = muzzle.clone().addScaledVector(dir, SIGHT.range);
+    expect(p.y).toBeLessThan(line.y);
+    expect(line.distanceTo(p)).toBeGreaterThan(0.2);
+    expect(line.distanceTo(p)).toBeLessThan(0.8);
+  });
+
+  it('moves with the aircraft', () => {
+    const { sim, combat } = setup();
+    const a = combat.sightPoint(sim);
+    sim.state.position.x += 100;
+    expect(combat.sightPoint(sim).x - a.x).toBeCloseTo(100, 6);
+  });
+});

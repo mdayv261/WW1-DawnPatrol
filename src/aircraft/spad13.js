@@ -34,6 +34,8 @@ export const spad13 = {
   },
   propeller: {
     diameter: 2.5, // m (M)
+    blades: 2, // (H) two-bladed wooden propeller
+    chord: 0.18, // m, blade width at the gun's radius (E) as drawn on the model
     gearRatio: 0.75, // propeller turns at 0.75 x crankshaft speed (M)
   },
   // Undercarriage (body axes, from the centre of gravity). The main wheels'
@@ -68,6 +70,16 @@ export const spad13 = {
     clMax: 1.3, // (E)
     staticMargin: 0.1, // (E)
     cnBeta: 0.12, // (E)
+  },
+  // Guns (body axes, from the centre of gravity). Parallel to the thrust line, as the
+  // synchroniser lets them fire only between propeller blades. Positions: on top of the cowling (E).
+  guns: {
+    type: 'vickers',
+    rounds: 400, // per gun, 400 rounds per gun (M)
+    synchroniser: 'mechanical interrupter gear (the maker and type were not found in an allowed source)',
+    muzzleX: 1.89, // m ahead of the centre of gravity: about 0.30 of the length, just behind the propeller plane (E)
+    muzzleY: 0.5, // m above the centre of gravity: on top of the cowling (E)
+    muzzleZ: 0.16, // m each side of the centre line: the two guns sit this far left and right (E)
   },
   documented: {
     maxSpeed: 59.17, // m/s, 213 km/h at 1,981 m, McCook Field test at 924 kg (M); drag is calibrated to this

@@ -2,9 +2,28 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 3 (world and visuals) signed off by the product owner. Phase 4 (weapons and damage) not started; needs a plan in plan mode first.
+## Current status: Phase 4 (weapons and damage) in progress: checkpoint 1 (guns, bullets, targets) built; waiting for the product owner's test. Phase 3 is signed off.
 
 Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft models (48df111), terrain (c3b90ec), airfields and detail (dee316a), and checkpoint 3 (quality levels, pixel budget, frame-rate readout, cirrus). Phase 4 must not start until the product owner confirms Phase 3.
+
+## Phase 4 checkpoint 1: guns, bullets and target aircraft (D48-D51)
+
+**Done:** two synchronised machine guns on each aircraft (twin Vickers on the Camel and SPAD, twin LMG 08/15 on the Dr.I and Albatros), with the real ammunition counts, rate of fire and stoppages. Bullets fly with gravity and air drag, and the guns only fire between the propeller blades. Enemy target aircraft (up to three) fly simple paths, take hits by zone, and fall when shot down. Trees, buildings and the ground stop bullets. A gun sight mark shows where a bullet lands at 200 m. 675 tests pass (plus 15 known deviations); `npm run build` works. The flight model is unchanged.
+
+**Acceptance for this part:** tests confirm bullet drop and travel time (`tests/ballistics.test.js`): for the .303 about 0.41 m drop and 0.30 s over 200 m, 1.83 m and 0.64 s over 400 m, more than in a vacuum and varying with air density and the aircraft's own speed.
+
+**Please test (about 5 minutes):**
+1. Run `npm run dev`, open http://localhost:5173, press **Shift+1** (Camel, air start at 1,000 m). Two target aircraft are ahead (about 450 m). Press **F3** for numbers.
+2. Open the throttle (Insert or W) to catch the targets (they fly slowly). Put the **ring (sight mark)** on a target and hold **Space** (or the joystick trigger). You should see yellow tracers, sparks where they hit, and the status line at the bottom (GUNS 250 | 250, TARGETS, DOWN).
+3. Keep firing at one target: it should be shot down after about a second of hits ("SHOT DOWN" message) and fall.
+4. Fire at a distance (over 400 m): the bullets visibly drop, and you must aim a little high.
+5. Keep firing until the guns jam ("Gun jammed" message, status shows JAMMED). Press **B** (joystick button 9): "CLEARING" for about 3 s, then it fires again (sometimes it fails; press B again). Fire until the belts are empty (EMPTY).
+6. Press **N** for more targets (maximum three). Try the other aircraft (Shift+2, 3, 4): the German ones fire the 7.92 mm gun, and the targets are Allied.
+7. Look at F3 frames, calls and triangles with three targets up: each target adds about 50 draw calls.
+
+**Decisions for you:** (a) is the sight mark welcome (I added it; it can be removed or limited to the cockpit)? (b) is about one second of hits too quick to shoot a target down (checkpoint 2 will replace this with real damage anyway)? (c) the three targets slow the screen a little on my measurements (draw calls 146 to 308): if F3 shows a drop below about 60 fps, I will cut that.
+
+**Known issues:** the real aircraft's gun convergence is not modelled (guns point along the nose). Targets do not shoot back or dogfight (next phase). Fuel, structural limits and damage come in checkpoint 2. A hands-off Camel at full throttle turns left on its own (rotary torque, as before), so you need to fly it while chasing.
 
 ## Phase 3 follow-up: crashes on trees and buildings, flat horizon (D47)
 

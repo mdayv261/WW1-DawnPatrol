@@ -18,6 +18,7 @@ export const KEYS = {
   throttleDown: ['Delete', 'KeyS'],
   trimNoseUp: ['Home', 'KeyT'],
   trimNoseDown: ['End', 'KeyG'],
+  fire: ['Space'], // machine guns (held)
 };
 
 const RAMP_UP = 1.6; // stick travel per second while a key is held (a tap gives a gentle input)
@@ -88,7 +89,7 @@ export class InputMapper {
   // True while the player holds any flight key (used to cancel a scripted
   // test pilot so the player can take over).
   pilotActive() {
-    return Object.keys(this.keys).some((action) => this.isDown(action));
+    return Object.keys(this.keys).some((action) => action !== 'fire' && this.isDown(action));
   }
 
   // Set the throttle and trim (used at the start of each flight).
