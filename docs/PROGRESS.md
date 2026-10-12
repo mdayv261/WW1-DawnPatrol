@@ -2,9 +2,24 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 5 (AI opponents), checkpoint 1 built (pilots that can fly); waiting for the product owner's test. Phases 0-4 are signed off.
+## Current status: Phase 5 (AI opponents): checkpoint 1 committed; checkpoint 2 built (pilots that fight), waiting for the product owner's test. Phases 0-4 are signed off.
 
 Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft models (48df111), terrain (c3b90ec), airfields and detail (dee316a), and checkpoint 3 (quality levels, pixel budget, frame-rate readout, cirrus). Phase 4 must not start until the product owner confirms Phase 3.
+
+## Phase 5 checkpoint 2: AI pilots that fight (D55)
+
+**Done:** enemies now engage, attack with a lead solution and the skill's aim error, fire in bursts, evade an enemy on their tail with a defensive break, break away to avoid collisions, and disengage when out of ammunition, short of fuel or badly damaged. Their fire damages you (Phase 4 damage model) unless practice mode (**Y**) is on. New enemies are Regular by default. 916 tests pass (plus 15 known deviations); `npm run build` works; the flight model is unchanged.
+
+**Please test (about 10 minutes):**
+1. Open http://localhost:5173/?skill=novice&enemies=1 and press **Shift+1**. Press **F3**: the enemy's line shows its state (patrol, engage, attack, evade, disengage), its manoeuvre, the range to you and FIRING. Let it come at you: it should get behind you and shoot. "You are hit!" appears and the status line shows the damage.
+2. Press **Y** (practice mode) and try again: the hits are counted (F3, "hits on you") but do no damage.
+3. Get on its tail: after a moment it notices and breaks hard (F3: evade / defensive break). Shoot it: when badly hurt it breaks off and runs east (disengage).
+4. Try **Regular** and **Ace** (`[` and `]`, then **N**): an Ace notices you behind it almost at once, shoots straighter in shorter bursts, and breaks off earlier when hurt.
+5. Try four enemies (`?enemies=4`) and read F3 for the frame rate.
+
+**Decisions for you:** (a) is a Novice too easy and an Ace too hard? Every number is a first guess (reaction, aim, cone, range, awareness, nerve). (b) Two equal AI pilots fighting each other often go round and round for minutes; checkpoint 3 adds the manoeuvres chosen by height and speed (Immelmann, split-S, climbing turn, boom-and-zoom), which should help. OK to leave that to checkpoint 3?
+
+**Known issues:** aircraft do not collide with each other (the AI breaks away anyway). The Albatros AI is less effective behind slow targets. A shot-down enemy may take a minute to reach the ground.
 
 ## Phase 5 checkpoint 1: AI pilots that can fly (D54)
 

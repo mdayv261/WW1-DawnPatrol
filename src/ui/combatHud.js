@@ -73,7 +73,7 @@ export function combatLines(combat) {
   const acc = combat.shotsFired ? Math.round((100 * combat.hitsOnTargets) / combat.shotsFired) : 0;
   return [
     `guns      ${combat.gunBank.statusText()}`,
-    `fired     ${combat.shotsFired}   hits ${combat.hitsOnTargets} (${acc}%)   in flight ${combat.bullets.length}`,
+    `fired     ${combat.shotsFired}   hits ${combat.hitsOnTargets} (${acc}%)   in flight ${combat.bullets.length}   hits on you ${combat.hitsOnPlayer}`,
     `enemies   ${combat.agents.length}   shot down ${combat.kills}   (new: ${SKILLS[combat.skill].name}${combat.practice ? ', practice mode' : ''})`,
     ...combat.agents.map((a, i) => `  ${i + 1}. ${a.describe()}`),
   ];

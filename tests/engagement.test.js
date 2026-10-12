@@ -18,6 +18,7 @@ function fight(player, seed) {
   const base = sim.start(player, 1000);
   const combat = new Combat({ rng: seededRandom(seed) });
   combat.reset(player);
+  combat.skill = 'drone'; // a target that flies straight on
   const target = combat.spawnAgent(sim); // the first target flies straight
   const e = new Vector3();
   let downAt = null;

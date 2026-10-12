@@ -16,8 +16,8 @@ describe('the status line', () => {
   it('is empty before a flight and shows the belts and the fuel in one', () => {
     expect(combatText(new Combat())).toBe('');
     const c = fresh();
-    expect(combatText(c)).toBe('GUNS  250  |  250     NEW ENEMIES: DRONE');
-    expect(combatText(c, createDamage())).toBe('GUNS  250  |  250     FUEL 100%     NEW ENEMIES: DRONE');
+    expect(combatText(c)).toBe('GUNS  250  |  250     NEW ENEMIES: REGULAR');
+    expect(combatText(c, createDamage())).toBe('GUNS  250  |  250     FUEL 100%     NEW ENEMIES: REGULAR');
   });
 
   it('shows stoppages and empty belts', () => {
@@ -69,6 +69,6 @@ describe('the F3 lines', () => {
     expect(lines[0]).toContain('250  |  250');
     expect(lines[1]).toContain('fired     40   hits 10 (25%)');
     expect(lines[2]).toContain('shot down 1');
-    expect(lines[2]).toContain('new: Drone');
+    expect(lines[2]).toContain('new: Regular');
   });
 });

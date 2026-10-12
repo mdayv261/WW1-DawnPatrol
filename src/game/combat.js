@@ -9,6 +9,7 @@ import { makeBullet, stepBullet, bulletSpeed, flyBullet } from '../weapons/balli
 import { findImpact } from '../weapons/hits.js';
 import { BULLETS, SIGHT, TARGETS } from '../aircraft/weapons.js';
 import { Agent, enemiesOf } from './agents.js';
+import { COMBAT } from '../aircraft/aiData.js';
 import { pilotDead, applyHit, destroyedReason } from '../physics/damage.js';
 import { DAMAGE } from '../aircraft/damageModel.js';
 import { attitude } from '../dev/flightScenarios.js';
@@ -21,8 +22,9 @@ const _q = new Quaternion();
 
 export class Combat {
   // solidAt(x, y, z) -> label | null: what stops bullets (trees, buildings). rng: random numbers.
-  constructor({ solidAt = null, rng = Math.random } = {}) {
+  constructor({ solidAt = null, rng = Math.random, dropRange = TARGETS.dropRange } = {}) {
     this.solidAt = solidAt;
+    this.dropRange = dropRange; // agents farther than this from the player are taken away
     this.rng = rng;
     this.aircraft = null;
     this.gunBank = null;
@@ -37,10 +39,11 @@ export class Combat {
     this.time = 0;
     this.spawned = 0;
     this.fxTimer = 0;
-    this.skill = 'drone'; // the skill new agents get
+    this.skill = 'regular'; // the skill new agents get
     this.practice = false; // true: enemy fire cannot hurt the player
     this.playerVictim = null; // the player as something bullets can hit
     this.playerDown = false;
+    this.lastHitNotice = -10;
   }
 
   // A new flight in `aircraft`: full belts, no bullets, no agents.
@@ -60,6 +63,7 @@ export class Combat {
     this.fxTimer = 0;
     this.playerVictim = null;
     this.playerDown = false;
+    this.lastHitNotice = -10;
   }
 
   clearJam() {
@@ -100,7 +104,8 @@ export class Combat {
     if (!this.gunBank || !player.aircraft) return;
     this.time += dt;
     const victims = this.victims(player);
-    const others = victims.map((v) => (v.isPlayer ? { id: 'player', side: player.aircraft.side, state: player.state } : v));
+    // What the agents can see: the player (unless he has crashed) and each other.
+    const others = victims.filter((v) => !(v.isPlayer && player.crashed)).map((v) => (v.isPlayer ? { id: 'player', side: player.aircraft.side, state: player.state } : v));
     for (const a of this.agents) a.step(dt, others.filter((o) => o.id !== a.id), this.solidAt);
 
     // The player's guns, then every agent's.
@@ -173,6 +178,11 @@ export class Combat {
     let energy = 0.5 * b.cartridge.mass * (vx * vx + vy * vy + vz * vz);
     if (victim.isPlayer) {
       this.hitsOnPlayer++;
+      // Tell the player, but not for every bullet of a burst.
+      if (this.time - this.lastHitNotice > 2) {
+        this.lastHitNotice = this.time;
+        this.messages.push(this.practice ? 'You are hit (practice: no damage)' : 'You are hit!');
+      }
       if (this.practice) return;
       // It goes through each part in turn, losing some energy in each, until one stops it.
       for (const part of hit.zones) {
@@ -188,6 +198,7 @@ export class Combat {
     }
     if (byPlayer) this.hitsOnTargets++;
     victim.hits++;
+    victim.hitTimer = COMBAT.hitMemory; // it knows it has been shot at
     for (const part of hit.zones) {
       if (victim.takeHit(part.zone, energy, this.rng)) {
         if (byPlayer) {
@@ -217,7 +228,7 @@ export class Combat {
         t.removeAt ??= this.time + 4;
         return this.time < t.removeAt;
       }
-      return t.state.position.distanceTo(player.state.position) < TARGETS.dropRange;
+      return t.state.position.distanceTo(player.state.position) < this.dropRange;
     });
   }
 

@@ -46,7 +46,8 @@ export class DroneBrain {
     }
   }
 
-  think(dt, sim) {
+  think(dt, self) {
+    const sim = self.sim;
     this.time += dt;
     const input = { ...sim.startInput };
     const a = attitude(sim.state);
@@ -81,6 +82,8 @@ export class Agent {
     this.brain = null; // made in place()
     this.gunBank = new GunBank(aircraft, rng);
     this.fire = false; // is its trigger down
+    this.rng = rng;
+    this.hitTimer = 0; // s left in which it knows it has just been hit
     this.hits = 0;
     this.down = false; // shot down: the pilot has let go
     this.reason = null; // why ("Pilot killed", "Wing failed", ...)
@@ -149,18 +152,19 @@ export class Agent {
     s.position.set(centre.x + PATROL.radius * Math.cos(angle), altitude, centre.z + PATROL.radius * Math.sin(angle));
     this.sim.previous.position.copy(s.position);
     this.sim.previous.quaternion.copy(s.quaternion);
-    this.brain = new AiBrain(this.aircraft, this.skill, centre);
+    this.brain = new AiBrain(this.aircraft, this.skill, centre, this.rng);
   }
 
   // Move the controls for one step and advance the aircraft. others: [{ id, side, state }] the
   // aircraft it could see (the player and the other agents).
   step(dt, others = [], solidAt = null) {
     this.time += dt;
+    this.hitTimer = Math.max(0, this.hitTimer - dt);
     let input;
     if (this.down) {
       input = { ...this.sim.startInput, throttle: 0, pull: 1, yaw: 1, fire: false };
     } else {
-      input = this.brain.think(dt, this.sim, others, solidAt);
+      input = this.brain.think(dt, this, others, solidAt);
     }
     this.fire = Boolean(input.fire) && !this.down;
     this.sim.step(dt, input);

@@ -134,7 +134,8 @@ describe('putting AI pilots into a fight', () => {
     const sim = start();
     const combat = new Combat({ rng: seededRandom(1) });
     combat.reset(AIRCRAFT.camel);
-    expect(combat.skill).toBe('drone');
+    expect(combat.skill).toBe('regular');
+    combat.skill = 'drone';
     const d = combat.spawnAgent(sim);
     expect(d.isDrone).toBe(true);
     expect(d.brain).toBeInstanceOf(DroneBrain);
@@ -144,7 +145,7 @@ describe('putting AI pilots into a fight', () => {
     expect(a.brain.skill).toBe(SKILLS.ace);
   });
 
-  it('a fight with AI pilots runs: they patrol round the player, see him inside their sight range, and nobody crashes', () => {
+  it('a fight with AI pilots runs: they see the player inside their sight range and go for him, and nobody crashes', () => {
     const sim = start();
     const combat = new Combat({ rng: seededRandom(1) });
     combat.reset(AIRCRAFT.camel);
@@ -162,7 +163,7 @@ describe('putting AI pilots into a fight', () => {
     expect(combat.agents.length).toBe(3);
     expect(combat.agents.every((a) => !a.crashed)).toBe(true);
     expect(sawPlayer).toBeGreaterThan(0); // at 1.5 km an Ace (sees 4 km) sees him
-    for (const a of combat.agents) expect(a.describe()).toContain('Ace patrol');
+    for (const a of combat.agents) expect(['engage', 'attack', 'evade']).toContain(a.brain.state);
   });
 
   it('a Novice, who sees only 2 km, does not see a player 3 km away', () => {
@@ -183,9 +184,9 @@ describe('putting AI pilots into a fight', () => {
     expect(a.brain.contacts.length).toBe(0);
   });
 
-  it('the default for a new fight is the drones of Phase 4, with at most four agents', () => {
+  it('the default for a new fight is Regular AI pilots, with at most four agents', () => {
     expect(TARGETS.maxAlive).toBe(4);
-    expect(new Combat().skill).toBe('drone');
+    expect(new Combat().skill).toBe('regular');
     expect(new Combat().practice).toBe(false);
   });
 

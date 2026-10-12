@@ -25,6 +25,7 @@ function setup(ac = AIRCRAFT.camel, opts = {}) {
   const sim = player(ac, opts.altitude ?? 1000);
   const combat = new Combat({ rng: seededRandom(11), ...opts.combat });
   combat.reset(ac);
+  combat.skill = 'drone'; // these tests are about the guns and targets: drones fly a known path
   return { sim, combat };
 }
 
