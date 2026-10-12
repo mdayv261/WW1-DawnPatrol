@@ -25,7 +25,15 @@ function distanceToSegment(px, py, pz, ax, ay, az, bx, by, bz) {
   return Math.hypot(ax + t * dx - px, ay + t * dy - py, az + t * dz - pz);
 }
 
-// Earliest entry into any hit box of one aircraft: { t, zone } or null.
+// The parts that stop a bullet (it ends in the first of these along its path). Fabric, wood
+// and wire (wings, tail, fuselage) are passed through, each taking a hit on the way.
+const STOPS = new Set(['engine', 'fuel', 'pilot']);
+const MAX_PARTS = 4; // a bullet that meets no stopping part ends after this many
+
+// Earliest entry into any hit box of one aircraft: { t, zone, level, zones } or null. t, zone
+// and level are the first part met; `zones` lists every part the bullet goes through, in
+// order, up to the first part that stops it: [{ zone, level, t }].
+// `ac` is the aircraft's data; `now` and `before` are its states at the end and
 // `ac` is the aircraft's data; `now` and `before` are its states at the end and
 // the start of the step ({ position, quaternion }).
 export function aircraftImpact(ac, now, before, x0, y0, z0, x1, y1, z1) {
@@ -38,12 +46,19 @@ export function aircraftImpact(ac, now, before, x0, y0, z0, x1, y1, z1) {
   _q.copy(now.quaternion).invert();
   _b.set(x1 - c.x, y1 - c.y, z1 - c.z).applyQuaternion(_q);
 
-  let best = null;
+  const entries = [];
   for (const zone of hitZones(ac, common)) {
     const t = segmentBoxEntry(_a.x, _a.y, _a.z, _b.x, _b.y, _b.z, zone);
-    if (t >= 0 && (best === null || t < best.t - 1e-9)) best = { t, zone: zone.name, level: zone.level };
+    if (t >= 0) entries.push({ zone: zone.name, level: zone.level, t });
   }
-  return best;
+  if (!entries.length) return null;
+  entries.sort((p, q) => p.t - q.t);
+  const zones = [];
+  for (const e of entries) {
+    zones.push(e);
+    if (STOPS.has(e.zone) || zones.length >= MAX_PARTS) break;
+  }
+  return { t: zones[0].t, zone: zones[0].zone, level: zones[0].level, zones };
 }
 
 // The first thing the bullet's step from (x0,y0,z0) to (x1,y1,z1) runs into.
@@ -74,7 +89,7 @@ export function findImpact(x0, y0, z0, x1, y1, z1, targets, solidAt = null) {
 
   for (const target of targets) {
     const hit = aircraftImpact(target.aircraft, target.state, target.previous, x0, y0, z0, x1, y1, z1);
-    if (hit) consider({ kind: 'aircraft', t: hit.t, target, zone: hit.zone, level: hit.level });
+    if (hit) consider({ kind: 'aircraft', t: hit.t, target, zone: hit.zone, level: hit.level, zones: hit.zones });
   }
   return best;
 }

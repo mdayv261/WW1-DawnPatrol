@@ -71,7 +71,6 @@ export const TARGETS = {
   circleBank: (20 * Math.PI) / 180, // rad (E)
   weaveBank: (25 * Math.PI) / 180, // rad (E)
   weavePeriod: 7, // s (E)
-  shotDownHits: 30, // weighted hits (pilot and engine count 4, fuel 3, wings and tail 1, fuselage 0.5) before the target is shot down (E, checkpoint 1; replaced by damage in checkpoint 2)
 };
 
 // Where the hit boxes of an aircraft are, as fractions of its own documented

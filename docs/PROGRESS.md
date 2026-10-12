@@ -2,9 +2,29 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 4 (weapons and damage) in progress: checkpoint 1 (guns, bullets, targets) built; waiting for the product owner's test. Phase 3 is signed off.
+## Current status: Phase 4 (weapons and damage) in progress: checkpoint 1 (guns, bullets, targets) done and committed; checkpoint 2 (component damage) built, waiting for the product owner's test. Phase 3 is signed off.
 
 Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft models (48df111), terrain (c3b90ec), airfields and detail (dee316a), and checkpoint 3 (quality levels, pixel budget, frame-rate readout, cirrus). Phase 4 must not start until the product owner confirms Phase 3.
+
+## Phase 4 checkpoint 2: component damage (D52)
+
+**Done:** hits now hurt the part they land on (each wing, engine, fuel tank, pilot, tailplane, fin, control cables), and damage changes the flight model. Bullets go through fabric to the engine, tank or pilot. Fuel burns and leaks. Overloading or over-speeding the airframe damages the wings and breaks one off at the ultimate load. 769 tests pass (plus 15 known deviations); `npm run build` works. An undamaged aircraft flies exactly as before (a test checks the forces for all four aircraft).
+
+**Acceptance for this part:** a damaged wing causes a measurable roll (`tests/damageFlight.test.js`): in every aircraft a half-damaged right wing gives 10+ degrees a second of roll and 15+ degrees of bank in 2 s hands-off, the left wing mirrors it, it grows with the damage, and holding it level takes opposite stick.
+
+**Please test (about 10 minutes):**
+1. **Your own damage:** press **Shift+1**, then **F4** (test panel) and **F3**. Click **Right wing 50%**: the aircraft should roll right and you must hold left stick to stay level. Click again: the wing fails ("Right wing failed", the wing disappears, violent roll). **Repair all** puts it right. Try **Left wing 50%**.
+2. **Engine:** **Engine 50%** (weaker, smoking), **Engine seized** (no power, a lot of drag, no smoke needed). **Fuel leak**: white spray, and the engine quits after about 45 s ("Out of fuel"); the propeller windmills.
+3. **Controls:** **Cut aileron cable** (roll stick does nothing; the aileron on the model stays still), **Cut elevator cable**, **Cut rudder cable**, **Tailplane 50%** (weaker pitch), **Fin 50%**. **Pilot wounded** (slower, weaker controls); **Pilot killed** (controls stay put, the banner says PILOT KILLED).
+4. **Shooting:** shoot a target from astern: it should fall in a second or so with the pilot killed. Shoot at a target from the side along its wings: they take damage, it rolls, an engine hit makes smoke. Messages say why it went down: "SHOT DOWN: Fokker Dr.I (Pilot killed / Wing failed / Engine seized)". F3 does not show the target's damage.
+5. **Structure:** at top speed pull the stick hard back: the g-load in F3 climbs past the limit (about 3.3 g for the Camel) and you get wing damage, then "wing failed" near 6 g. In a steep dive past about 70 m/s the wings begin to fail too. Ordinary turns do nothing. F3 shows the worst g you pulled and the limit.
+
+**Decisions for you:**
+(a) **Is the structural limit welcome?** It will break wings if you yank the stick at speed (that is what the spec asks for). I can make it an optional assist or soften it (a higher limit, slower damage).
+(b) **Pilot kills in about half a second from astern** (3 hits). Make it harder (more hits) or leave it?
+(c) **Fuel and strength figures are estimates** (no sources found): fine for now?
+
+**Known issues:** no fire (a holed tank only leaks). Fuel burning does not change the aircraft's mass. A shot-down target with a failed wing takes a minute or more to reach the ground. Wing damage does not change how the model *looks* until it fails (only smoke, spray and the broken wing are drawn). The player cannot be shot at yet (no AI): use the F4 buttons.
 
 ## Phase 4 checkpoint 1: guns, bullets and target aircraft (D48-D51)
 

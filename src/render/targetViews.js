@@ -3,6 +3,8 @@
 
 import { createAircraftMesh, setControlSurfaces } from './aircraftMesh.js';
 import { deflections } from '../physics/controls.js';
+import { damagedDeflections } from '../physics/damage.js';
+import { showDamage } from './damageView.js';
 import { common } from '../aircraft/index.js';
 
 export class TargetViews {
@@ -24,7 +26,8 @@ export class TargetViews {
       const { position, quaternion } = t.sim.interpolate(alpha);
       v.model.group.position.copy(position);
       v.model.group.quaternion.copy(quaternion);
-      if (t.sim.surfaces) setControlSurfaces(v.model, deflections(common, t.sim.surfaces));
+      if (t.sim.surfaces) setControlSurfaces(v.model, damagedDeflections(t.sim.damage, deflections(common, t.sim.surfaces), common));
+      showDamage(v.model, t.sim.damage);
       if (t.sim.diag) v.model.prop.rotation.x += (t.sim.diag.rpm / 60) * Math.PI * 2 * realDt * 0.15;
     }
     for (const [id, v] of this.views) {

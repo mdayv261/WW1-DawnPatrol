@@ -83,6 +83,12 @@ export const albatrosDv = {
     muzzleY: 0.5, // m above the centre of gravity: on top of the cowling (E)
     muzzleZ: 0.18, // m each side of the centre line: the two guns sit this far left and right (E)
   },
+  // Fuel carried (kg) and the structure's strength; see docs/AIRCRAFT_DATA.md for sources and reasons.
+  fuel: { capacity: 70 },
+  structure: {
+    ultimateLoad: 5.5, // g, load factor at which the wings fail (E)
+    neverExceedSpeed: 60, // m/s equivalent airspeed above which wings begin to fail (E)
+  },
   documented: {
     maxSpeed: 47.78, // m/s, 172 km/h (D.Va, 937 kg, 170 hp), Herris; altitude not stated, taken as sea level (M)
     maxSpeedAltitude: 0, // m

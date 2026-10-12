@@ -85,6 +85,12 @@ export const camel = {
     muzzleY: 0.56, // m above the centre of gravity: on top of the cowling (E)
     muzzleZ: 0.13, // m each side of the centre line: the two guns sit this far left and right (E)
   },
+  // Fuel carried (kg) and the structure's strength; see docs/AIRCRAFT_DATA.md for sources and reasons.
+  fuel: { capacity: 78 },
+  structure: {
+    ultimateLoad: 6.0, // g, load factor at which the wings fail (E)
+    neverExceedSpeed: 70, // m/s equivalent airspeed above which wings begin to fail (E)
+  },
   documented: {
     maxSpeed: 52.3, // m/s, 117 mph at sea level, Mason (M); drag is calibrated to this
     maxSpeedAltitude: 0, // m

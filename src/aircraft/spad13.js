@@ -81,6 +81,12 @@ export const spad13 = {
     muzzleY: 0.5, // m above the centre of gravity: on top of the cowling (E)
     muzzleZ: 0.16, // m each side of the centre line: the two guns sit this far left and right (E)
   },
+  // Fuel carried (kg) and the structure's strength; see docs/AIRCRAFT_DATA.md for sources and reasons.
+  fuel: { capacity: 83 },
+  structure: {
+    ultimateLoad: 7.0, // g, load factor at which the wings fail (E)
+    neverExceedSpeed: 80, // m/s equivalent airspeed above which wings begin to fail (E)
+  },
   documented: {
     maxSpeed: 59.17, // m/s, 213 km/h at 1,981 m, McCook Field test at 924 kg (M); drag is calibrated to this
     maxSpeedAltitude: 1981, // m

@@ -6,6 +6,7 @@ import { TARGETS, BULLETS, SIGHT, CARTRIDGES } from '../src/aircraft/weapons.js'
 import { Combat } from '../src/game/combat.js';
 import { Target, enemiesOf } from '../src/game/targets.js';
 import { seededRandom } from '../src/weapons/guns.js';
+import { DAMAGE } from '../src/aircraft/damageModel.js';
 import { attitude } from '../src/dev/flightScenarios.js';
 
 // The fight: the player's guns, bullets, targets, hits and shooting down.
@@ -223,7 +224,8 @@ describe('hitting and shooting down', () => {
     expect(combat.hitsOnTargets).toBeGreaterThan(0);
     expect(log.hit).toBe(combat.hitsOnTargets);
     expect(t.hits).toBe(combat.hitsOnTargets);
-    expect(t.score).toBeGreaterThan(0);
+    const d = t.sim.damage; // bullets from astern go through the fuselage: something is hurt
+    expect(d.pilot + d.engine + d.tank + d.tailplane + d.fin + d.wing.L + d.wing.R + Object.values(d.cables).filter((c) => c !== null).length).toBeGreaterThan(0);
   });
 
   it('shots well to the side miss', () => {
@@ -234,29 +236,61 @@ describe('hitting and shooting down', () => {
     expect(combat.hitsOnTargets).toBe(0);
   });
 
-  it('enough hits shoot the target down once: a message, a kill, a burst, and it falls out of the sky', () => {
+  it('a burst from astern kills the pilot: one message and one kill, the burst effect, and the target tumbles out of the sky', () => {
     const { sim, combat } = setup();
     const t = combat.spawnTarget(sim);
     onSightPoint(combat, sim, t);
-    let downs = 0;
     for (let i = 0; i < 4 / DT && !t.down; i++) {
       run(combat, sim, DT);
       onSightPoint(combat, sim, t); // keep it on the sight
     }
     expect(t.down).toBe(true);
+    expect(t.reason).toBe('Pilot killed');
     expect(combat.kills).toBe(1);
-    expect(combat.messages).toEqual([`SHOT DOWN: ${t.aircraft.name}`]);
-    expect(t.score).toBeGreaterThanOrEqual(TARGETS.shotDownHits);
+    expect(combat.messages).toEqual([`SHOT DOWN: ${t.aircraft.name} (Pilot killed)`]);
     // More hits do not count another kill.
     run(combat, sim, 0.3);
     expect(combat.kills).toBe(1);
-    downs = combat.messages.length;
-    expect(downs).toBe(1);
-    // Left alone it loses its pilot's control and goes down.
-    combat.targets[0].state.position.y = 600;
+    expect(combat.messages.length).toBe(1);
+    // Left alone it falls.
+    t.state.position.y = 600;
     const y0 = t.state.position.y;
     run(combat, sim, 25, false);
     expect(t.state.position.y).toBeLessThan(y0 - 50);
+  });
+
+  it('hits take effect by part: an engine hit hurts the engine, a wing hit the wing, and a bullet goes through a wing to what is behind it', () => {
+    const t = new Target(AIRCRAFT.albatros, 'straight');
+    t.takeHit('engine', 1800 * 3);
+    expect(t.sim.damage.engine).toBeCloseTo(3 / 15, 9);
+    t.takeHit('wingR', 1800 * 2);
+    expect(t.sim.damage.wing.R).toBeCloseTo(2 / 20, 9);
+    expect(t.down).toBe(false);
+  });
+
+  it('a hit from the side on a wing passes through both wings of a biplane before it stops', () => {
+    const { sim, combat } = setup();
+    const t = combat.spawnTarget(sim);
+    // Fire straight down at the right wing from above: through the upper wing and the lower one.
+    const ac = t.aircraft;
+    const half = ac.wingStack[0].span / 2;
+    t.state.position.set(0, 500, 0);
+    t.sim.previous.position.copy(t.state.position);
+    t.sim.previous.quaternion.copy(t.state.quaternion);
+    const before = t.sim.damage.wing.R;
+    // A point above the right wing (body +Z), in world axes: the target faces north, its right is east.
+    const above = new Vector3(0.3, 4, half * 0.6).applyQuaternion(t.state.quaternion).add(t.state.position);
+    const b = { x: above.x, y: above.y, z: above.z, vx: 0, vy: -700, vz: 0, age: 0, cartridge: CARTRIDGES.smk, tracer: false };
+    combat.advance(b, 0.01, [t]); // a 7 m step straight down through the wing
+    // Every wing of the target was hit, each a share (0.75) of the energy of the one before: the Dr.I has three.
+    const rel = new Vector3(b.vx, b.vy, b.vz).sub(t.state.velocity);
+    const first = (0.5 * CARTRIDGES.smk.mass * rel.lengthSq()) / DAMAGE.energyRef / DAMAGE.hitsToDestroy.wing;
+    let expected = 0;
+    for (let i = 0; i < ac.wings; i++) expected += first * DAMAGE.passLoss ** i;
+    expect(ac.wings).toBe(3);
+    expect(t.sim.damage.wing.R - before).toBeCloseTo(expected, 6);
+    expect(t.sim.damage.wing.L).toBe(0);
+    expect(b.alive).toBe(false);
   });
 
   it('a crashed target is taken away a few seconds later', () => {
@@ -277,18 +311,6 @@ describe('hitting and shooting down', () => {
     expect(combat.targets.length).toBe(0);
   });
 
-  it('hits count by zone: the pilot and engine four times a wing hit', () => {
-    const t = new Target(AIRCRAFT.albatros, 'straight');
-    t.takeHit('wingL');
-    expect(t.score).toBe(1);
-    t.takeHit('pilot');
-    expect(t.score).toBe(5);
-    t.takeHit('engine');
-    expect(t.score).toBe(9);
-    t.takeHit('fuselage');
-    expect(t.score).toBe(9.5);
-    expect(t.hits).toBe(4);
-  });
 });
 
 describe('the gun sight', () => {

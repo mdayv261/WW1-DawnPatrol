@@ -4,6 +4,7 @@
 
 import { SCENARIOS, attitude, turnRate } from '../dev/flightScenarios.js';
 import { toMph } from './units.js';
+import { TEST_DAMAGE } from '../physics/damage.js';
 
 const DEG = 180 / Math.PI;
 
@@ -17,8 +18,8 @@ const BUTTON = `
   background: #2f3d2a; color: #e8f0e0; border: 1px solid #6b7a4a; border-radius: 4px; cursor: pointer;
 `;
 
-// aircraftList: the four aircraft; onStart(aircraftIndex, scenarioId).
-export function createTestPanel(aircraftList, onStart) {
+// aircraftList: the four aircraft; onStart(aircraftIndex, scenarioId); onDamage(kind) damages your own aircraft.
+export function createTestPanel(aircraftList, onStart, onDamage = () => {}) {
   const root = document.createElement('div');
   root.style.cssText = STYLE;
   const title = document.createElement('div');
@@ -44,6 +45,21 @@ export function createTestPanel(aircraftList, onStart) {
     }
   });
   root.appendChild(table);
+
+  const damageTitle = document.createElement('div');
+  damageTitle.textContent = 'Damage your own aircraft (then fly it):';
+  damageTitle.style.margin = '8px 0 2px';
+  root.appendChild(damageTitle);
+  for (const k of TEST_DAMAGE) {
+    const b = document.createElement('button');
+    b.textContent = k.label;
+    b.style.cssText = BUTTON;
+    b.addEventListener('click', () => {
+      b.blur();
+      onDamage(k.id);
+    });
+    root.appendChild(b);
+  }
 
   const status = document.createElement('pre');
   status.style.cssText = 'margin: 8px 0 0; white-space: pre;';

@@ -83,6 +83,12 @@ export const fokkerDr1 = {
     muzzleY: 0.52, // m above the centre of gravity: on top of the cowling (E)
     muzzleZ: 0.14, // m each side of the centre line: the two guns sit this far left and right (E)
   },
+  // Fuel carried (kg) and the structure's strength; see docs/AIRCRAFT_DATA.md for sources and reasons.
+  fuel: { capacity: 54 },
+  structure: {
+    ultimateLoad: 7.0, // g, load factor at which the wings fail (E)
+    neverExceedSpeed: 69, // m/s equivalent airspeed above which wings begin to fail (E)
+  },
   documented: {
     maxSpeed: 51.39, // m/s, 185 km/h at sea level (M); drag is calibrated to this. 103 mph is the 4,000 m figure
     maxSpeedAltitude: 0, // m

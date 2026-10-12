@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { CARTRIDGES, GUN_TYPES, SYNC, BULLETS } from '../src/aircraft/weapons.js';
+import { DAMAGE } from '../src/aircraft/damageModel.js';
 import { G1 } from '../src/aircraft/g1Table.js';
 
 // The weapon data in code must match the "Weapons" section of docs/AIRCRAFT_DATA.md,
@@ -9,9 +10,9 @@ import { G1 } from '../src/aircraft/g1Table.js';
 const text = readFileSync(new URL('../docs/AIRCRAFT_DATA.md', import.meta.url), 'utf8');
 const cells = (line) => line.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
 
-function weaponRows() {
+function weaponRows(heading = '## Weapons') {
   const lines = text.split('\n');
-  const start = lines.findIndex((l) => l.startsWith('## Weapons'));
+  const start = lines.findIndex((l) => l.startsWith(heading));
   const rows = [];
   for (let i = start + 1; i < lines.length && !lines[i].startsWith('## '); i++) {
     if (!lines[i].startsWith('|')) continue;
@@ -23,8 +24,8 @@ function weaponRows() {
 }
 
 const sourceIds = new Set(text.split('\n').filter((l) => /^\|\s*S\d+\s*\|/.test(l)).map((l) => cells(l)[0]));
-const roots = { CARTRIDGES, GUN_TYPES, SYNC, BULLETS };
-const rows = weaponRows();
+const roots = { CARTRIDGES, GUN_TYPES, SYNC, BULLETS, DAMAGE };
+const rows = [...weaponRows(), ...weaponRows('## Damage model')];
 const keyed = rows.filter((r) => /`[A-Z_]+\.[\w.]+`/.test(r[0]));
 const get = (path) => path.split('.').reduce((o, k) => o?.[k], roots);
 const number = (s) => Number(s.replace(/,/g, '').split(/\s/)[0]);
@@ -46,7 +47,7 @@ describe('Weapons section of AIRCRAFT_DATA.md', () => {
   });
 
   it('every value in a keyed row equals the value in the code', () => {
-    expect(keyed.length).toBeGreaterThan(14);
+    expect(keyed.length).toBeGreaterThan(35);
     for (const r of keyed) {
       const path = r[0].match(/`([A-Z_]+\.[\w.]+)`/)[1];
       const code = get(path);
@@ -66,6 +67,12 @@ describe('Weapons section of AIRCRAFT_DATA.md', () => {
     for (const k of ['jamPerRound', 'clearTime', 'clearSuccess']) expect(GUN_TYPES.lmg0815[k]).toBe(GUN_TYPES.vickers[k]);
     expect(documented.has('SYNC.bladeMargin')).toBe(true);
     expect(documented.has('BULLETS.tracerEvery')).toBe(true);
+  });
+
+  it('every number in DAMAGE has a row', () => {
+    const documented = new Set(keyed.map((r) => r[0].match(/`([A-Z_]+\.[\w.]+)`/)[1]));
+    const walk = (o, prefix) => Object.entries(o).forEach(([k, v]) => (typeof v === 'object' ? walk(v, `${prefix}.${k}`) : expect(documented.has(`${prefix}.${k}`), `${prefix}.${k}`).toBe(true)));
+    walk(DAMAGE, 'DAMAGE');
   });
 
   it('the cartridges and guns are consistent with each other', () => {

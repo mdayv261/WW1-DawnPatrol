@@ -3,7 +3,7 @@
 // a tree or building). Only reads the Combat object; nothing here affects physics.
 
 import {
-  BufferGeometry, BufferAttribute, Mesh, MeshBasicMaterial, DoubleSide, Points, ShaderMaterial, Vector3, AdditiveBlending,
+  BufferGeometry, BufferAttribute, Mesh, MeshBasicMaterial, DoubleSide, Points, ShaderMaterial, Vector3,
 } from 'three';
 import { BULLETS } from '../aircraft/weapons.js';
 
@@ -64,8 +64,10 @@ const KINDS = {
   down: { life: 0.9, size: 6, color: [1, 0.55, 0.2], blend: true }, // a target shot down: a burst
   ground: { life: 0.8, size: 2.6, color: [0.55, 0.45, 0.33], blend: false }, // dust
   solid: { life: 0.5, size: 1.8, color: [0.62, 0.58, 0.5], blend: false }, // chips off a tree or building
+  smoke: { life: 2.6, size: 3.2, color: [0.16, 0.15, 0.15], blend: false }, // a damaged engine's trail
+  spray: { life: 1.2, size: 1.7, color: [0.86, 0.86, 0.8], blend: false }, // fuel leaking from a holed tank
 };
-const POOL = 96;
+const POOL = 280;
 
 export class EffectsView {
   constructor(scene) {
@@ -79,7 +81,7 @@ export class EffectsView {
     this.geometry.setAttribute('aColour', new BufferAttribute(this.colour, 4));
     this.geometry.setDrawRange(0, 0);
     const material = new ShaderMaterial({
-      transparent: true, depthWrite: false, blending: AdditiveBlending,
+      transparent: true, depthWrite: false,
       vertexShader: `
         attribute float aSize; attribute vec4 aColour; varying vec4 vColour;
         void main() {

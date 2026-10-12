@@ -26,6 +26,7 @@ function createGround() {
 // maxPixels: most pixels drawn per frame (see quality.js); change it with setMaxPixels().
 export function createScene(canvas, maxPixels = Infinity) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.localClippingEnabled = true; // a broken wing is cut off with a clipping plane (render/damageView.js)
   let pixelBudget = maxPixels;
 
   const scene = new THREE.Scene();

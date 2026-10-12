@@ -73,6 +73,7 @@ All values are stored in SI units. The original figure and unit from the source 
 | S43 | Royal Armouries, Maxim MG 08/15 (rate 450 rpm) and Australian War Memorial MG 08/15 record (up to 450 rpm) | https://collections.royalarmouries.org/first-world-war/type/rac-narrative-63.html and https://www.awm.gov.au/collection/C154473 | Museum records (read through search-result summaries only) |
 | S44 | Western Front Association, "The .303 Cartridge" (2008): 174 grains, about 2,400 ft/s | https://www.westernfrontassociation.com/world-war-i-articles/2008/may/the-303-cartridge/ | Society article |
 | S45 | JBM Ballistics: G1 drag function tabulated by R. McCoy (mcg1.txt), from E. Lowry, Exterior Ballistics of Small Arms Projectiles (Winchester-Western, 1965) | https://jbmballistics.com/downloads.html | Published standard drag table |
+| S46 | H. Weyl, Fokker: The Creative Years (Putnam), as quoted on the flyingmachines.ru Dr.I page: Dr.I V.4 prototype wing load test (ultimate load factor 7.92), acceptance fuel, and von Tutschek's claimed dive speed | https://flyingmachines.ru/Site2/Crafts/Craft25493.htm | Reference book (transcription) |
 
 Transcriptions on flyingmachines.ru reproduce the named books' tables; values from them are rated medium because the transcription itself was not checked against the printed book.
 
@@ -111,6 +112,9 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Gun muzzle ahead of the CG (`guns.muzzleX`) | 1.72 | m | — | ASSUMPTION | estimate | Not found. About 0.30 of the length, just behind the propeller plane; places the guns on top of the nose as the sources describe. Shots are timed so they pass between the propeller blades. |
 | Gun muzzle above the CG (`guns.muzzleY`) | 0.56 | m | — | ASSUMPTION | estimate | Not found. On top of the cowling, above the engine, as drawn on the model. |
 | Gun muzzle each side of the centre line (`guns.muzzleZ`) | 0.13 | m | — | ASSUMPTION | estimate | Not found. The two guns are mounted on top of the nose, a few inches apart (S22, S23 for the Camel); the guns are parallel to the aircraft's axis. |
+| Fuel carried (`fuel.capacity`) | 78 | kg | — | ASSUMPTION | estimate | The tank size was not found. S22 and S24 give an endurance of about 2.5 hours; 78 kg is 2.5 hours at this model's cruise fuel use (80% of rated power at 0.40 kg per kWh, 31 kg an hour). Only the burn time depends on it; the aircraft's mass does not change as fuel burns. |
+| Ultimate load factor (`structure.ultimateLoad`) | 6 | g | — | ASSUMPTION | estimate | No strength test or design load found for the Camel. A typical design figure for a WWI fighter, a little below the Fokker prototype's tested 7.92 (S46) because the Camel is lighter built. Tune by flying. |
+| Never-exceed speed (`structure.neverExceedSpeed`) | 70 | m/s | about 157 mph | ASSUMPTION | estimate | No diving limit found. 1.35 times the documented top speed (52.3 m/s). Wings begin to take damage above it and fail 25% above it. |
 | Propeller blades (`propeller.blades`) | 2 | — | two-bladed | S1, S2 | high | All four aircraft had two-bladed wooden propellers (museum records). |
 | Propeller blade chord at the guns (`propeller.chord`) | 0.17 | m | — | ASSUMPTION | estimate | Not found. As drawn on the model (0.17 to 0.18 m, a typical blade width at a third of the radius); used by the synchroniser to know when a blade covers a gun. |
 | Zero-lift drag coefficient CD0 | 0.036 | — | — | ASSUMPTION | estimate | Fitted (`npm run calibrate`) so the model's full-throttle level top speed at sea level and 659 kg equals Mason's 117 mph, using the multiplane induced drag (S29), measured propeller curve (S30) and power-altitude law (S31). The Phase 1 value (0.036, from 112 mph with a fixed 0.70 propeller efficiency) happens to come out the same. |
@@ -173,6 +177,9 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Gun muzzle ahead of the CG (`guns.muzzleX`) | 1.89 | m | — | ASSUMPTION | estimate | Not found. About 0.30 of the length, just behind the propeller plane; places the guns on top of the nose as the sources describe. Shots are timed so they pass between the propeller blades. |
 | Gun muzzle above the CG (`guns.muzzleY`) | 0.5 | m | — | ASSUMPTION | estimate | Not found. On top of the cowling, above the engine, as drawn on the model. |
 | Gun muzzle each side of the centre line (`guns.muzzleZ`) | 0.16 | m | — | ASSUMPTION | estimate | Not found. Position chosen to look right on the model and to cross the propeller disc, so the synchroniser matters; the guns are parallel to the aircraft's axis. |
+| Fuel carried (`fuel.capacity`) | 83 | kg | — | ASSUMPTION | estimate | S17 gives 83 kg of fuel, but its wording is ambiguous (see the gaps table), so it is held as an estimate. |
+| Ultimate load factor (`structure.ultimateLoad`) | 7 | g | — | ASSUMPTION | estimate | No strength test found. S2 says only that the SPAD was noted for robust construction, so it is set a little above the Camel's. |
+| Never-exceed speed (`structure.neverExceedSpeed`) | 80 | m/s | about 179 mph | ASSUMPTION | estimate | No diving limit found. 1.35 times the documented top speed (59.17 m/s). |
 | Propeller blades (`propeller.blades`) | 2 | — | two-bladed | S1, S2 | high | All four aircraft had two-bladed wooden propellers (museum records). |
 | Propeller blade chord at the guns (`propeller.chord`) | 0.18 | m | — | ASSUMPTION | estimate | Not found. As drawn on the model (0.17 to 0.18 m, a typical blade width at a third of the radius); used by the synchroniser to know when a blade covers a gun. |
 | Zero-lift drag coefficient CD0 | 0.039 | — | — | ASSUMPTION | estimate | Fitted (`npm run calibrate`) so the model's full-throttle level top speed at 1,981 m, 924 kg and 220 hp equals the McCook 213 km/h. With the 197 hp alternative it would be 0.0343 (see FLIGHT_VALIDATION.md). Phase 1 value: 0.0365. |
@@ -231,6 +238,9 @@ No original Dr.I survives (S6), so all geometry and weights come from reproducti
 | Gun muzzle ahead of the CG (`guns.muzzleX`) | 1.73 | m | — | ASSUMPTION | estimate | Not found. About 0.30 of the length, just behind the propeller plane; places the guns on top of the nose as the sources describe. Shots are timed so they pass between the propeller blades. |
 | Gun muzzle above the CG (`guns.muzzleY`) | 0.52 | m | — | ASSUMPTION | estimate | Not found. On top of the cowling, above the engine, as drawn on the model. |
 | Gun muzzle each side of the centre line (`guns.muzzleZ`) | 0.14 | m | — | ASSUMPTION | estimate | Not found. Position chosen to look right on the model and to cross the propeller disc, so the synchroniser matters; the guns are parallel to the aircraft's axis. |
+| Fuel carried (`fuel.capacity`) | 54 | kg | 75 litres | S26 | medium | Herris and Phillips give a 75 litre tank for the V.5 prototype. Converted at 0.72 kg per litre, an assumed petrol density. |
+| Ultimate load factor (`structure.ultimateLoad`) | 7 | g | 7.92 on the V.4 prototype | ASSUMPTION | estimate | Weyl (S46) reports an ultimate load factor of 7.92 for the V.4 prototype's wing test. Production aircraft are assumed 12% lower, because early production Dr.Is lost wings in service. |
+| Never-exceed speed (`structure.neverExceedSpeed`) | 69 | m/s | about 154 mph | ASSUMPTION | estimate | No diving limit found. 1.35 times the documented top speed (51.39 m/s). Von Tutschek's claimed dive of over 240 km/h (67 m/s) is called possible but unlikely by Weyl (S46). |
 | Propeller blades (`propeller.blades`) | 2 | — | two-bladed | S1, S2 | high | All four aircraft had two-bladed wooden propellers (museum records). |
 | Propeller blade chord at the guns (`propeller.chord`) | 0.17 | m | — | ASSUMPTION | estimate | Not found. As drawn on the model (0.17 to 0.18 m, a typical blade width at a third of the radius); used by the synchroniser to know when a blade covers a gun. |
 | Zero-lift drag coefficient CD0 | 0.0356 | — | — | ASSUMPTION | estimate | Fitted (`npm run calibrate`) so the model's full-throttle level top speed at sea level equals 185 km/h. The Phase 1 value 0.043 was wrong because 103 mph, a 4,000 m figure, was treated as a sea-level speed. |
@@ -287,6 +297,9 @@ Dimensions and weights come from the Smithsonian's original D.Va (D.7161/17), wh
 | Gun muzzle ahead of the CG (`guns.muzzleX`) | 2.19 | m | — | ASSUMPTION | estimate | Not found. About 0.30 of the length, just behind the propeller plane; places the guns on top of the nose as the sources describe. Shots are timed so they pass between the propeller blades. |
 | Gun muzzle above the CG (`guns.muzzleY`) | 0.5 | m | — | ASSUMPTION | estimate | Not found. On top of the cowling, above the engine, as drawn on the model. |
 | Gun muzzle each side of the centre line (`guns.muzzleZ`) | 0.18 | m | — | ASSUMPTION | estimate | Not found. Position chosen to look right on the model and to cross the propeller disc, so the synchroniser matters; the guns are parallel to the aircraft's axis. |
+| Fuel carried (`fuel.capacity`) | 70 | kg | — | ASSUMPTION | estimate | Not found. S3 mentions only an emergency tank. 70 kg is about 1.6 hours at this model's cruise fuel use for the 130 kW engine. |
+| Ultimate load factor (`structure.ultimateLoad`) | 5.5 | g | — | ASSUMPTION | estimate | No strength test found. Set below the others because S3 and S25 record upper wing spar failures soon after the D.V's introduction and weak lower wing attachments. |
+| Never-exceed speed (`structure.neverExceedSpeed`) | 60 | m/s | about 134 mph | ASSUMPTION | estimate | No diving limit found. Only 1.25 times the documented top speed (47.78 m/s), because lower wings failed in dives (S3, S25). |
 | Propeller blades (`propeller.blades`) | 2 | — | two-bladed | S1, S2 | high | All four aircraft had two-bladed wooden propellers (museum records). |
 | Propeller blade chord at the guns (`propeller.chord`) | 0.18 | m | — | ASSUMPTION | estimate | Not found. As drawn on the model (0.17 to 0.18 m, a typical blade width at a third of the radius); used by the synchroniser to know when a blade covers a gun. |
 | Zero-lift drag coefficient CD0 | 0.0602 | — | — | ASSUMPTION | estimate | Fitted (`npm run calibrate`) so the model's full-throttle level top speed at sea level, 937 kg and 170 hp equals Herris's 172 km/h. High compared with the others; the source speed's altitude is not stated. Phase 1 value: 0.0505. |
@@ -502,6 +515,39 @@ Shared by the four aircraft. The code is in `src/aircraft/weapons.js` and `src/a
 | Tracer spacing (`BULLETS.tracerEvery`) | 3 | rounds | — | ASSUMPTION | estimate | Period belts mixed ball, tracer and incendiary rounds; the mix is not documented. Every third round is drawn, so the stream can be seen. |
 | G1 standard drag function | 79 points | Mach 0 to 5 | table | S45 | high | The standard small-arms drag curve (drag coefficient 0.2629 at Mach 0, 0.4805 at Mach 1, 0.6625 at Mach 1.4, 0.4988 at Mach 5). Copied unchanged into `src/aircraft/g1Table.js`. |
 
+## Damage model (Phase 4)
+
+Shared by the four aircraft. The code is `src/aircraft/damageModel.js` and `src/physics/damage.js`; `tests/weaponsData.test.js` checks the numbers against these rows. Nothing here was found in a source: they are design choices, set so the effects are clear and plausible. Each is meant to be tuned by flying.
+
+| Parameter | Value | Unit | Original figure | Source | Confidence | Notes |
+|---|---|---|---|---|---|---|
+| Reference hit energy (`DAMAGE.energyRef`) | 1800 | J | — | ASSUMPTION | estimate | About the energy of a .303 bullet at 300 m (half of 11.3 g at 560 m/s squared). A hit with this energy counts as one hit; harder hits count more. |
+| Hits to destroy a wing panel (`DAMAGE.hitsToDestroy.wing`) | 20 | hits | — | ASSUMPTION | estimate | A rifle-calibre bullet makes a small hole in fabric, and a spar must be struck to weaken it. A burst of 20 hits on one panel is about a second and a half of one gun. |
+| Hits to destroy the engine (`DAMAGE.hitsToDestroy.engine`) | 15 | hits | — | ASSUMPTION | estimate | A rotary engine was hardy but had many exposed parts and the fuel and oil lines. A gameplay choice. |
+| Hits to destroy the fuel tank (`DAMAGE.hitsToDestroy.tank`) | 6 | hits | — | ASSUMPTION | estimate | One hole leaks, six make the tank drain at the full rate. Fire is not modelled. |
+| Hits to kill the pilot (`DAMAGE.hitsToDestroy.pilot`) | 3 | hits | — | ASSUMPTION | estimate | One hit wounds (a third), three kill. A gameplay choice. |
+| Hits to destroy the tailplane (`DAMAGE.hitsToDestroy.tailplane`) | 15 | hits | — | ASSUMPTION | estimate | A gameplay choice, smaller than a wing panel's because the tail structure is lighter. |
+| Hits to destroy the fin (`DAMAGE.hitsToDestroy.fin`) | 12 | hits | — | ASSUMPTION | estimate | A gameplay choice, as for the tailplane. |
+| Energy kept after passing a part (`DAMAGE.passLoss`) | 0.75 | fraction | — | ASSUMPTION | estimate | A bullet goes through fabric, wood and wire (wing, tail, fuselage) and carries on to the next part, with this share of its energy, until it reaches the engine, fuel tank or pilot, which stop it. Not measured. |
+| Chance a hit cuts a control cable (`DAMAGE.cableCutChance`) | 0.03 | per hit | — | ASSUMPTION | estimate | Cables are thin and few. A wing hit may cut the aileron cable; a fuselage, tail or fin hit the elevator or rudder cable. |
+| Lift lost by a damaged wing (`DAMAGE.wingLiftLoss`) | 0.6 | fraction | — | ASSUMPTION | estimate | At full damage (before it fails) one wing loses this much lift. A failed wing loses all of it. Chosen so a badly hurt wing is a clear roll that the ailerons can nearly hold. |
+| Extra drag of a damaged wing (`DAMAGE.wingDragGain`) | 0.5 | fraction | — | ASSUMPTION | estimate | At full damage one wing makes this much more drag, so the aircraft yaws toward it. |
+| Stall roll toward the damaged wing (`DAMAGE.wingStallBias`) | 0.05 | moment coefficient | — | ASSUMPTION | estimate | A stalled aircraft drops the hurt wing first. The undamaged model's own stall bias is 0.03. |
+| Centre of lift of a half wing (`DAMAGE.liftArm`) | 0.424413 | half spans | 4 / (3 pi) | ASSUMPTION | estimate | The textbook result for an elliptical lift distribution (lifting-line theory), not a figure from a WWI source. It is the lever arm of a half wing's lift. |
+| Power lost at full engine damage (`DAMAGE.enginePowerLoss`) | 0.85 | fraction | — | ASSUMPTION | estimate | A damaged engine runs rough and weak; the last 15% is lost only when it seizes, which is at full damage. |
+| Locked propeller drag (`DAMAGE.seizedPropDrag`) | 0.35 | drag coefficient on the disc | — | ASSUMPTION | estimate | A stopped propeller is a flat obstacle; 0.35 is a moderate value for a two-bladed disc. A seized engine therefore slows the aircraft a lot. |
+| Windmilling propeller drag (`DAMAGE.windmillPropDrag`) | 0.12 | drag coefficient on the disc | — | ASSUMPTION | estimate | A propeller turning freely makes less drag than a locked one. Used when the fuel runs out. |
+| Windmilling speed (`DAMAGE.windmillRpmFraction`) | 0.5 | fraction of rated | — | ASSUMPTION | estimate | A windmilling propeller at top speed turns at about half the engine's rated speed; it is slower at lower airspeed. Matters to the gun synchroniser. |
+| Elevator or rudder lost with tail damage (`DAMAGE.tailAuthorityLoss`) | 0.8 | fraction | — | ASSUMPTION | estimate | At full tailplane (or fin) damage the control has a fifth of its effect. |
+| Stability lost with tail damage (`DAMAGE.tailStabilityLoss`) | 0.5 | fraction | — | ASSUMPTION | estimate | At full damage the aircraft's pitch (or yaw) stability is halved. |
+| Control lost with a wounded pilot (`DAMAGE.pilotAuthorityLoss`) | 0.5 | fraction | — | ASSUMPTION | estimate | A pilot who is fully wounded (just short of dead) moves the stick and rudder half as far. |
+| Control speed lost with a wounded pilot (`DAMAGE.pilotSlowing`) | 0.5 | fraction | — | ASSUMPTION | estimate | The same pilot also moves the controls at half the normal speed (a gameplay choice). |
+| Fuel used per joule (`DAMAGE.specificFuelConsumption`) | 1.11e-7 | kg per joule | 0.40 kg per kWh | ASSUMPTION | estimate | No measured value found. 0.40 kg per kWh with the Camel's 78 kg gives its documented endurance of about 2.5 hours (S22, S24). |
+| Fuel leak rate (`DAMAGE.leakRate`) | 0.0222 | tank per second | about 45 s to empty | ASSUMPTION | estimate | A badly holed tank empties in under a minute; a gameplay choice. |
+| Safety factor (`DAMAGE.safetyFactor`) | 1.8 | — | — | ASSUMPTION | estimate | Limit load is the ultimate load divided by this. Nothing damages the structure below the limit load. A figure of 1.8 to 2.0 was proposed in French writing of 1911, as reported secondhand in a DTIC history of safety factors (the paper itself could not be opened). |
+| Wing damage rate at the ultimate load (`DAMAGE.overloadRate`) | 0.25 | per second | — | ASSUMPTION | estimate | Between the limit and the ultimate load the wings are damaged at a rate rising from zero to this; at the ultimate load a wing fails at once. |
+| Over-speed margin (`DAMAGE.overspeedMargin`) | 0.25 | fraction | — | ASSUMPTION | estimate | Wings begin to be damaged above the never-exceed speed and fail when the speed is this much above it. |
+
 ## Open research gaps (no value recorded; nothing invented)
 
 Updated after the flight-model validation (see `docs/FLIGHT_VALIDATION.md`).
@@ -515,7 +561,8 @@ Updated after the flight-model validation (see `docs/FLIGHT_VALIDATION.md`).
 | Propeller pitch and mass for all four aircraft | Propeller efficiency curve placement; gyroscopic effect | Museum object records |
 | Engine mass for Oberursel UR.II and Mercedes D.IIIa | Centre of gravity | NASM engine records. A related Mercedes D.IIIav (supercharged) is listed at 288 kg, but that is a different engine. |
 | Airfoil sections for each aircraft | Lift and drag curves | NACA and RAE reports on WWI sections |
-| Fuel and oil capacities, fuel consumption | Endurance and weight change | Museum object records. S17 gives 83 kg fuel for the SPAD but the wording is ambiguous. |
+| Fuel tank capacities and consumption (only the Dr.I prototype's 75 litres was found) | Fuel leak and endurance (Phase 4) | Museum object records. S17 gives 83 kg fuel for the SPAD but the wording is ambiguous. The mass does not fall as fuel burns (a simplification). |
+| Strength: load factors and diving speeds of the production aircraft (only the Dr.I V.4 prototype's 7.92 was found) | Structural limits (Phase 4) | RAE and Air Board strength-test reports; Windsock Datafiles; Cross and Cockade articles |
 | Camel and Dr.I range or endurance (sources disagree) | Fuel model | As above |
 | Vickers and LMG 08/15: synchronised rate of fire at a given engine speed, 7.92 mm S bullet mass, ballistic coefficients, jam rates, type of interrupter gear on each aircraft | Weapons | Royal Armouries and Imperial War Museum catalogue pages could not be opened (blocked); try the printed Textbook of Small Arms 1929 and the Constantinesco gear booklet at the IWM |
 | Fuel tank capacity and consumption of the Camel, SPAD and Albatros; strength (load factor) limits of all four | Fuel leaks and structural limits (Phase 4 checkpoint 2) | Dr.I prototype: 75 l tank (S26). Strength: ultimate load factor 7.92 for the Dr.I V.4 prototype (Weyl, as transcribed on the Dr.I page); nothing else found. Estimates will be marked |

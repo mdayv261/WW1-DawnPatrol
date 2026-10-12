@@ -2,20 +2,20 @@
 // (the dogfighting AI comes in a later phase). Each is a full Simulation, so it
 // obeys the same flight model as the player, and a scripted pilot moves its
 // controls like a person would: a bank angle to hold, and the stick to hold its
-// height. When hit enough it is shot down: its pilot lets go and it falls.
+// height. Hits damage it like they would the player (physics/damage.js); when its
+// pilot is killed, a wing or the tail breaks off, or its engine seizes, it is shot
+// down: the scripted pilot lets go and it falls.
 
 import { Quaternion, Vector3 } from 'three';
 import { Simulation } from '../core/simulation.js';
 import { AIRCRAFT_LIST } from '../aircraft/index.js';
 import { TARGETS } from '../aircraft/weapons.js';
 import { attitude } from '../dev/flightScenarios.js';
+import { applyHit, destroyedReason } from '../physics/damage.js';
 
 const clamp = (v, lo = -1, hi = 1) => Math.min(hi, Math.max(lo, v));
 const _yaw = new Quaternion();
 const UP = new Vector3(0, 1, 0);
-
-// How much one hit in a zone counts toward shooting the target down.
-const HIT_WEIGHT = { pilot: 4, engine: 4, fuel: 3, wingL: 1, wingR: 1, tailplane: 1, fin: 1, fuselage: 0.5 };
 
 let nextId = 1;
 
@@ -26,13 +26,14 @@ export class Target {
     this.pattern = pattern;
     this.sim = new Simulation();
     this.sim.solidAt = hooks.solidAt ?? null;
+    this.sim.deadPilotFreezes = false; // a shot-down target tumbles (below) instead of flying on with frozen controls
     this.integral = 0;
     this.time = 0;
     this.altitude = 0;
     this.speed = 0;
-    this.score = 0; // weighted hits taken
     this.hits = 0;
     this.down = false; // shot down: the pilot has let go
+    this.reason = null; // why ("Pilot killed", "Wing failed", ...)
     this.removeAt = null; // game time when a crashed target is taken away
   }
 
@@ -113,16 +114,16 @@ export class Target {
     this.sim.step(dt, this.fly(dt));
   }
 
-  // A hit in a zone. Returns true if this hit shot the target down.
-  takeHit(zone) {
-    this.hits++;
-    if (this.down) return false;
-    this.score += HIT_WEIGHT[zone] ?? 1;
-    if (this.score >= TARGETS.shotDownHits) {
-      this.down = true;
-      return true;
-    }
-    return false;
+  // A hit in a zone with `energy` joules. Returns true if this hit shot the target down.
+  takeHit(zone, energy, rng = Math.random) {
+    const damage = this.sim.damage;
+    applyHit(damage, zone, energy, rng, this.sim.surfaces);
+    damage.events.length = 0; // the screen reports the player's damage, not the targets'
+    const reason = destroyedReason(damage);
+    if (this.down || !reason) return false;
+    this.down = true;
+    this.reason = reason;
+    return true;
   }
 }
 

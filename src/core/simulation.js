@@ -9,6 +9,7 @@ import { restingPose } from '../physics/ground.js';
 import { createState, copyState } from '../physics/rigidBody.js';
 import { createInput, createSurfaces } from '../physics/controls.js';
 import { hitPoints } from '../physics/hitpoints.js';
+import { createDamage, resetDamage, filterInput, stepDamage } from '../physics/damage.js';
 
 export const START_ALTITUDE = 1000; // m
 export const START_SPEED_FRACTION = 0.8; // of the documented top speed
@@ -25,6 +26,8 @@ export class Simulation {
     this.previous = createState();
     this.surfaces = null;
     this.diag = null;
+    this.damage = createDamage(); // wings, engine, fuel, pilot, tail and cables (physics/damage.js)
+    this.deadPilotFreezes = true; // a killed pilot leaves the controls where they were (a scripted target sets this false and tumbles)
     this.crashed = false;
     this.crashReason = null;
     this.time = 0;
@@ -43,6 +46,7 @@ export class Simulation {
     copyState(this.state, trim.state);
     copyState(this.previous, trim.state);
     this.surfaces = trim.surfaces;
+    resetDamage(this.damage);
     this.startInput = createInput();
     this.startInput.throttle = trim.surfaces.throttle;
     this.startInput.trim = trim.surfaces.trim;
@@ -63,6 +67,7 @@ export class Simulation {
     this.aircraft = aircraft;
     copyState(this.state, state);
     this.state.chocked = true;
+    resetDamage(this.damage);
     this.surfaces = createSurfaces();
     this.surfaces.throttle = 0;
     this.startInput = createInput();
@@ -82,7 +87,9 @@ export class Simulation {
     if (!this.aircraft || this.crashed) return;
     copyState(this.previous, this.state);
     if (this.state.chocked && input.throttle > common.chockReleaseThrottle) this.state.chocked = false;
-    this.diag = advance(this.aircraft, common, this.state, this.surfaces, input, dt);
+    const hands = !this.deadPilotFreezes && this.damage.pilot >= 1 ? input : filterInput(this.damage, input, this.surfaces); // what a hurt pilot can still do
+    this.diag = advance(this.aircraft, common, this.state, this.surfaces, hands, dt, this.damage);
+    stepDamage(this.aircraft, this.damage, this.diag, dt);
     this.time += dt;
     if (this.diag.crash) this.crash(this.diag.crash);
     else if (this.state.position.y < FUSELAGE_FLOOR) this.crash('Hit the ground');

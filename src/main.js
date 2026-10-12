@@ -33,6 +33,8 @@ import { Combat } from './game/combat.js';
 import { TracerView, EffectsView } from './render/bullets.js';
 import { TargetViews } from './render/targetViews.js';
 import { createCombatHud, combatText, combatLines } from './ui/combatHud.js';
+import { applyTestDamage, damagedDeflections, damageLines, pilotDead } from './physics/damage.js';
+import { showDamage } from './render/damageView.js';
 
 const canvas = document.getElementById('game');
 // Graphics quality: ?quality= in the address, else the level saved in this browser, else Medium; L changes it.
@@ -118,7 +120,7 @@ const keyboard = attachKeyboard({
   onJoystickPanel: () => joystickPanel.toggle(),
 });
 
-if (import.meta.env.DEV) testPanel = createTestPanel(AIRCRAFT_LIST, (i, id) => startFlight(i, id));
+if (import.meta.env.DEV) testPanel = createTestPanel(AIRCRAFT_LIST, (i, id) => startFlight(i, id), (id) => applyTestDamage(sim.damage, id, sim.surfaces));
 
 const mouse = attachMouse(canvas, {
   onMove: (dx, dy) => {
@@ -252,7 +254,8 @@ function draw(realDt, alpha, now) {
   const { position, quaternion } = sim.interpolate(alpha);
   model.group.position.copy(position);
   model.group.quaternion.copy(quaternion);
-  setControlSurfaces(model, deflections(common, sim.surfaces)); // ailerons, elevators and rudder follow the controls
+  setControlSurfaces(model, damagedDeflections(sim.damage, deflections(common, sim.surfaces), common)); // ailerons, elevators and rudder follow the controls (a cut cable leaves one stuck)
+  showDamage(model, sim.damage); // a broken wing disappears
   const d = sim.diag;
   if (d) model.prop.rotation.x += (d.rpm / 60) * Math.PI * 2 * realDt * 0.15; // slowed so it reads on screen
 
@@ -272,6 +275,7 @@ function draw(realDt, alpha, now) {
   tracers.update(combat.bullets, camera, alpha, 1 / 120);
   effects.update(combat.events, realDt);
   for (const text of combat.messages.splice(0)) showNotice(text, 3000);
+  for (const text of sim.damage.events.splice(0)) showNotice(text, 3000); // the player's own damage
   const jammed = Boolean(combat.gunBank?.guns.some((g) => g.jammed));
   if (jammed && !wasJammed) showNotice('Gun jammed: press B (joystick button 9) to clear it', 3500);
   wasJammed = jammed;
@@ -281,7 +285,7 @@ function draw(realDt, alpha, now) {
   if (now - lastOverlay > 100) {
     lastOverlay = now;
     const message = now < notice.until ? notice.text : '';
-    banner.set(sim.crashed ? `CRASHED: ${sim.crashReason} - press R` : paused ? 'PAUSED' : message);
+    banner.set(sim.crashed ? `CRASHED: ${sim.crashReason} - press R` : pilotDead(sim.damage) ? 'PILOT KILLED - press R' : paused ? 'PAUSED' : message);
     const stick = joystick.pad;
     // A joystick seen before but missing now: remind how to wake it, and say what the browser can see.
     if (!stick && now > joystickHintAt && joystick.seenBefore) {
@@ -293,7 +297,7 @@ function draw(realDt, alpha, now) {
       const nearest = world.nearestAirfield(sim.state.position.x, sim.state.position.z);
       debug.set(debugLines(sim.aircraft, sim.diag, {
         crashed: sim.crashed, paused, joystick: stick ? stick.id : 'not detected', airfield: airfieldLine(nearest),
-        extra: [...perfLines(frameStats, renderer.info.render, qualityName, view, terrain.stats()), ...combatLines(combat)],
+        extra: [...perfLines(frameStats, renderer.info.render, qualityName, view, terrain.stats()), ...combatLines(combat), ...damageLines(sim.damage, sim.aircraft)],
       }));
     }
     if (import.meta.env.DEV && testPanel?.visible) testPanel.update(sim, runner, scenarioLabel);

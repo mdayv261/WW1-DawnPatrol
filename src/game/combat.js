@@ -9,7 +9,10 @@ import { makeBullet, stepBullet, bulletSpeed, flyBullet } from '../weapons/balli
 import { findImpact } from '../weapons/hits.js';
 import { BULLETS, SIGHT, TARGETS } from '../aircraft/weapons.js';
 import { Target, enemiesOf } from './targets.js';
+import { pilotDead } from '../physics/damage.js';
+import { DAMAGE } from '../aircraft/damageModel.js';
 
+const PASS_LOSS = DAMAGE.passLoss;
 const _p = new Vector3();
 const _v = new Vector3();
 const _d = new Vector3();
@@ -31,6 +34,7 @@ export class Combat {
     this.messages = []; // short texts for the screen: "SHOT DOWN: Fokker Dr.I"
     this.time = 0;
     this.spawned = 0;
+    this.fxTimer = 0;
   }
 
   // A new flight in `aircraft`: full belts, no bullets, no targets.
@@ -46,6 +50,7 @@ export class Combat {
     this.hitsOnTargets = 0;
     this.time = 0;
     this.spawned = 0;
+    this.fxTimer = 0;
   }
 
   clearJam() {
@@ -72,11 +77,29 @@ export class Combat {
 
     const live = this.targets.filter((t) => !t.crashed);
     const rpm = player.diag ? player.diag.rpm : 0;
-    const shots = this.gunBank.update(dt, trigger && !player.crashed, rpm);
+    const shots = this.gunBank.update(dt, trigger && !player.crashed && !pilotDead(player.damage), rpm);
     this.shotsFired += shots.length;
     for (const shot of shots) this.spawn(player, shot, live, dt);
     this.moveBullets(dt, live);
     this.tidyTargets(player);
+    this.fxTimer += dt;
+    if (this.fxTimer >= 0.05) {
+      this.fxTimer -= 0.05;
+      this.damageEffects(player);
+      for (const t of live) this.damageEffects(t.sim);
+    }
+  }
+
+  // Smoke from a hurt engine and spray from a holed fuel tank, as events for the renderer.
+  damageEffects(sim) {
+    const d = sim.damage;
+    const smoking = d.engine > 0.25;
+    const leaking = d.tank > 0 && d.fuel > 0;
+    if (!smoking && !leaking) return;
+    const s = sim.state;
+    _p.set(0.2 * sim.aircraft.geometry.length, 0, 0).applyQuaternion(s.quaternion).add(s.position);
+    if (smoking) this.events.push({ kind: 'smoke', x: _p.x, y: _p.y, z: _p.z });
+    if (leaking) this.events.push({ kind: 'spray', x: _p.x, y: _p.y - 0.4, z: _p.z });
   }
 
   spawn(player, shot, live) {
@@ -110,10 +133,20 @@ export class Combat {
   registerHit(hit, b) {
     this.hitsOnTargets++;
     const target = hit.target;
-    if (target.takeHit(hit.zone)) {
-      this.kills++;
-      this.messages.push(`SHOT DOWN: ${target.aircraft.name}`);
-      this.events.push({ kind: 'down', x: b.x, y: b.y, z: b.z });
+    target.hits++;
+    // The bullet's energy as the target feels it (their speeds subtract).
+    const vx = b.vx - target.state.velocity.x;
+    const vy = b.vy - target.state.velocity.y;
+    const vz = b.vz - target.state.velocity.z;
+    let energy = 0.5 * b.cartridge.mass * (vx * vx + vy * vy + vz * vz);
+    // It goes through each part in turn, losing some energy in each, until one stops it.
+    for (const part of hit.zones) {
+      if (target.takeHit(part.zone, energy, this.rng)) {
+        this.kills++;
+        this.messages.push(`SHOT DOWN: ${target.aircraft.name} (${target.reason})`);
+        this.events.push({ kind: 'down', x: b.x, y: b.y, z: b.z });
+      }
+      energy *= PASS_LOSS;
     }
   }
 
