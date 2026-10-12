@@ -25,6 +25,8 @@ export const SKILLS = {
     burst: [0.8, 2.2], // s: how long a burst lasts (between these)
     pause: [0.6, 1.4], // s: the pause between bursts
     rearAwareness: 0.25, // chance per second of noticing an enemy on its tail (it always notices being hit)
+    leadsTurns: false, // does it allow for a turning target's turn when it leads it
+    fireSpread: 6, // m: close in, it fires if the shot would pass within this of the target
     fleeDamage: 0.8, // damage (0 to 1) at which it breaks off the fight
     attackSpeed: 0.8, // of top speed, the speed it flies into an attack
   },
@@ -42,6 +44,8 @@ export const SKILLS = {
     burst: [0.6, 1.6],
     pause: [0.4, 1.0],
     rearAwareness: 0.6,
+    leadsTurns: true,
+    fireSpread: 4.5,
     fleeDamage: 0.55,
     attackSpeed: 0.85,
   },
@@ -59,6 +63,8 @@ export const SKILLS = {
     burst: [0.4, 1.1],
     pause: [0.3, 0.7],
     rearAwareness: 0.95,
+    leadsTurns: true,
+    fireSpread: 3.5,
     fleeDamage: 0.4,
     attackSpeed: 0.9,
   },
@@ -77,6 +83,7 @@ export function stepSkill(name, step) {
 export const STEERING = {
   // --- turning: the wanted turn is proportional to the angle to the wanted direction
   turnDamping: 0.3, // 1/s: the demand is cut by this times the turn rate it already has toward the wanted direction
+  maxTurnAngle: 0.25, // rad: in a maximum-rate turn it pulls fully until the wanted direction is this close
   turnGain: 0.9, // 1/s: lateral acceleration wanted per radian of error, divided by speed
   rollGain: 2.5, // roll stick per radian of bank error (the same loop the Drone uses)
   rollDamping: 0.8, // roll stick per rad/s of roll rate
@@ -146,19 +153,55 @@ export const COMBAT = {
   fleeLowFuel: 0.12, // share of fuel left at which it breaks off
   fleeTime: 25, // s of flying away before it goes back on patrol
   fleeSlope: -0.08, // slope of its flight away (a shallow dive for speed)
-  energyFloor: 0.7, // of the speed it wants: below this share it eases the turn to get speed back (energy management)
-  energyBand: 0.2, // of the speed it wants: over this range the turn eases from full to its minimum
+  fightSpeed: 0.75, // of top speed: the speed the energy rules below are measured against
+  energyFloor: 0.7, // of the fighting speed: below this share it eases the turn to get speed back (energy management)
+  energyBand: 0.2, // of the fighting speed: over this range the turn eases from full to its minimum
   minTurnShare: 0.35, // the least share of its load it will pull while it regains speed
   climbSpeed: 0.75, // of the speed it wants: it climbs at this share of it (nearer the speed that climbs best)
   diveRange: 450, // m: inside this it may dive steeply on the enemy
   maxAttackDive: -0.6, // the steepest slope it dives on an enemy that is in range
   maxApproachDive: -0.1, // and on one that is not
-  recoverSpeed: 0.62, // of the speed it wants: below this it stops turning and extends to build speed
-  extendDone: 0.92, // of the speed it wants: it climbs once it has this much and goes back to the fight when it is high enough
-  extendMargin: 120, // m above the fight floor it must be to go back to the fight
+  recoverSpeed: 0.62, // of the fighting speed: below this it stops turning and extends to build speed
+  extendDone: 0.92, // of the fighting speed: it climbs once it has this much and goes back to the fight when it is high enough
+  extendMargin: 80, // m above the fight floor it must be to go back to the fight
   recoverDive: -0.22, // slope of that dive
-  fightFloor: 450, // m: below this height in a fight it stops turning for position and climbs away
+  fightFloor: 280, // m: below this height in a fight it stops turning for position and climbs away (unless an enemy is close)
+  extendNoCloser: 450, // m: with an enemy closer than this it does not extend (flying straight in front of him is fatal)
   fightClimb: 0.18, // the slope it climbs on then
   leadClamp: 1200, // m: the farthest it will try to lead
   pursuitAhead: 150, // m: height above the enemy it likes to approach from (Ace), scaled by the skill
+};
+
+// The manoeuvres (src/ai/manoeuvres.js) and when the brain chooses them.
+export const MANOEUVRES = {
+  maxTime: 14, // s: any manoeuvre gives up after this long
+  abortSpeed: 0.42, // of top speed: an Immelmann too slow to get over the top is given up
+  loopLean: 0.35, // how far the loop leans back the way out (0 = straight up)
+  rollOutSlope: 0.05, // slope it rolls out on at the top of an Immelmann
+  climbSlope: 0.2, // slope of a climbing turn
+  climbSpeed: 0.75, // of top speed, in a climbing turn
+  zoomRange: 110, // m: closer than this a boom-and-zoom stops diving and zooms away
+  zoomSlope: 0.45, // slope of the zoom climb
+  zoomEndSpeed: 0.62, // of top speed: the zoom ends when the speed has been spent
+  // Choosing (energy is height plus speed squared over 2g, in metres):
+  boomEnergy: 300, // m of energy above the enemy to dive on him
+  boomAbove: 200, // m above him at least
+  climbAbove: 150, // m: an enemy this far above is approached in a climbing turn
+  reverseAngle: 2.1, // rad off the nose: an enemy this far behind calls for a reversal (Immelmann or split-S)
+  reverseRange: [150, 1000], // m: ...at this range
+  reverseOpening: 5, // m/s: the two must be flying apart at least this fast for a reversal
+  reverseAway: 1.5, // rad: and the enemy's nose must be this far from pointing at it
+  immelmannMargin: 2.1, // the speed must be this many times the stall speed to try an Immelmann (the Albatros cannot)
+  immelmannSpeed: 0.85, // of top speed, needed to start an Immelmann
+  splitSHeight: 900, // m: height needed for a split-S
+  splitSThrottleSpeed: 0.4, // of top speed: the speed asked for in its dive, which closes the throttle
+  splitSEscape: 0.3, // chance a pilot who knows it escapes an enemy on its tail with a split-S rather than a break
+  cooldown: 8, // s after one manoeuvre before it starts another
+};
+
+// Which manoeuvres each skill knows.
+export const REPERTOIRE = {
+  novice: ['defensive break', 'turning fight', 'climbing turn'],
+  regular: ['defensive break', 'turning fight', 'climbing turn', 'Immelmann', 'split-S'],
+  ace: ['defensive break', 'turning fight', 'climbing turn', 'Immelmann', 'split-S', 'boom-and-zoom'],
 };

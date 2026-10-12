@@ -168,6 +168,14 @@ export class Agent {
     }
     this.fire = Boolean(input.fire) && !this.down;
     this.sim.step(dt, input);
+    // Damage that finishes it in flight (a wing shot through and then overstressed, an engine seizing) brings it down too.
+    if (!this.down) {
+      const reason = destroyedReason(this.sim.damage);
+      if (reason) {
+        this.down = true;
+        this.reason = reason;
+      }
+    }
   }
 
   // A hit in a zone with `energy` joules. Returns true if this hit shot the agent down.

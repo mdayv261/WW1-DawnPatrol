@@ -43,6 +43,18 @@ export class Observer {
     return found;
   }
 
+  // How one aircraft's velocity was changing at its latest known record: from that record and one
+  // about `span` seconds older (its turn, as a pilot judges it). Zero if there is not enough history.
+  acceleration(id, seen, span = 0.25, out = new Vector3()) {
+    out.set(0, 0, 0);
+    const list = this.records.get(id);
+    if (!list) return out;
+    let older = null;
+    for (const r of list) if (r.t <= seen.t - span) older = r;
+    if (!older) return out;
+    return out.copy(seen.velocity).sub(older.velocity).divideScalar(seen.t - older.t);
+  }
+
   forget(id) {
     this.records.delete(id);
   }

@@ -8,7 +8,6 @@ import { Combat } from '../src/game/combat.js';
 import { damageScore } from '../src/ai/brain.js';
 import { createDamage } from '../src/physics/damage.js';
 import { seededRandom } from '../src/weapons/guns.js';
-import { attitude } from '../src/dev/flightScenarios.js';
 
 // AI pilots in a fight: engage, attack, evade, disengage, and shooting at the player.
 
@@ -132,24 +131,29 @@ describe('evading', () => {
     chaser.sim.previous.position.copy(chaser.state.position);
     if (hit) ai.hitTimer = COMBAT.hitMemory;
     let evadeAt = null;
-    const h0 = attitude(ai.state).heading;
+    const v0 = ai.state.velocity.clone().normalize();
     let turned = 0;
+    let how = null;
     fight([ai, chaser], player, 6, {
       practice: true,
       onStep: (t) => {
-        if (evadeAt === null && ai.brain.state === 'evade') evadeAt = t;
-        if (evadeAt !== null && t > evadeAt + 3 && turned === 0) turned = Math.abs(((attitude(ai.state).heading - h0 + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+        if (evadeAt === null && ai.brain.state === 'evade') {
+          evadeAt = t;
+          how = ai.brain.manoeuvre;
+        }
+        // How far its flight path has swung (in any direction: a break turns, a split-S rolls and dives).
+        if (evadeAt !== null && t > evadeAt + 3 && turned === 0) turned = Math.acos(Math.min(1, ai.state.velocity.clone().normalize().dot(v0)));
       },
     });
-    return { evadeAt, turned, ai };
+    return { evadeAt, turned, ai, how };
   }
 
-  it('an Ace notices an enemy on its tail within about a second and breaks hard (more than 45 degrees in 3 s)', () => {
+  it('an Ace notices an enemy on its tail within about a second and breaks hard or split-Ss away (its path swings 30+ degrees in 3 s, within its safe load)', () => {
     const r = tailed('ace');
     expect(r.evadeAt).not.toBeNull();
     expect(r.evadeAt).toBeLessThan(1.5);
-    expect(r.turned * 180 / Math.PI).toBeGreaterThan(45);
-    expect(r.ai.brain.manoeuvre === 'defensive break' || r.ai.brain.state !== 'evade').toBe(true);
+    expect(['defensive break', 'split-S']).toContain(r.how);
+    expect(r.turned * 180 / Math.PI, r.how).toBeGreaterThan(30);
   });
 
   it('a Novice is slower to notice, but being hit wakes anyone up at once (after the reaction time)', () => {

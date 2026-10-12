@@ -42,10 +42,11 @@ const _fly = new Vector3();
 const _miss = new Vector3();
 const _bullet = new Vector3();
 
-// Where to point the guns to hit a target flying straight on at constant speed. All in world axes.
-// muzzle: the gun's position; selfVelocity: the shooter's velocity (the bullet inherits it).
+// Where to point the guns to hit a target. All in world axes. muzzle: the gun's position;
+// selfVelocity: the shooter's velocity (the bullet inherits it); targetAcceleration (optional):
+// how the target's velocity is changing (a turning target), so the lead allows for its turn.
 // Returns { dir (unit vector to aim along), time (s), range (m) } into `out`.
-export function aimSolution(cartridge, muzzle, selfVelocity, targetPosition, targetVelocity, out = {}) {
+export function aimSolution(cartridge, muzzle, selfVelocity, targetPosition, targetVelocity, out = {}, targetAcceleration = null) {
   _r0.copy(targetPosition).sub(muzzle);
   _vrel.copy(targetVelocity).sub(selfVelocity); // the target's motion as the shooter sees it
   let t = _r0.length() / cartridge.muzzleVelocity;
@@ -53,10 +54,12 @@ export function aimSolution(cartridge, muzzle, selfVelocity, targetPosition, tar
   let range = 0;
   for (let k = 0; k < 4; k++) {
     aim.copy(_r0).addScaledVector(_vrel, t);
+    if (targetAcceleration) aim.addScaledVector(targetAcceleration, 0.5 * t * t);
     range = Math.min(aim.length(), COMBAT.leadClamp);
     t = flightTime(cartridge, range);
   }
   aim.copy(_r0).addScaledVector(_vrel, t);
+  if (targetAcceleration) aim.addScaledVector(targetAcceleration, 0.5 * t * t);
   aim.y += bulletDrop(cartridge, aim.length()); // aim high by the drop
   out.range = aim.length();
   const reach = out.range;
@@ -68,7 +71,9 @@ export function aimSolution(cartridge, muzzle, selfVelocity, targetPosition, tar
     const b = makeBullet(cartridge, muzzle, _fly);
     const steps = Math.max(1, Math.round(t * 120));
     for (let i = 0; i < steps; i++) stepBullet(b, t / steps);
-    _miss.copy(targetPosition).addScaledVector(targetVelocity, t).sub(_bullet.set(b.x, b.y, b.z));
+    _miss.copy(targetPosition).addScaledVector(targetVelocity, t);
+    if (targetAcceleration) _miss.addScaledVector(targetAcceleration, 0.5 * t * t);
+    _miss.sub(_bullet.set(b.x, b.y, b.z));
     aim.multiplyScalar(reach).add(_miss).normalize();
   }
   out.dir = aim;

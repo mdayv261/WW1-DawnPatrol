@@ -2,9 +2,22 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 5 (AI opponents): checkpoint 1 committed; checkpoint 2 built (pilots that fight), waiting for the product owner's test. Phases 0-4 are signed off.
+## Current status: Phase 5 (AI opponents): all three checkpoints built; checkpoints 1 and 2 committed; waiting for the product owner's acceptance test. Phases 0-4 are signed off.
 
 Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft models (48df111), terrain (c3b90ec), airfields and detail (dee316a), and checkpoint 3 (quality levels, pixel budget, frame-rate readout, cirrus). Phase 4 must not start until the product owner confirms Phase 3.
+
+## Phase 5 checkpoint 3 and acceptance test (D56)
+
+**Done:** the climbing turn, Immelmann, split-S and boom-and-zoom, chosen by height and speed against the enemy's and by what each skill knows; Regular and Ace pilots lead a turning target. 943 tests pass (plus 15 known deviations); `npm run build` works; the flight model is unchanged. In Chrome, four Ace enemies fought with no errors (up to about 250 draw calls).
+
+**Phase 5 acceptance test:**
+1. **No cheating** (tests): AI aircraft fly the player's aircraft data with the same flight model and controls, inside the aircraft's speed and load limits; reaction time and aim error are measured (`aiSteering`, `aiBehaviour`, `aiFight`, `aiAiming` tests).
+2. **Behaviours and manoeuvres:** press **F3** in a fight: each enemy's line names its state (patrol, engage, attack, evade, disengage) and manoeuvre (turning fight, climbing turn, Immelmann, split-S, boom-and-zoom, defensive break, break away). Tests exercise each one.
+3. **Skill:** fly against a Novice, a Regular and an Ace (`?skill=novice&enemies=1`, then `regular`, `ace`, press **Shift+1**). The Ace should notice you on its tail almost at once, shoot straighter in shorter bursts, dive on you from above, and break off earlier when hurt; the Novice is slow, sprays, and knows few tricks. Against drones the Ace shoots down far more (16 of 18 against 1 of 18 for a Novice, in a test series).
+4. **A fair fight:** you can be shot down (and are told who did it), and you can shoot them down; **Y** practice mode stops their fire hurting you.
+5. **Frame rate** with four enemies (`?enemies=4`): read F3.
+
+**Known issue (accepted):** two AI pilots fighting each other mostly circle without a result; left for a later polish phase.
 
 ## Phase 5 checkpoint 2: AI pilots that fight (D55)
 
@@ -379,4 +392,5 @@ Still open:
   - This needs ground handling (take-off and landing) and basic instruments, so both are included.
 - **Phase 3: World and visuals.** Done and signed off. Procedurally generated Western Front terrain (fields, woods, trench lines), sky and clouds. Low-polygon aircraft models built in code, with no third-party assets. Acceptance: steady frame rate at 1080p on the product owner's machine; each aircraft is recognisable by its silhouette.
 - **Phase 4: Weapons and damage.** Done and signed off. Synchronised machine guns firing through the propeller, bullet ballistics with gravity and drag, limited ammunition and gun jams. Component damage to the engine, fuel, pilot, wings and control cables; damage changes the flight model. Acceptance: tests confirm bullet drop and travel time; a damaged wing causes a measurable roll.
+- **Phase 5: AI opponents.** Built (checkpoints 1-3); waiting for acceptance. AI pilots on the player's flight model and controls, with patrol, engage, attack, evade and disengage; the six manoeuvres of the spec; Novice, Regular and Ace skill levels plus the Drone. Acceptance: see "Phase 5 checkpoint 3 and acceptance test" above.
 - Later phases: not yet defined (Phase 7 includes gamepad and joystick support, per the spec).

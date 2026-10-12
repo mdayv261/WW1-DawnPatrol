@@ -132,7 +132,9 @@ export class Pilot {
     _w.copy(s.angularVelocity).applyQuaternion(s.quaternion);
     _dv.crossVectors(_w, vhat);
     const rateToward = _dv.dot(_e);
-    const lateral = clamp((want.gain ?? S.turnGain) * angle * Math.max(speed, 10) - (want.damping ?? S.turnDamping) * Math.max(speed, 10) * rateToward, 0, nMax * G * 0.999); // m/s^2 across the path
+    // A maximum-rate turn (in a turning fight) pulls all it allows itself until the angle is small.
+    const proportional = (want.gain ?? S.turnGain) * angle * Math.max(speed, 10) - (want.damping ?? S.turnDamping) * Math.max(speed, 10) * rateToward;
+    const lateral = clamp(want.maxTurn && angle > S.maxTurnAngle ? Infinity : proportional, 0, nMax * G * 0.999); // m/s^2 across the path
 
     // The force the wing must give: the turn, plus holding the aircraft up (gravity), across the path.
     _f.copy(_e).multiplyScalar(lateral).y += G;
