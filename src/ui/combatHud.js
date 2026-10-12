@@ -42,10 +42,25 @@ export function createCombatHud() {
   };
 }
 
-// "GUNS 250 | 250   TARGETS 2   DOWN 1" for the status line.
-export function combatText(combat) {
+// "GUNS 250 | 250   FUEL 87%   TARGETS 2   DOWN 1" for the status line, with warnings
+// ("ENGINE SEIZED", "FUEL LEAK") when the player's own aircraft is hurt.
+export function combatText(combat, damage = null) {
   if (!combat.gunBank) return '';
   const parts = [`GUNS  ${combat.gunBank.statusText()}`];
+  if (damage) {
+    parts.push(`FUEL ${Math.round(damage.fuel * 100)}%`);
+    const warnings = [];
+    if (damage.pilot >= 1) warnings.push('PILOT KILLED');
+    else if (damage.pilot > 0) warnings.push('PILOT WOUNDED');
+    if (damage.failed.L || damage.failed.R) warnings.push('WING FAILED');
+    if (damage.failed.tailplane) warnings.push('TAIL FAILED');
+    if (damage.engine >= 1) warnings.push('ENGINE SEIZED');
+    else if (damage.fuel <= 0) warnings.push('OUT OF FUEL');
+    else if (damage.engine > 0) warnings.push('ENGINE DAMAGED');
+    if (damage.tank > 0 && damage.fuel > 0) warnings.push('FUEL LEAK');
+    if (Object.values(damage.cables).some((c) => c !== null)) warnings.push('CABLE CUT');
+    if (warnings.length) parts.push(warnings.join(', '));
+  }
   if (combat.targets.length || combat.kills) parts.push(`TARGETS ${combat.targets.filter((t) => !t.crashed).length}`, `DOWN ${combat.kills}`);
   return parts.join('     ');
 }

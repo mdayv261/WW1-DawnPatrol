@@ -47,7 +47,7 @@ const HELP = [
   '  Space fire (hold)   B clear a gun jam   N new target aircraft (up to 3)',
   '  C camera (cockpit / chase / free)   V or right mouse: look around',
   '  J instruments readout   L graphics quality   R restart   P pause   F3 debug   I invert pitch',
-  '  H hide this   F4 flight test panel (development builds only)',
+  '  H hide this   F4 flight test panel (development builds only; its buttons also damage your own aircraft)',
 ].join('\n');
 
 export function createHelp() {

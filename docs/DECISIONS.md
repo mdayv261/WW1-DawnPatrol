@@ -557,3 +557,11 @@ The propeller's turning angle is followed from the engine speed the flight model
 - **Visuals:** engine smoke and fuel spray (puffs), a broken wing or tailplane is cut off by a clipping plane (`render/damageView.js`), and a cut cable leaves the control surface drawn stuck.
 - **F4 test panel** has buttons to hurt your own aircraft. F3 shows each damaged part, the fuel and the worst load factor.
 - **Product owner's answers:** keep the structural limits as the spec says; leave the pilot kill at 3 hits; the estimated fuel and strength figures are accepted for now.
+
+## D53. Phase 4 finish (checkpoint 3)
+
+- **Status line:** shows both belts (with JAMMED, CLEARING, EMPTY), the fuel left, a warning for each kind of damage to your own aircraft (ENGINE DAMAGED / SEIZED, FUEL LEAK, OUT OF FUEL, WING FAILED, TAIL FAILED, CABLE CUT, PILOT WOUNDED / KILLED), and targets up and shot down.
+- **End-to-end test** (`tests/engagement.test.js`): for each of the four aircraft a scripted pilot flies the real flight model up behind a slower enemy, puts the gun sight on it and fires; the target must be shot down within 60 s with a sensible number of rounds and hits. This checks the guns, ballistics, hit boxes, damage and the target's own flying together.
+- **Not changed on purpose** (product owner: no more adjustments): target speed, shoot-down toughness, three-target cap, the structural limits and the estimated figures.
+- **Left for later phases:** enemy fire and dogfighting AI, gun convergence, fire, fuel mass, rebinding of the fire and clear-jam keys (Phase 7 controls), a cockpit rounds counter (the status line shows it in every view).
+

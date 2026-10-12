@@ -2,9 +2,23 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 4 (weapons and damage) in progress: checkpoint 1 (guns, bullets, targets) done and committed; checkpoint 2 (component damage) built, waiting for the product owner's test. Phase 3 is signed off.
+## Current status: Phase 4 (weapons and damage) signed off by the product owner. Phases 0-4 are done. Phase 5 (AI opponents) is next; it needs a plan in plan mode first.
 
 Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft models (48df111), terrain (c3b90ec), airfields and detail (dee316a), and checkpoint 3 (quality levels, pixel budget, frame-rate readout, cirrus). Phase 4 must not start until the product owner confirms Phase 3.
+
+## Phase 4 checkpoint 3 and acceptance test (D53)
+
+**Done:** the status line now shows both belts, the fuel left and a warning for each kind of damage to your own aircraft; the help screen lists the new keys; an end-to-end test has a scripted pilot shoot down a target in each of the four aircraft. Nothing else was changed (as you asked). 778 tests pass (plus 15 known deviations); `npm run build` works.
+
+**Phase 4 acceptance test (the two things in the brief):**
+1. **Bullet drop and travel time.** Tests confirm it (`tests/ballistics.test.js`): for the .303, about 0.30 s and 0.41 m of drop over 200 m, 0.64 s and 1.83 m over 400 m, arriving at about 530 m/s. In the game: press **Shift+1**, line up a target, and fire from over 400 m: the tracers visibly drop.
+2. **A damaged wing causes a measurable roll.** Tests confirm it (`tests/damageFlight.test.js`). In the game: **Shift+1**, **F4**, click **Right wing 50%** and hold left stick to stay level.
+
+**Everything in Phase 4 to try (all keys):** **Space** fire, **B** clear a jam (joystick: trigger fires, button 9 clears), **N** new target (up to three), **F4** damage buttons for your own aircraft, **F3** numbers (guns, hits, targets, damage, fuel, worst g). The checkpoint 1 and 2 test lists above still apply.
+
+**After your sign-off:** commit the checkpoint and say whether to start Phase 5. The phase list needs your brief for Phase 5 (AI opponents); the targets already use the same flight model and control inputs as the player, so the AI can replace the scripted pilot without changing the physics.
+
+**Known issues (unchanged):** no fire; fuel does not change the mass; enemy aircraft do not shoot back; gun convergence is not modelled; a shot-down target with a failed wing takes a minute or more to reach the ground; each target model adds about 50 draw calls (check F3 with three targets up).
 
 ## Phase 4 checkpoint 2: component damage (D52)
 
@@ -334,5 +348,5 @@ Still open:
   - Acceptance: you can take off, fly a circuit and land without the debug panel; the Camel visibly pulls right under power. The product owner decided to research what the Camel really did and follow the sources.
   - This needs ground handling (take-off and landing) and basic instruments, so both are included.
 - **Phase 3: World and visuals.** Built; waiting for acceptance. Procedurally generated Western Front terrain (fields, woods, trench lines), sky and clouds. Low-polygon aircraft models built in code, with no third-party assets. Acceptance: steady frame rate at 1080p on the product owner's machine; each aircraft is recognisable by its silhouette.
-- **Phase 4: Weapons and damage.** Synchronised machine guns firing through the propeller, bullet ballistics with gravity and drag, limited ammunition and gun jams. Component damage to the engine, fuel, pilot, wings and control cables; damage changes the flight model. Acceptance: tests confirm bullet drop and travel time; a damaged wing causes a measurable roll.
+- **Phase 4: Weapons and damage.** Done and signed off. Synchronised machine guns firing through the propeller, bullet ballistics with gravity and drag, limited ammunition and gun jams. Component damage to the engine, fuel, pilot, wings and control cables; damage changes the flight model. Acceptance: tests confirm bullet drop and travel time; a damaged wing causes a measurable roll.
 - Later phases: not yet defined (Phase 7 includes gamepad and joystick support, per the spec).

@@ -280,7 +280,7 @@ function draw(realDt, alpha, now) {
   if (jammed && !wasJammed) showNotice('Gun jammed: press B (joystick button 9) to clear it', 3500);
   wasJammed = jammed;
   camera.updateMatrixWorld();
-  combatHud.update(combat.sightPoint(sim, sightPoint), camera, !sim.crashed && !paused, combatText(combat));
+  combatHud.update(combat.sightPoint(sim, sightPoint), camera, !sim.crashed && !paused, combatText(combat, sim.damage));
 
   if (now - lastOverlay > 100) {
     lastOverlay = now;
