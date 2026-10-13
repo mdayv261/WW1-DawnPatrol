@@ -59,6 +59,16 @@ export function markerFor(ndc, margin = 0.05) {
   return { onScreen, x: (ex + 1) / 2, y: (1 - ey) / 2, angle: Math.atan2(x, y) };
 }
 
+// The elevator trim indicator: trim runs from -1 (full nose down) to +1 (full nose up). Returns the
+// words ("TRIM 25% UP", "TRIM NEUTRAL", "TRIM 40% DOWN") and where the marker sits on its scale
+// (0 at the top, full nose up, to 1 at the bottom, full nose down).
+export function trimReadout(trim = 0) {
+  const t = Math.min(1, Math.max(-1, trim));
+  const pct = Math.round(Math.abs(t) * 100);
+  const text = pct === 0 ? 'TRIM NEUTRAL' : `TRIM ${pct}% ${t > 0 ? 'UP' : 'DOWN'}`;
+  return { text, marker: (1 - t) / 2 };
+}
+
 // The words under an enemy marker: its type and how far away it is.
 export function enemyLabel(name, metres) {
   return `${name}  ${metres < 1000 ? `${Math.round(metres / 10) * 10} m` : `${(metres / 1000).toFixed(1)} km`}`;

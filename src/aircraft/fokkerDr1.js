@@ -29,6 +29,7 @@ export const fokkerDr1 = {
   },
   engine: {
     kind: 'rotary',
+    cylinders: 9, // (H) for the engine sound's firing rate; see AIRCRAFT_DATA
     ratedPower: 82000, // W (M)
     ratedRpm: 1200, // rpm (M)
     rotationSign: 1, // +1 = clockwise seen from the cockpit (E)

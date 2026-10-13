@@ -13,12 +13,15 @@ import { COMBAT } from '../aircraft/aiData.js';
 import { pilotDead, applyHit, destroyedReason } from '../physics/damage.js';
 import { DAMAGE } from '../aircraft/damageModel.js';
 import { attitude } from '../dev/flightScenarios.js';
+import { closestApproach } from '../audio/soundMath.js';
+import { DISTANCE_SOUND } from '../aircraft/sounds.js';
 
 const PASS_LOSS = DAMAGE.passLoss;
 const _p = new Vector3();
 const _v = new Vector3();
 const _d = new Vector3();
 const _q = new Quaternion();
+const xyz = (v) => ({ x: v.x, y: v.y, z: v.z });
 
 export class Combat {
   // solidAt(x, y, z) -> label | null: what stops bullets (trees, buildings). rng: random numbers.
@@ -36,6 +39,9 @@ export class Combat {
     this.hitsOnTargets = 0;
     this.hitsOnPlayer = 0;
     this.messages = []; // short texts for the screen: "SHOT DOWN: Fokker Dr.I"
+    // For the sound (read and emptied each frame by the audio): { kind: 'shot', gun, player, x, y, z }
+    // | { kind: 'nearMiss', distance, x, y, z } | { kind: 'hitPlayer' }.
+    this.sounds = [];
     this.time = 0;
     this.spawned = 0;
     this.fxTimer = 0;
@@ -54,6 +60,7 @@ export class Combat {
     this.agents.length = 0;
     this.events.length = 0;
     this.messages.length = 0;
+    this.sounds.length = 0;
     this.kills = 0;
     this.shotsFired = 0;
     this.hitsOnTargets = 0;
@@ -114,10 +121,16 @@ export class Combat {
     const rpm = player.diag ? player.diag.rpm : 0;
     const shots = this.gunBank.update(dt, trigger && !player.crashed && !pilotDead(player.damage), rpm);
     this.shotsFired += shots.length;
-    for (const shot of shots) this.spawn(player, shot, victims, this.playerVictim);
+    for (const shot of shots) {
+      this.spawn(player, shot, victims, this.playerVictim);
+      this.sound({ kind: 'shot', gun: this.aircraft.guns.type, player: true, ...xyz(player.state.position) });
+    }
     for (const a of this.agents) {
       if (a.crashed) continue;
-      for (const shot of a.gunBank.update(dt, a.fire, a.sim.diag ? a.sim.diag.rpm : 0)) this.spawn(a.sim, shot, victims, a);
+      for (const shot of a.gunBank.update(dt, a.fire, a.sim.diag ? a.sim.diag.rpm : 0)) {
+        this.spawn(a.sim, shot, victims, a);
+        this.sound({ kind: 'shot', gun: a.aircraft.guns.type, player: false, ...xyz(a.state.position) });
+      }
     }
     this.moveBullets(dt, victims);
     this.tidyAgents(player);
@@ -168,6 +181,21 @@ export class Combat {
       if (hit.kind === 'aircraft') this.registerHit(hit, b);
       b.alive = false;
     } else if (b.age > BULLETS.maxLife || bulletSpeed(b) < BULLETS.minSpeed) b.alive = false;
+    // An enemy bullet passing close to the player cracks as it goes by (once per bullet).
+    const me = this.playerVictim;
+    if (me && b.owner !== me && !b.cracked && b.alive !== false) {
+      const pass = closestApproach({ x: x0, y: y0, z: z0 }, b, me.state.position);
+      if (pass.distance < DISTANCE_SOUND.nearMiss) {
+        b.cracked = true;
+        this.sound({ kind: 'nearMiss', distance: pass.distance, x: b.x, y: b.y, z: b.z });
+      }
+    }
+  }
+
+  // Note a sound for the audio (kept short, in case nothing reads it for a while).
+  sound(s) {
+    this.sounds.push(s);
+    if (this.sounds.length > 120) this.sounds.splice(0, this.sounds.length - 120);
   }
 
   registerHit(hit, b) {
@@ -180,6 +208,7 @@ export class Combat {
     let energy = 0.5 * b.cartridge.mass * (vx * vx + vy * vy + vz * vz);
     if (victim.isPlayer) {
       this.hitsOnPlayer++;
+      this.sound({ kind: 'hitPlayer' });
       // Tell the player, but not for every bullet of a burst.
       if (this.time - this.lastHitNotice > 2) {
         this.lastHitNotice = this.time;

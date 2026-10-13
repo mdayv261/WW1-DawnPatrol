@@ -27,6 +27,7 @@ export const spad13 = {
   },
   engine: {
     kind: 'inline',
+    cylinders: 8, // (H) for the engine sound's firing rate; see AIRCRAFT_DATA
     ratedPower: 164000, // W (M)
     ratedRpm: 2100, // crankshaft rpm (M)
     rotationSign: 1, // +1 = right-hand propeller, clockwise seen from the cockpit (E): the left-hand 8B engine drives it through reversing reduction gears

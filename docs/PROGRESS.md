@@ -2,9 +2,33 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 6 (game loop, HUD and audio): checkpoint 1 committed (18b3036). Checkpoint 2 (3D cockpits, period instruments, modern HUD) is committed; the product owner approved all four cockpits. Checkpoint 3 (sound) next. Phases 0-5 are signed off.
+## Current status: Phase 6 (game loop, HUD and audio): checkpoints 1 and 2 committed (18b3036, 6e87681). Checkpoint 3 (sound, all made in code) is built and waiting for the product owner's listening test; then the Phase 6 acceptance test. Phases 0-5 are signed off.
 
 Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft models (48df111), terrain (c3b90ec), airfields and detail (dee316a), and checkpoint 3 (quality levels, pixel budget, frame-rate readout, cirrus). Phase 4 must not start until the product owner confirms Phase 3.
+
+## Phase 6 checkpoint 3: sound (D60)
+
+**Done:** the game now has sound, all made in code through the Web Audio API (no sound files):
+- **Your engine:** its pitch is the firing rate of its cylinders (it follows engine speed), louder and brighter with the throttle open. The Camel and Dr.I rotaries sound rough and uneven; the SPAD's V8 and the Albatros's six are smoother and deeper. A stopped engine leaves only the windmilling propeller.
+- **Wind:** rises with airspeed, and the bracing wires hum when you are fast.
+- **Guns:** a crack and thump for every round actually fired (Vickers and Spandau slightly different), much louder than the engine (peaking at four times it, and saturated like recorded gunfire so each shot is dense and punchy); pitch raised after the louder version sounded too deep (doubling it again was tried and sounded like pop guns, so it was put back).
+- **Enemies:** their engines from left or right, quieter and duller with distance, rising in pitch as they come at you and dropping as they pass; their gunfire arrives late at the speed of sound.
+- **Being shot at:** a sharp crack when a bullet passes close, a thud when you are hit, a crunch when you crash.
+- **Controls:** Options volume; **M** mutes and unmutes; sound fades out when paused and in the menus.
+- **Also:** the modern HUD (**U**) now shows the **elevator trim**: a short scale under the height, its marker up for nose-up trim and down for nose-down, with "TRIM 25% UP", "TRIM NEUTRAL" or "TRIM 40% DOWN".
+
+Checked in Chrome: the engine pitch matched the firing rate exactly (Camel 93.8 per second at full throttle, 51.6 at idle; SPAD 110.2 at 1,240 propeller rpm), loudness and brightness followed the throttle, 18 rounds fired made 18 gunshot sounds, and the volume faded to silence when paused and muted. 1,087 tests pass (plus 15 known deviations); `npm run build` works. The flight model and AI are unchanged.
+
+**Please listen (about 10 minutes; headphones help):**
+1. Run `npm run dev`, open http://localhost:5173 and click once (browsers start sound only after a click or key press). Fly a mission in the Camel: move the throttle from closed to open and listen to the engine; dive and climb and listen to the wind.
+2. Fire (Space): each round cracks. Fly the Dr.I, SPAD and Albatros and compare the engines (rotary rough, inline smooth) and the two guns.
+3. Fight one enemy: hear its engine come and go as it passes, its guns from a distance, the crack of its bullets passing close, and the thud of hits.
+4. Pause (Esc or P): the sound fades. Press **M** in flight to mute and unmute. Try the Options volume slider.
+5. Press **U** for the modern HUD and trim with **Page Up / Page Down** (or T/G; on a Mac, fn+Up / fn+Down): the trim marker and words follow.
+
+**Decisions for you:** sound made purely in code is a matter of taste: tell me which sounds to change (louder, quieter, deeper, rougher, smoother) and I will tune them.
+
+**Known issues:** I cannot hear, so the sound quality has only been checked by measurement; expect a round of tuning. Trim moved from Home/End to **Page Up / Page Down** at the product owner's request (End had not worked on their Mac). On a Mac these are fn+Up / fn+Down; an arrow with Fn held is also read as Page Up / Page Down. The F3 screen shows the last key the game received, to find out what a keyboard sends if a key does not work.
 
 ## Phase 6 checkpoint 2: 3D cockpits, period instruments and the modern HUD (D59)
 
@@ -364,7 +388,7 @@ Start: in Terminal, in the project folder, run `npm run dev`, open http://localh
 | Left / Right arrow | Roll |
 | Q / E | Rudder left / right |
 | Insert / Delete, or W / S | Throttle up / down (stays where left). Mac: fn+Delete is Delete. The mouse wheel works the throttle too. |
-| Home / End, or T / G | Trim nose up / down. Mac: fn+Left is Home, fn+Right is End. |
+| Page Up / Page Down, or T / G | Trim nose up / down. Mac: fn+Up is Page Up, fn+Down is Page Down. (Home/End until Phase 6.) |
 | 1 2 3 4 | Camel, SPAD, Dr.I, Albatros on the airfield, engine idling, chocks in (they come away when you open the throttle) |
 | Shift + 1-4 | The same aircraft in the air at 1,000 m, trimmed |
 | C | Camera: chase, free-look, cockpit |

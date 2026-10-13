@@ -4,9 +4,9 @@
 import { createInput } from '../physics/controls.js';
 
 // Default key bindings (rebinding comes in a later phase). Insert/Delete and
-// Home/End are the product owner's choice; W/S and T/G also work because a
-// Mac keyboard has no Insert key (Mac: fn+Backspace = Delete, fn+Left = Home,
-// fn+Right = End).
+// Page Up/Page Down (trim, changed from Home/End in Phase 6) are the product
+// owner's choice; W/S and T/G also work because a Mac keyboard has no Insert
+// key (Mac: fn+Backspace = Delete, fn+Up = Page Up, fn+Down = Page Down).
 export const KEYS = {
   pullBack: ['ArrowDown'], // stick back, nose up
   pushForward: ['ArrowUp'], // stick forward, nose down
@@ -16,8 +16,8 @@ export const KEYS = {
   rudderRight: ['KeyE'],
   throttleUp: ['Insert', 'KeyW'],
   throttleDown: ['Delete', 'KeyS'],
-  trimNoseUp: ['Home', 'KeyT'],
-  trimNoseDown: ['End', 'KeyG'],
+  trimNoseUp: ['PageUp', 'KeyT'],
+  trimNoseDown: ['PageDown', 'KeyG'],
   fire: ['Space'], // machine guns (held)
 };
 
@@ -40,6 +40,7 @@ export class InputMapper {
     this.held = new Set();
     this.input = createInput();
     this.invertPitch = false;
+    this.lastKey = ''; // the last key pressed, as the browser reported it (the F3 screen shows it)
   }
 
   press(code) {

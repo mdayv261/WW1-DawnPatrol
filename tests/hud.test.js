@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { hudReadouts, headingTape, markerFor, enemyLabel } from '../src/ui/hudMath.js';
+import { hudReadouts, headingTape, markerFor, enemyLabel, trimReadout } from '../src/ui/hudMath.js';
 import { AIRCRAFT } from '../src/aircraft/index.js';
 import { createDamage } from '../src/physics/damage.js';
 
@@ -77,3 +77,22 @@ describe('enemy markers', () => {
     expect(enemyLabel('Albatros D.V', 2345)).toBe('Albatros D.V  2.3 km');
   });
 });
+
+describe('elevator trim indicator', () => {
+  it('says how much trim, nose up or down, or neutral', () => {
+    expect(trimReadout(0).text).toBe('TRIM NEUTRAL');
+    expect(trimReadout(0.25).text).toBe('TRIM 25% UP');
+    expect(trimReadout(-0.4).text).toBe('TRIM 40% DOWN');
+    expect(trimReadout(0.004).text).toBe('TRIM NEUTRAL'); // rounds to 0%
+    expect(trimReadout(5).text).toBe('TRIM 100% UP'); // kept within the trim's range
+    expect(trimReadout().text).toBe('TRIM NEUTRAL');
+  });
+
+  it('the marker is at the top for full nose up, in the middle at neutral, at the bottom for full nose down', () => {
+    expect(trimReadout(1).marker).toBe(0);
+    expect(trimReadout(0).marker).toBe(0.5);
+    expect(trimReadout(-1).marker).toBe(1);
+    expect(trimReadout(0.5).marker).toBeCloseTo(0.25, 9);
+  });
+});
+

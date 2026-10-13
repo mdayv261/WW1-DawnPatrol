@@ -20,6 +20,7 @@ import { QUALITY_LEVELS, QUALITY_KEY, chooseQuality, nextQuality } from './rende
 import { FrameStats } from './ui/perfStats.js';
 import { createCombatHud } from './ui/combatHud.js';
 import { createHud } from './ui/hud.js';
+import { createAudio } from './audio/audioEngine.js';
 import { SKILLS, SKILL_ORDER, stepSkill } from './aircraft/aiData.js';
 import { applyTestDamage } from './physics/damage.js';
 import { Flow, loadConfig, saveConfig, cleanConfig } from './game/flow.js';
@@ -59,6 +60,11 @@ const flow = new Flow('menu');
 
 // ---- input ---------------------------------------------------------------------------------
 
+// Sound. Browsers allow it only after a click or key press, so it starts on the first one.
+const audio = createAudio();
+audio.setVolume(options.volume);
+for (const kind of ['pointerdown', 'keydown']) window.addEventListener(kind, () => audio.start(), { capture: true });
+
 const keyboard = attachKeyboard({
   onSelect: (i, shift) => { if (DEV && i < AIRCRAFT_LIST.length) devStart(i, shift); },
   onRestart: () => { if (flow.flying) session.restart(); },
@@ -78,6 +84,10 @@ const keyboard = attachKeyboard({
   onTarget: () => { if (DEV) newAgent(); },
   onSkill: (step) => { if (DEV) changeSkill(step); },
   onPractice: () => setOptions({ ...options, practice: !options.practice }, true),
+  onMute: () => {
+    audio.setMuted(!audio.muted);
+    showNotice(audio.muted ? 'Sound off (M to turn it back on)' : 'Sound on', 2000);
+  },
   onHud: () => {
     if (!flow.flying) return;
     setOptions({ ...options, hud: !options.hud });
@@ -123,7 +133,7 @@ overlays.joystickPanel = createJoystickPanel(joystick);
 const session = createSession({
   parts, world, terrain, clouds, rig, keyboard, mouse, joystick, overlays, frameStats,
   notice: showNotice, noticeText: () => notice.text, noticeUntil: () => notice.until, quality: () => qualityName,
-  hudOn: () => options.hud,
+  hudOn: () => options.hud, audio,
 });
 if (DEV) overlays.testPanel = createTestPanel(AIRCRAFT_LIST, (i, id) => devStart(i, false, id), (id) => applyTestDamage(session.sim.damage, id, session.sim.surfaces));
 
@@ -145,6 +155,7 @@ function applyQuality(name) {
 function setOptions(next, announce = false) {
   options = next;
   saveOptions(storage, options);
+  audio.setVolume(options.volume);
   session.combat.practice = options.practice;
   if (announce) showNotice(options.practice ? 'Practice mode: enemy fire cannot hurt you' : 'Practice mode off: enemy fire is real', 2500);
 }
@@ -202,6 +213,7 @@ function togglePause() {
 }
 
 flow.onChange((to, from) => {
+  audio.setActive(to === 'flying'); // sound only while flying: it fades out when paused and in the menus
   for (const [name, screen] of Object.entries(screens)) if (name !== to) screen.hide();
   if (to === 'results' && session.result) {
     lastRecord = recordMission(careers, session.sim.aircraft, session.result, config.skill, options.practice);
@@ -280,7 +292,7 @@ requestAnimationFrame(frame);
 // when the browser tab is hidden and not animating.
 if (DEV) {
   window.__dawn = {
-    session, flow, screens, world, terrain, clouds, renderer, keyboard, joystick, rig, frameStats,
+    session, flow, screens, world, terrain, clouds, renderer, keyboard, joystick, rig, frameStats, audio,
     debug: overlays.debug, testPanel: overlays.testPanel, applyQuality, fly, devStart,
     get sim() { return session.sim; },
     get combat() { return session.combat; },

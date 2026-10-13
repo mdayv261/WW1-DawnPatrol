@@ -28,6 +28,7 @@ export const albatrosDv = {
   },
   engine: {
     kind: 'inline',
+    cylinders: 6, // (H) for the engine sound's firing rate; see AIRCRAFT_DATA
     ratedPower: 130000, // W (M)
     ratedRpm: 1400, // rpm (M)
     rotationSign: 1, // +1 = clockwise seen from the cockpit (E): direction not found

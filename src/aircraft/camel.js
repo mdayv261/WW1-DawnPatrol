@@ -30,6 +30,7 @@ export const camel = {
   },
   engine: {
     kind: 'rotary',
+    cylinders: 9, // (H) for the engine sound's firing rate; see AIRCRAFT_DATA
     ratedPower: 96900, // W at sea level (H)
     ratedRpm: 1250, // rpm (H)
     rotationSign: 1, // +1 = clockwise seen from the cockpit (M)

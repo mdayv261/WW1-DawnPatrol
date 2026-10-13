@@ -104,6 +104,7 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Empty weight | 421.8 | kg | 930 lb | S1 | high | S15 gives 421 kg. Other sources range 889 to 962 lb, depending on equipment and engine. |
 | Maximum take-off weight | 659 | kg | 1,453 lb | S8, S15 | medium | Both give 1,453 lb. Treated as loaded weight with pilot, fuel, oil and ammunition. |
 | Engine | Clerget 9B 9-cylinder rotary | — | 130 hp Clerget 9B | S1, S4, S11 | high | |
+| Cylinders (`engine.cylinders`) | 9 | — | 9-cylinder rotary | S1, S4, S11 | high | Sets the engine sound's firing rate (Phase 6). |
 | Engine rated power | 96.9 | kW | 130 hp at 1,250 rpm | S11 | high | Sea-level rating. Power versus altitude still to be researched. |
 | Engine rated speed | 1,250 | rpm | 1,250 rpm | S11 | high | |
 | Engine bore x stroke | 120 x 160 | mm | 4.72 x 6.3 in | S11 | high | |
@@ -164,6 +165,7 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Empty weight | 566 | kg | 1,245 lb | S2 | high | S9 also gives 1,245 lb. S17 gives 664 kg for a fully equipped test aircraft. |
 | Gross weight | 820 | kg | 1,808 lb | S2 | high | S5 gives 1,815 lb (823 kg). S17 gives 924 kg for the equipped 8Ba test aircraft. |
 | Engine | Hispano-Suiza 8Be V-8, water-cooled | — | 220 hp Hispano-Suiza 8Be | S2, S5 | high | S17 tested an earlier 8Ba, 200 hp. |
+| Cylinders (`engine.cylinders`) | 8 | — | V-8 | S2, S5, S12 | high | Sets the engine sound's firing rate (Phase 6). |
 | Engine rated power | 164 | kW | 220 hp at 2,100 rpm | S12 | medium | S12 is the record for the "Model 8 Ca". It has the same 220 hp rating and geared drive, but is not named 8Be. |
 | Engine rated speed | 2,100 | rpm | 2,100 rpm | S12 | medium | Same caveat as above. |
 | Engine bore x stroke | 120 x 130 | mm | 4.72 x 5.12 in | S12 | medium | Same caveat. |
@@ -231,6 +233,7 @@ No original Dr.I survives (S6), so all geometry and weights come from reproducti
 | Empty weight | 405 | kg | 891 lb | S6, S7 | medium | S7 gives 406 kg, S10 gives 893 lb. |
 | Loaded weight | 586 | kg | 1,291 lb | S6, S7 | medium | S10 gives 1,289 lb. |
 | Engine | Oberursel UR.II 9-cylinder rotary | — | 110 hp Oberursel Ur II | S6, S7, S13 | high | S6 also allows a Le Rhône 110 hp. The UR.II was a licensed Le Rhône 9J copy. |
+| Cylinders (`engine.cylinders`) | 9 | — | 9-cylinder rotary | S6, S7, S13 | high | Sets the engine sound's firing rate (Phase 6). |
 | Engine rated power | 82.0 | kW | 110 hp at 1,200 rpm | S13 | medium | Some model-maker sources quote about 120 hp. Not used. |
 | Engine rated speed | 1,200 | rpm | 1,200 rpm | S13 | medium | A single engine reference. Same rating as the other 110 hp Le Rhône type engines. |
 | Engine bore x stroke | 112 x 170 | mm | 4.409 x 6.693 in | S13 | high | |
@@ -291,6 +294,7 @@ Dimensions and weights come from the Smithsonian's original D.Va (D.7161/17), wh
 | Empty weight | 680 | kg | 1,500 lb | S3 | high | S16 gives 717 kg. |
 | Gross weight | 915 | kg | 2,017 lb | S3, S16 | high | |
 | Engine | Mercedes D.IIIa 6-cylinder inline, water-cooled | — | 180 hp Mercedes D.IIIa | S3 | high | S3 says the D.V began with 160 hp and was later "approximately 180 horsepower". |
+| Cylinders (`engine.cylinders`) | 6 | — | 6-cylinder inline | S3, S14 | high | Sets the engine sound's firing rate (Phase 6). |
 | Engine rated power | 130 | kW | 174 hp at 1,400 rpm | S14 | medium | S14 also calls it the "180-hp model". S3 gives 180 hp (134 kW). The ratings are inconsistent between sources. |
 | Engine rated speed | 1,400 | rpm | 1,400 rpm | S14 | medium | A single engine reference, which also calls the engine a 180 hp model, so the rating basis is unclear. |
 | Engine bore x stroke | 140 x 160 | mm | 5.512 x 6.299 in | S14 | medium | Given for the D.III. S14 says the D.IIIa crankshaft and rods were "practically identical". |

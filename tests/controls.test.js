@@ -21,11 +21,11 @@ describe('keyboard: throttle and trim keys', () => {
     expect(m.input.throttle).toBeCloseTo(0.75, 1);
   });
 
-  it('Home / End trim nose up / down', () => {
+  it('Page Up / Page Down trim nose up / down', () => {
     const m = new InputMapper();
-    hold(m, 'Home', 1);
+    hold(m, 'PageUp', 1);
     expect(m.input.trim).toBeGreaterThan(0);
-    hold(m, 'End', 3);
+    hold(m, 'PageDown', 3);
     expect(m.input.trim).toBeLessThan(0);
   });
 
@@ -45,9 +45,17 @@ describe('keyboard: throttle and trim keys', () => {
 });
 
 describe('Mac fn-key handling', () => {
-  it('fn+Left (key "Home" from the Left-arrow position) trims instead of rolling', () => {
-    expect(keyId({ key: 'Home', code: 'ArrowLeft' })).toBe('Home');
-    expect(keyId({ key: 'End', code: 'ArrowRight' })).toBe('End');
+  it('fn+Up / fn+Down (keys "PageUp" / "PageDown" from the arrow positions) trim instead of moving the stick', () => {
+    expect(keyId({ key: 'PageUp', code: 'ArrowUp' })).toBe('PageUp');
+    expect(keyId({ key: 'PageDown', code: 'ArrowDown' })).toBe('PageDown');
+    expect(keyId({ key: 'PageUp', code: 'PageUp' })).toBe('PageUp'); // a full-size keyboard's own key
+    // Some Macs send the plain arrow with only the Fn flag set: still Page Up and Page Down (and Delete).
+    const fn = (key, code) => ({ key, code, getModifierState: (m) => m === 'Fn' });
+    expect(keyId(fn('ArrowUp', 'ArrowUp'))).toBe('PageUp');
+    expect(keyId(fn('ArrowDown', 'ArrowDown'))).toBe('PageDown');
+    expect(keyId(fn('Backspace', 'Backspace'))).toBe('Delete');
+    // Without Fn the arrows still move the stick.
+    expect(keyId({ key: 'ArrowUp', code: 'ArrowUp', getModifierState: () => false })).toBe('ArrowUp');
   });
 
   it('fn+Backspace sends Delete (throttle down); plain keys use their position', () => {

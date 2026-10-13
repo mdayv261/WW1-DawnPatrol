@@ -1,9 +1,9 @@
-// The optional modern HUD (U, or Options): speed, height, climb, g, a heading tape, throttle,
-// fuel, guns and damage, and markers on the enemy aircraft (a box when it is on screen, an arrow
+// The optional modern HUD (U, or Options): speed, height, climb, g, a heading tape, the elevator
+// trim, throttle, fuel, guns and damage, and markers on the enemy aircraft (a box when it is on screen, an arrow
 // at the edge when it is not). Plain DOM over the 3D view. The numbers are worked out in hudMath.js.
 
 import { Vector3 } from 'three';
-import { hudReadouts, headingTape, markerFor } from './hudMath.js';
+import { hudReadouts, headingTape, markerFor, trimReadout } from './hudMath.js';
 
 const GREEN = 'rgba(140, 255, 160, 0.92)';
 const BASE = `position: fixed; z-index: 12; pointer-events: none; color: ${GREEN};
@@ -23,6 +23,29 @@ export function createHud() {
   const right = box('right: 18%; top: 42%; white-space: pre;');
   const tape = box('left: 50%; top: 26px; width: 420px; height: 24px; margin-left: -210px; border-bottom: 1px solid ' + GREEN + ';');
   const bottom = box('left: 50%; bottom: 44px; transform: translateX(-50%); text-align: center; white-space: pre;');
+  // The elevator trim: a short vertical scale (nose up at the top) with a moving marker, and its words.
+  const TRIM_H = 64; // px
+  const trim = box('right: 18%; top: 54%; width: 120px; height: ' + (TRIM_H + 22) + 'px;');
+  const trimScale = document.createElement('div');
+  trimScale.style.cssText = `position: absolute; left: 6px; top: 0; width: 0; height: ${TRIM_H}px; border-left: 1px solid ${GREEN};`;
+  for (const f of [0, 0.25, 0.5, 0.75, 1]) {
+    const tick = document.createElement('div');
+    tick.style.cssText = `position: absolute; left: 0; top: ${f * TRIM_H}px; width: ${f === 0.5 ? 12 : 6}px; border-top: 1px solid ${GREEN};`;
+    trimScale.appendChild(tick);
+  }
+  const trimMark = document.createElement('div'); // a small triangle pointing at the scale
+  trimMark.style.cssText = `position: absolute; left: -12px; width: 0; height: 0; margin-top: -5px;
+    border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 9px solid ${GREEN};`;
+  trimScale.appendChild(trimMark);
+  const trimText = document.createElement('div');
+  trimText.style.cssText = `position: absolute; left: 0; top: ${TRIM_H + 4}px; font-size: 12px; white-space: nowrap;`;
+  trim.append(trimScale, trimText);
+  for (const [f, word] of [[0, 'UP'], [1, 'DN']]) {
+    const w = document.createElement('div');
+    w.style.cssText = `position: absolute; left: 22px; top: ${f * TRIM_H - 7}px; font-size: 11px;`;
+    w.textContent = word;
+    trim.appendChild(w);
+  }
   const markers = [];
   let visible = false;
 
@@ -33,7 +56,7 @@ export function createHud() {
 
   function show(on) {
     visible = on;
-    for (const e of [left, right, tape, bottom, ...markers]) e.style.display = on ? 'block' : 'none';
+    for (const e of [left, right, tape, bottom, trim, ...markers]) e.style.display = on ? 'block' : 'none';
   }
   show(false);
 
@@ -42,11 +65,14 @@ export function createHud() {
       return visible;
     },
     show,
-    // state: { aircraft, diag, velocityY, heading (rad), throttle, damage, gunText, enemies: [{ position, label }], camera }
+    // state: { aircraft, diag, velocityY, heading (rad), throttle, trim (-1 to 1), damage, gunText, enemies: [{ position, label }], camera }
     update(state) {
       if (!visible) return;
       const r = hudReadouts(state);
       left.textContent = `${r.speed}\n${r.g}`;
+      const t = trimReadout(state.trim);
+      trimMark.style.top = `${t.marker * TRIM_H}px`;
+      trimText.textContent = t.text;
       right.textContent = `${r.altitude}\n${r.climb}`;
       tape.replaceChildren(...headingTape(Number(r.heading)).flatMap((t) => {
         const tick = document.createElement('div');

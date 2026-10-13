@@ -20,7 +20,7 @@ import { Combat } from './combat.js';
 import { TracerView, EffectsView } from '../render/bullets.js';
 import { TargetViews } from '../render/targetViews.js';
 import { combatText, combatLines } from '../ui/combatHud.js';
-import { damagedDeflections, damageLines, pilotDead } from '../physics/damage.js';
+import { damagedDeflections, damageLines, pilotDead, engineSeized, fuelOut } from '../physics/damage.js';
 import { showDamage } from '../render/damageView.js';
 import { perfLines } from '../ui/perfStats.js';
 import { startMission } from './mission.js';
@@ -34,7 +34,7 @@ const JOYSTICK_HINT = 'Joystick not detected: click the game window and press th
 
 // ctx: { parts (createScene's result), world, terrain, clouds, rig, keyboard, mouse, joystick,
 //        overlays: { debug, banner, readout, combatHud, testPanel, joystickPanel }, notice(text, ms),
-//        frameStats, quality(), hudOn() }
+//        frameStats, quality(), hudOn(), audio (createAudio()) }
 export function createSession(ctx) {
   const { parts, world, terrain, clouds, rig, keyboard, mouse, joystick, overlays, notice } = ctx;
   const { scene, camera, renderer, ground, groundTile } = parts;
@@ -64,6 +64,7 @@ export function createSession(ctx) {
     runner: null, // development: a scripted test pilot
     scenarioLabel: '',
     wasJammed: false,
+    wasCrashed: false, // for the crash sound
     lastOverlay: 0,
     joystickHintAt: performance.now() + 5000,
   };
@@ -99,6 +100,8 @@ export function createSession(ctx) {
     effects.update(combat.events, 0);
     s.result = null;
     s.wasJammed = false;
+    s.wasCrashed = false;
+    combat.sounds.length = 0;
   }
 
   // Start a mission from its settings (or, with watch = false, the idle aircraft behind the menus).
@@ -169,6 +172,38 @@ export function createSession(ctx) {
     }).alpha;
   };
 
+  // The sound for this frame: the player's engine and the wind, the enemies' engines, and the
+  // fight's one-shot sounds (gunfire, near misses, hits), heard from the camera.
+  const _right = new Vector3();
+  const crankRpm = (ac, propRpm) => propRpm / (ac.propeller.gearRatio || 1);
+  function feedAudio(paused) {
+    const ac = sim.aircraft;
+    const d = sim.diag;
+    const crashed = sim.crashed && !s.wasCrashed;
+    s.wasCrashed = sim.crashed;
+    if (paused) {
+      combat.sounds.length = 0;
+      return;
+    }
+    _right.set(1, 0, 0).applyQuaternion(camera.quaternion);
+    ctx.audio.update({
+      player: {
+        kind: ac.engine.kind, cylinders: ac.engine.cylinders, ratedRpm: ac.engine.ratedRpm,
+        rpm: d ? crankRpm(ac, d.rpm) : 0, propRpm: d ? d.rpm : 0,
+        throttle: sim.surfaces?.throttle ?? 0,
+        running: !sim.crashed && !engineSeized(sim.damage) && !fuelOut(sim.damage),
+        speed: sim.crashed ? 0 : d ? d.speed : 0, density: d ? d.density : 1, velocity: sim.state.velocity,
+      },
+      listener: { position: camera.position, right: _right },
+      enemies: combat.agents.filter((a) => !a.crashed && a.sim.diag).map((a) => ({
+        id: a.id, kind: a.aircraft.engine.kind, cylinders: a.aircraft.engine.cylinders,
+        rpm: crankRpm(a.aircraft, a.sim.diag.rpm), position: a.state.position, velocity: a.state.velocity,
+      })),
+      sounds: combat.sounds,
+      crashed,
+    });
+  }
+
   // Sun shadows in the cockpit view (Medium and High quality): the sun's shadow camera is a small
   // box round the cockpit, moved with the aircraft (a directional light's position only sets its direction).
   const sunDir = new Vector3();
@@ -226,6 +261,7 @@ export function createSession(ctx) {
     if (jammed && !s.wasJammed) notice('Gun jammed: press B (joystick button 9) to clear it', 3500);
     s.wasJammed = jammed;
     camera.updateMatrixWorld();
+    if (ctx.audio) feedAudio(paused);
     const hudOn = ctx.hudOn() && !paused;
     overlays.hud.show(hudOn);
     // With the modern HUD on, it carries the guns, fuel and damage, so the status line is hidden.
@@ -246,7 +282,7 @@ export function createSession(ctx) {
         const nearest = world.nearestAirfield(sim.state.position.x, sim.state.position.z);
         overlays.debug.set(debugLines(sim.aircraft, sim.diag, {
           crashed: sim.crashed, paused, joystick: stick ? stick.id : 'not detected', airfield: airfieldLine(nearest),
-          extra: [...perfLines(ctx.frameStats, renderer.info.render, ctx.quality(), parts.view, terrain.stats()), ...combatLines(combat), ...damageLines(sim.damage, sim.aircraft)],
+          extra: [...perfLines(ctx.frameStats, renderer.info.render, ctx.quality(), parts.view, terrain.stats()), ...combatLines(combat), ...damageLines(sim.damage, sim.aircraft), `last key  ${keyboard.lastKey || '-'}   trim ${((sim.surfaces?.trim ?? 0) * 100).toFixed(0)}%`],
         }));
       }
       if (import.meta.env.DEV && overlays.testPanel?.visible) overlays.testPanel.update(sim, s.runner, s.scenarioLabel);
@@ -255,7 +291,7 @@ export function createSession(ctx) {
       if (hudOn) {
         const me = sim.state.position;
         overlays.hud.update({
-          aircraft: sim.aircraft, diag: sim.diag, velocityY: sim.state.velocity.y, heading, throttle: sim.surfaces?.throttle ?? 0, damage: sim.damage,
+          aircraft: sim.aircraft, diag: sim.diag, velocityY: sim.state.velocity.y, heading, throttle: sim.surfaces?.throttle ?? 0, trim: sim.surfaces?.trim ?? 0, damage: sim.damage,
           gunText: combat.gunBank ? `GUNS ${combat.gunBank.statusText()}` : '', camera,
           enemies: combat.agents.filter((a) => !a.crashed).map((a) => ({ position: a.state.position, label: enemyLabel(a.aircraft.name, a.state.position.distanceTo(me)) })),
         });
