@@ -2,7 +2,7 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 6 (game loop, HUD and audio): checkpoints 1 and 2 committed (18b3036, 6e87681). Checkpoint 3 (sound, all made in code) is built and waiting for the product owner's listening test; then the Phase 6 acceptance test. Phases 0-5 are signed off.
+## Current status: Phase 6 (game loop, HUD and audio) signed off by the product owner, in three commits: menus and missions (18b3036), cockpits and HUD (6e87681), sound (cae1ae3). Phases 0-6 are done. Phase 7 is next; it needs the product owner's brief and a plan in plan mode first.
 
 Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft models (48df111), terrain (c3b90ec), airfields and detail (dee316a), and checkpoint 3 (quality levels, pixel budget, frame-rate readout, cirrus). Phase 4 must not start until the product owner confirms Phase 3.
 
@@ -454,5 +454,5 @@ Still open:
 - **Phase 3: World and visuals.** Done and signed off. Procedurally generated Western Front terrain (fields, woods, trench lines), sky and clouds. Low-polygon aircraft models built in code, with no third-party assets. Acceptance: steady frame rate at 1080p on the product owner's machine; each aircraft is recognisable by its silhouette.
 - **Phase 4: Weapons and damage.** Done and signed off. Synchronised machine guns firing through the propeller, bullet ballistics with gravity and drag, limited ammunition and gun jams. Component damage to the engine, fuel, pilot, wings and control cables; damage changes the flight model. Acceptance: tests confirm bullet drop and travel time; a damaged wing causes a measurable roll.
 - **Phase 5: AI opponents.** Done and signed off. AI pilots on the player's flight model and controls, with patrol, engage, attack, evade and disengage; the six manoeuvres of the spec; Novice, Regular and Ace skill levels plus the Drone. Acceptance: see "Phase 5 checkpoint 3 and acceptance test" above.
-- **Phase 6: Game loop, HUD and audio.** In progress. Start menu, mission setup, pause and results; period cockpit instruments and an optional modern HUD; engine, gun, wind and hit sounds. Acceptance: a full mission runs from menu to result screen and back without reloading the page.
+- **Phase 6: Game loop, HUD and audio.** Done and signed off. Start menu, mission setup, pause and results; period cockpit instruments and an optional modern HUD; engine, gun, wind and hit sounds. Acceptance: a full mission runs from menu to result screen and back without reloading the page.
 - Later phases: not yet defined (Phase 7 includes gamepad and joystick support, per the spec).
