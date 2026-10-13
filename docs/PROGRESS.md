@@ -2,7 +2,7 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 7 (controls screen and assists): checkpoint 1 (the Controls screen) committed (3c44123); checkpoint 2 (auto-rudder, stall and G warnings, structural damage switch) approved by the product owner (yaw oscillations gone) and committed; next, the Phase 7 acceptance test. Phases 0-6 are signed off (Phase 6 in 18b3036, 6e87681, cae1ae3).
+## Current status: Phase 7 (controls screen and assists) signed off by the product owner, in two commits: the Controls screen (3c44123) and auto-rudder, warnings and the damage switch (81a3fb0). Phases 0-7 are done. The next phase needs the product owner's brief and a plan in plan mode first.
 
 ## Phase 7 checkpoint 2: assists and warnings (D62)
 
@@ -502,5 +502,5 @@ Still open:
 - **Phase 4: Weapons and damage.** Done and signed off. Synchronised machine guns firing through the propeller, bullet ballistics with gravity and drag, limited ammunition and gun jams. Component damage to the engine, fuel, pilot, wings and control cables; damage changes the flight model. Acceptance: tests confirm bullet drop and travel time; a damaged wing causes a measurable roll.
 - **Phase 5: AI opponents.** Done and signed off. AI pilots on the player's flight model and controls, with patrol, engage, attack, evade and disengage; the six manoeuvres of the spec; Novice, Regular and Ace skill levels plus the Drone. Acceptance: see "Phase 5 checkpoint 3 and acceptance test" above.
 - **Phase 6: Game loop, HUD and audio.** Done and signed off. Start menu, mission setup, pause and results; period cockpit instruments and an optional modern HUD; engine, gun, wind and hit sounds. Acceptance: a full mission runs from menu to result screen and back without reloading the page.
-- **Phase 7: Controls screen and assists.** In progress. Rebinding of keyboard and joystick controls; options for auto-rudder, stall warning, G warning and structural damage. Proposed acceptance: a key and a joystick button rebound on the Controls screen work in flight and survive a reload, and each of the four options visibly changes the flight when switched on.
+- **Phase 7: Controls screen and assists.** Done and signed off. Rebinding of keyboard and joystick controls; options for auto-rudder, stall warning, G warning and structural damage. Proposed acceptance: a key and a joystick button rebound on the Controls screen work in flight and survive a reload, and each of the four options visibly changes the flight when switched on.
 - Later phases: not yet defined. Candidates: other gamepads (per the spec); an engine overspeed warning, with engine speed rising in dives and documented rpm limits (product owner, Phase 7: "I will add later").
