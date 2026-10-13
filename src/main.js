@@ -29,8 +29,10 @@ import { applyTestDamage } from './physics/damage.js';
 import { Flow, loadConfig, saveConfig, cleanConfig } from './game/flow.js';
 import { loadOptions, saveOptions } from './game/options.js';
 import { createSession } from './game/session.js';
-import { loadCareers, saveCareers, recordMission, rankFor } from './game/career.js';
+import { loadCareers, recordMission } from './game/career.js';
+import { loadRoster, saveRoster, importOldCareer, activePilot, pilotTitle, enlist, rename, retire, select } from './game/pilots.js';
 import { createMainMenu, createSetup, createOptions, createControls, createPause, createResults } from './ui/screens/screens.js';
+import { createRollCall } from './ui/screens/rollCall.js';
 
 const DEV = import.meta.env.DEV;
 const canvas = document.getElementById('game');
@@ -57,7 +59,12 @@ const showNotice = (text, ms = 2000) => { notice = { text, until: performance.no
 
 let config = loadConfig(storage);
 let options = loadOptions(storage);
-const careers = loadCareers(storage);
+// The Pilot Roll Call. The old unnamed careers (before named pilots) are brought in once, as
+// pilots waiting for a name.
+let roster = importOldCareer(loadRoster(storage), loadCareers(storage));
+saveRoster(storage, roster);
+const pilotSide = () => activePilot(roster)?.side ?? null;
+let rosterMessage = ''; // a line for the Roll Call when it opens (e.g. "Enlist a pilot first")
 let lastRecord = null; // the career record of the mission just ended
 const flow = new Flow('menu');
 
@@ -185,10 +192,35 @@ function clearJam() {
   if (jammed) showNotice('Clearing the jam...', 1500);
 }
 
+// ---- pilots --------------------------------------------------------------------------------
+
+// Apply a Roll Call change ({ roster, error }) and save it. Returns the error text or null.
+function changeRoster({ roster: next, error }) {
+  if (error) return error;
+  roster = next;
+  saveRoster(storage, roster);
+  return null;
+}
+
+// The main menu's line: who is flying, or what to do first.
+function pilotLine() {
+  const p = activePilot(roster);
+  if (p) return `Flying as ${pilotTitle(p)}, ${p.victories} ${p.victories === 1 ? 'victory' : 'victories'} in ${p.missions} missions`;
+  return roster.pilots.length ? 'Choose who flies on the Pilot Roll Call' : 'Enlist a pilot on the Pilot Roll Call to begin';
+}
+
+// Fly a mission needs a pilot: without one, the Roll Call opens first.
+function flyOrEnlist() {
+  if (activePilot(roster)) return flow.go('setup');
+  const ready = roster.pilots.some((p) => !p.needsName);
+  rosterMessage = ready ? 'Choose a pilot first (Fly as)' : roster.pilots.length ? 'Name your earlier record (Name), or enlist a new pilot' : 'Enlist a pilot first';
+  flow.go('roster');
+}
+
 // ---- screens -------------------------------------------------------------------------------
 
 function fly(cfg) {
-  config = cleanConfig(cfg);
+  config = cleanConfig(cfg, pilotSide());
   saveConfig(storage, config);
   session.startMission(config);
   session.combat.practice = options.practice;
@@ -196,8 +228,18 @@ function fly(cfg) {
 }
 
 const screens = {
-  menu: createMainMenu({ onFly: () => flow.go('setup'), onOptions: () => flow.go('options') }),
-  setup: createSetup({ config, onFly: (cfg) => fly(cfg), onBack: () => flow.go('menu') }),
+  menu: createMainMenu({ onFly: () => flyOrEnlist(), onRoster: () => flow.go('roster'), onOptions: () => flow.go('options') }),
+  setup: createSetup({ config, getSide: pilotSide, onFly: (cfg) => fly(cfg), onBack: () => flow.go('menu') }),
+  roster: createRollCall({
+    getRoster: () => roster,
+    actions: {
+      onEnlist: (name, side) => changeRoster(enlist(roster, name, side)),
+      onRename: (id, name) => changeRoster(rename(roster, id, name)),
+      onRetire: (id) => changeRoster({ roster: retire(roster, id) }),
+      onSelect: (id) => changeRoster({ roster: select(roster, id) }),
+    },
+    onBack: () => flow.go('menu'),
+  }),
   options: createOptions({
     getOptions: () => options, quality: qualityName,
     onChange: (o) => setOptions(o),
@@ -245,10 +287,15 @@ flow.onChange((to, from) => {
   audio.setActive(to === 'flying'); // sound only while flying: it fades out when paused and in the menus
   for (const [name, screen] of Object.entries(screens)) if (name !== to) screen.hide();
   if (to === 'results' && session.result) {
-    lastRecord = recordMission(careers, session.sim.aircraft, session.result, config.skill, options.practice);
-    saveCareers(storage, careers);
+    const pilot = activePilot(roster);
+    lastRecord = pilot ? { ...recordMission(pilot, session.result, config.skill, options.practice), pilot: pilot.name } : null;
+    saveRoster(storage, roster);
     screens.results.show(session.result, lastRecord);
-  } else if (to === 'menu') screens.menu.show(careers, rankFor);
+  } else if (to === 'menu') screens.menu.show(pilotLine());
+  else if (to === 'roster') {
+    screens.roster.show(rosterMessage);
+    rosterMessage = '';
+  }
   else if (screens[to]) screens[to].show();
   if (to !== 'flying' && document.pointerLockElement) document.exitPointerLock(); // the mouse is for the menus now
   overlays.help.allow(to === 'flying'); // the keys help only in flight
@@ -289,7 +336,7 @@ function changeSkill(step) {
 idle();
 updateHelp();
 if (DEV && SKILL_ORDER.includes(params.get('skill'))) session.combat.skill = params.get('skill');
-screens.menu.show(careers, rankFor);
+screens.menu.show(pilotLine());
 overlays.help.allow(false);
 
 let lastTime = performance.now();

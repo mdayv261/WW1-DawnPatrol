@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AIRCRAFT } from '../src/aircraft/index.js';
-import { POINTS, RANKS, ACE_VICTORIES, missionPoints, rankFor, newCareer, loadCareers, saveCareers, recordMission, CAREER_KEY } from '../src/game/career.js';
+import { POINTS, RANKS, ACE_VICTORIES, missionPoints, rankFor, newCareer, loadCareers, recordMission, CAREER_KEY } from '../src/game/career.js';
 
 // Points, ranks and the career.
 
@@ -34,57 +33,73 @@ describe('points for a mission', () => {
   });
 });
 
-describe('ranks', () => {
-  it('period ranks for each side, from the lowest', () => {
+describe('ranks (by victories; product owner, the Roll Call)', () => {
+  it('period ranks for each side, from the lowest, rising at 3, 8 and 15 victories', () => {
     expect(rankFor('allied', 0)).toBe('Second Lieutenant');
-    expect(rankFor('allied', 400)).toBe('Captain');
-    expect(rankFor('german', 149)).toBe('Leutnant');
-    expect(rankFor('german', 2000)).toBe('Rittmeister');
+    expect(rankFor('allied', 2)).toBe('Second Lieutenant');
+    expect(rankFor('allied', 3)).toBe('Lieutenant');
+    expect(rankFor('allied', 8)).toBe('Captain');
+    expect(rankFor('allied', 15)).toBe('Major');
+    expect(rankFor('german', 0)).toBe('Leutnant');
+    expect(rankFor('german', 7)).toBe('Oberleutnant');
+    expect(rankFor('german', 40)).toBe('Rittmeister');
     for (const side of ['allied', 'german']) {
-      expect(RANKS[side][0].points).toBe(0);
-      for (let i = 1; i < RANKS[side].length; i++) expect(RANKS[side][i].points).toBeGreaterThan(RANKS[side][i - 1].points);
+      expect(RANKS[side][0].victories).toBe(0);
+      for (let i = 1; i < RANKS[side].length; i++) expect(RANKS[side][i].victories).toBeGreaterThan(RANKS[side][i - 1].victories);
     }
   });
 });
 
-describe('the career', () => {
-  it('adds up missions on the side the player flew, promotes, and makes an Ace at five victories', () => {
-    const careers = { allied: newCareer(), german: newCareer() };
-    const r1 = recordMission(careers, AIRCRAFT.camel, result({ kills: 3 }), 'ace');
+const pilot = (side = 'allied') => ({ id: 'p1', name: 'Test', side, victories: 0, drones: 0, missions: 0, losses: 0, score: 0 });
+
+describe("a pilot's record", () => {
+  it('adds up missions, promotes at three victories, and makes an Ace at five', () => {
+    const p = pilot();
+    const r1 = recordMission(p, result({ kills: 3 }), 'ace');
     expect(r1.total).toBe(r1.points);
     expect(r1.victories).toBe(3);
+    expect(r1.promoted).toBe('Lieutenant');
     expect(r1.ace).toBe(false);
-    expect(r1.promoted).toBe('Lieutenant'); // 3 x 60 + 10 + 20 = 210 points, past 150
-    expect(careers.german.missions).toBe(0);
-    const r2 = recordMission(careers, AIRCRAFT.spad13, result({ kills: 2 }), 'ace');
+    const r2 = recordMission(p, result({ kills: 2 }), 'novice');
     expect(r2.victories).toBe(ACE_VICTORIES);
     expect(r2.ace).toBe(true);
-    expect(r2.promoted).toBeNull(); // 360 points, not yet Captain (400)
-    expect(careers.allied.missions).toBe(2);
-    const r3 = recordMission(careers, AIRCRAFT.camel, result({ kills: 1 }), 'regular');
+    expect(r2.promoted).toBeNull();
+    expect(p.missions).toBe(2);
+    const r3 = recordMission(p, result({ kills: 1 }), 'regular');
     expect(r3.ace).toBe(false); // already an Ace
     expect(r3.isAce).toBe(true);
   });
 
-  it('never goes below zero points, and counts losses', () => {
-    const careers = { allied: newCareer(), german: newCareer() };
-    const r = recordMission(careers, AIRCRAFT.dr1, result({ kills: 0, shotsFired: 0, outcome: 'shot down', headline: 'Shot down' }), 'ace');
+  it('drones are counted apart and do not promote', () => {
+    const p = pilot('german');
+    const r = recordMission(p, result({ kills: 4 }), 'drone');
+    expect(p.victories).toBe(0);
+    expect(p.drones).toBe(4);
+    expect(r.promoted).toBeNull();
+    expect(r.rank).toBe('Leutnant');
+    expect(p.score).toBeGreaterThan(0); // they still earn a few points
+  });
+
+  it('the score never goes below zero, and losses are counted', () => {
+    const p = pilot('german');
+    const r = recordMission(p, result({ kills: 0, shotsFired: 0, outcome: 'shot down', headline: 'Shot down' }), 'ace');
     expect(r.total).toBe(0);
-    expect(careers.german.losses).toBe(1);
+    expect(p.losses).toBe(1);
   });
 
   it('a practice mission is not recorded', () => {
-    const careers = { allied: newCareer(), german: newCareer() };
-    recordMission(careers, AIRCRAFT.camel, result(), 'ace', true);
-    expect(careers.allied).toEqual(newCareer());
+    const p = pilot();
+    recordMission(p, result(), 'ace', true);
+    expect(p).toEqual(pilot());
   });
+});
 
-  it('is remembered in the browser, and a broken saved copy is ignored', () => {
+describe('the old careers (before the Roll Call)', () => {
+  it('are read from the browser, and a broken saved copy is ignored', () => {
     const s = memory();
-    const careers = loadCareers(s);
-    recordMission(careers, AIRCRAFT.albatros, result({ kills: 1 }), 'novice');
-    saveCareers(s, careers);
-    expect(loadCareers(s).german.victories).toBe(1);
+    s.setItem(CAREER_KEY, JSON.stringify({ allied: { points: 210, victories: 3, missions: 2, losses: 1 } }));
+    expect(loadCareers(s).allied).toEqual({ points: 210, victories: 3, missions: 2, losses: 1 });
+    expect(loadCareers(s).german).toEqual(newCareer());
     s.setItem(CAREER_KEY, '{bad');
     expect(loadCareers(s)).toEqual({ allied: newCareer(), german: newCareer() });
     s.setItem(CAREER_KEY, JSON.stringify({ allied: { points: -5, victories: 'x' } }));

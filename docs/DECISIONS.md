@@ -685,3 +685,12 @@ The propeller's turning angle is followed from the engine speed the flight model
 - **Shown in its own box** at the top centre (below the HUD's heading tape) in every view, so it works with the period cockpit too. These aircraft had no such devices; the warnings are clearly game aids.
 - **Structural damage off** skips only the g and speed damage in `stepDamage`; fuel, bullets and everything else are unchanged. Career points are not changed by it (only practice mode changes points).
 - **Product owner's answer:** Phase 7 passes the acceptance test (rebound key and joystick button work in flight and survive a reload; each of the four options changes the flight).
+
+## D63. The Pilot Roll Call: named pilots, rank by victories (added after Phase 7)
+- **Named pilots** (product owner's requirement), kept on a roster in the browser (`dawnPatrol.pilots`, `src/game/pilots.js`): name, side, victories, drones, missions, losses and score. One pilot is flying at a time; flying a mission needs one.
+- **One side per pilot**, chosen when enlisting, and only that side's aircraft are offered (product owner): an airman served one air service and climbed one rank ladder.
+- **Rank follows victories** (product owner), replacing the points-based rank of D58: 0, 3, 8 and 15 victories for Second Lieutenant, Lieutenant, Captain, Major (RFC/RAF) and Leutnant, Oberleutnant, Hauptmann, Rittmeister (German air service). The names are period ranks; the steps are design choices, accepted by the product owner. "Ace" stays at five victories. Mission points (D58) are kept as each pilot's score.
+- **Drone kills are not victories** (product owner): target practice cannot earn promotion. They are counted separately and still earn their few points.
+- **The earlier unnamed record is kept** (product owner): each side with missions became a pilot waiting for a name, once. Its victories could include drones (they were not kept apart before) and count as victories. The old key is left in the browser untouched.
+- **Names:** 1 to 24 characters of letters (any alphabet), numbers, spaces and ' - .; unique ignoring capitals; at most 20 pilots. Retiring asks on the page (the game's frame shows no browser pop-ups) and removes the record.
+- **Typing is typing:** key presses in a text box are left to the page, so a name with M or C in it does not mute the sound or change the camera.

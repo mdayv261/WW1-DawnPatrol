@@ -23,6 +23,7 @@ const CSS = `
 .dp-table { width: 100%; border-collapse: collapse; margin-top: 0.6rem; }
 .dp-table td { padding: 0.25rem 0.4rem; border-bottom: 1px dotted #9c8758; }
 .dp-table td:last-child { text-align: right; font-weight: bold; }
+.dp-pilot { text-align: center; font-style: italic; margin: 0 0 0.4rem; }
 .dp-small { font-size: 0.85rem; color: #5a4a30; text-align: center; margin-top: 1rem; }
 .dp-card.dp-wide { width: min(46rem, 94vw); }
 .dp-tabs { display: flex; gap: 0.4rem; justify-content: center; margin-bottom: 0.6rem; }
@@ -38,6 +39,16 @@ const CSS = `
 .dp-bar span { position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1px; background: #4a3b24; }
 .dp-lit { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 50%; border: 1px solid #6b5530; background: #f7f0dc; }
 .dp-lit.on { background: #c9a227; }
+.dp-card input.dp-name { font: inherit; font-size: 1rem; padding: 0.25rem 0.4rem; width: 12rem; background: #f7f0dc;
+  color: #2a2015; border: 1px solid #6b5530; }
+.dp-enlist { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: center; margin-top: 1rem;
+  padding-top: 0.8rem; border-top: 1px solid #9c8758; }
+.dp-enlist label { font-weight: bold; }
+.dp-card.dp-wider { width: min(60rem, 96vw); }
+.dp-roster td { white-space: nowrap; }
+.dp-roster td:first-child { white-space: normal; }
+.dp-roster tr.dp-active td { background: #dccb9f; font-weight: bold; }
+.dp-roster td:last-child { white-space: nowrap; text-align: right; }
 `;
 
 let injected = false;

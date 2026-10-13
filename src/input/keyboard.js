@@ -18,6 +18,13 @@ export function keyId(e) {
   return e.code;
 }
 
+// True for a text box (or other editable element), where key presses are typing, not commands.
+export function typingIn(target) {
+  const tag = target?.tagName;
+  if (tag === 'INPUT') return !['range', 'checkbox', 'radio', 'button'].includes(target.type);
+  return tag === 'TEXTAREA' || Boolean(target?.isContentEditable);
+}
+
 // What each one-shot action calls. Shared with the joystick's buttons (main.js), so a
 // command does the same from either.
 const PRESS = {
@@ -63,6 +70,7 @@ export function attachKeyboard(handlers, bindings = defaultBindings()) {
   };
 
   window.addEventListener('keydown', (e) => {
+    if (typingIn(e.target)) return; // a name being typed (the Roll Call): the keys are the page's
     const id = keyId(e);
     mapper.lastKey = `${e.key} (${e.code}${e.getModifierState?.('Fn') ? ', Fn' : ''}) -> ${id}`; // shown on the F3 screen
     if (capture) {

@@ -1,8 +1,8 @@
-// The player's career: points for each mission, added up and remembered in the browser, and the
-// rank they bring. One career for each side (an Allied pilot and a German pilot), because the
-// ranks differ. The rank names are period ranks of the Royal Flying Corps and Royal Air Force and
-// of the German air service; the points and the thresholds are design choices (docs/DECISIONS.md).
-// "Ace" after five victories follows the common usage of the time.
+// A pilot's career: points for each mission (the pilot's score), victories, and the rank they
+// bring. Each pilot on the Roll Call (src/game/pilots.js) serves one side, and the ranks differ
+// by side. The rank names are period ranks of the Royal Flying Corps and Royal Air Force and of
+// the German air service; the points and the thresholds are design choices (docs/DECISIONS.md,
+// D58 and D63). "Ace" after five victories follows the common usage of the time.
 
 export const POINTS = {
   kill: { drone: 5, novice: 20, regular: 35, ace: 60 }, // per enemy shot down, by its skill
@@ -11,25 +11,28 @@ export const POINTS = {
   outcome: { victory: 20, landed: 30, withdrew: 5, ended: 0, 'shot down': -40, crashed: -30 },
 };
 
+// Rank by victories (product owner: a pilot rises with enemy kills). Drones (target practice)
+// are not victories.
 export const RANKS = {
   allied: [
-    { points: 0, name: 'Second Lieutenant' },
-    { points: 150, name: 'Lieutenant' },
-    { points: 400, name: 'Captain' },
-    { points: 900, name: 'Major' },
+    { victories: 0, name: 'Second Lieutenant' },
+    { victories: 3, name: 'Lieutenant' },
+    { victories: 8, name: 'Captain' },
+    { victories: 15, name: 'Major' },
   ],
   german: [
-    { points: 0, name: 'Leutnant' },
-    { points: 150, name: 'Oberleutnant' },
-    { points: 400, name: 'Hauptmann' },
-    { points: 900, name: 'Rittmeister' },
+    { victories: 0, name: 'Leutnant' },
+    { victories: 3, name: 'Oberleutnant' },
+    { victories: 8, name: 'Hauptmann' },
+    { victories: 15, name: 'Rittmeister' },
   ],
 };
 
+export const SERVICE = { allied: 'RFC/RAF', german: 'German air service' };
 export const ACE_VICTORIES = 5;
-export const CAREER_KEY = 'dawnPatrol.career';
+export const CAREER_KEY = 'dawnPatrol.career'; // the old, unnamed careers (read once, to import)
 
-const sideOf = (aircraft) => (aircraft.side === 'Allied' ? 'allied' : 'german');
+export const sideOf = (aircraft) => (aircraft.side === 'Allied' ? 'allied' : 'german');
 
 // Points for one mission, and how they were earned (for the results screen).
 // result: from mission.summary(); skill: the enemies' skill; practice: practice mode was on.
@@ -43,12 +46,36 @@ export function missionPoints(result, skill, practice = false) {
   return { total: lines.reduce((sum, [, p]) => sum + p, 0), lines };
 }
 
-export function rankFor(side, points) {
-  const table = RANKS[side];
+// The rank for a number of victories on a side.
+export function rankFor(side, victories) {
+  const table = RANKS[side] ?? RANKS.allied;
   let rank = table[0];
-  for (const r of table) if (points >= r.points) rank = r;
+  for (const r of table) if (victories >= r.victories) rank = r;
   return rank.name;
 }
+
+// Add a mission to a pilot's record (changes `pilot` in place: victories, drones, missions,
+// losses, score). Returns what the results screen shows: { points (this mission), lines, total
+// (score), rank, promoted (new rank or null), victories, ace (just became one), isAce }.
+export function recordMission(pilot, result, skill, practice = false) {
+  const before = rankFor(pilot.side, pilot.victories);
+  const wasAce = pilot.victories >= ACE_VICTORIES;
+  const { total, lines } = missionPoints(result, skill, practice);
+  if (!practice) {
+    pilot.score = Math.max(0, pilot.score + total);
+    if (skill === 'drone') pilot.drones += result.kills;
+    else pilot.victories += result.kills;
+    pilot.missions += 1;
+    if (result.outcome === 'shot down' || result.outcome === 'crashed') pilot.losses += 1;
+  }
+  const rank = rankFor(pilot.side, pilot.victories);
+  return {
+    points: total, lines, total: pilot.score, rank, promoted: rank !== before ? rank : null,
+    victories: pilot.victories, ace: !wasAce && pilot.victories >= ACE_VICTORIES, isAce: pilot.victories >= ACE_VICTORIES,
+  };
+}
+
+// ---- the old careers (one unnamed pilot per side, before the Roll Call) -----------------------
 
 export function newCareer() {
   return { points: 0, victories: 0, missions: 0, losses: 0 };
@@ -72,34 +99,4 @@ export function loadCareers(storage) {
   } catch {
     return { allied: newCareer(), german: newCareer() };
   }
-}
-
-export function saveCareers(storage, careers) {
-  try {
-    storage?.setItem(CAREER_KEY, JSON.stringify(careers));
-  } catch {
-    // not remembered (private window)
-  }
-}
-
-// Add a mission to the career of the player's side. Returns what the results screen shows:
-// { points (this mission), lines, total, rank, promoted (new rank or null), victories, ace (just
-// became one), career }. Changes `careers` in place.
-export function recordMission(careers, aircraft, result, skill, practice = false) {
-  const side = sideOf(aircraft);
-  const c = careers[side];
-  const before = rankFor(side, c.points);
-  const wasAce = c.victories >= ACE_VICTORIES;
-  const { total, lines } = missionPoints(result, skill, practice);
-  if (!practice) {
-    c.points = Math.max(0, c.points + total);
-    c.victories += result.kills;
-    c.missions += 1;
-    if (result.outcome === 'shot down' || result.outcome === 'crashed') c.losses += 1;
-  }
-  const rank = rankFor(side, c.points);
-  return {
-    points: total, lines, total: c.points, rank, promoted: rank !== before ? rank : null,
-    victories: c.victories, ace: !wasAce && c.victories >= ACE_VICTORIES, isAce: c.victories >= ACE_VICTORIES, career: { ...c },
-  };
 }

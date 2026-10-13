@@ -1,15 +1,16 @@
 // The game's screens and how one leads to another, with no drawing: the main menu, mission
-// setup, options (and its controls screen), flying, paused and results. Also the mission settings the player chooses,
+// setup, options (and its controls screen), the Pilot Roll Call, flying, paused and results. Also the mission settings the player chooses,
 // cleaned up and remembered in the browser. The screens themselves are in src/ui/screens/.
 
 import { AIRCRAFT_LIST } from '../aircraft/index.js';
 import { SKILL_ORDER } from '../aircraft/aiData.js';
 
-export const STATES = ['menu', 'setup', 'options', 'controls', 'flying', 'paused', 'results'];
+export const STATES = ['menu', 'setup', 'options', 'controls', 'roster', 'flying', 'paused', 'results'];
 
 // Where each screen may go next.
 const NEXT = {
-  menu: ['setup', 'options'],
+  menu: ['setup', 'options', 'roster'],
+  roster: ['menu'],
   setup: ['menu', 'flying'],
   options: ['menu', 'paused', 'controls'], // options goes back to where it was opened from
   controls: ['options'],
@@ -84,11 +85,19 @@ export function enemyChoices(aircraftId) {
   return ['mixed', ...AIRCRAFT_LIST.filter((a) => a.side !== mine.side).map((a) => a.id)];
 }
 
-// A clean config from anything (a saved copy, a form): unknown or bad values fall back to the defaults.
-export function cleanConfig(raw) {
+// The aircraft a pilot of `side` ('allied' or 'german') may fly; all of them with no side.
+export function aircraftFor(side) {
+  if (!side) return AIRCRAFT_LIST;
+  return AIRCRAFT_LIST.filter((a) => (a.side === 'Allied') === (side === 'allied'));
+}
+
+// A clean config from anything (a saved copy, a form): unknown or bad values fall back to the
+// defaults. side: the pilot's side; an aircraft of the other side becomes the first of theirs.
+export function cleanConfig(raw, side = null) {
   const r = raw && typeof raw === 'object' ? raw : {};
   const c = { ...DEFAULT_CONFIG };
-  if (AIRCRAFT_LIST.some((a) => a.id === r.aircraft)) c.aircraft = r.aircraft;
+  const allowed = aircraftFor(side);
+  c.aircraft = allowed.some((a) => a.id === r.aircraft) ? r.aircraft : allowed.some((a) => a.id === c.aircraft) ? c.aircraft : allowed[0].id;
   if (enemyChoices(c.aircraft).includes(r.enemyType)) c.enemyType = r.enemyType;
   const n = Number(r.enemyCount);
   if (Number.isInteger(n) && n >= 0 && n <= MAX_ENEMIES) c.enemyCount = n;

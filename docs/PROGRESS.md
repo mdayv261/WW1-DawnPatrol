@@ -2,7 +2,32 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 7 (controls screen and assists) signed off by the product owner, in two commits: the Controls screen (3c44123) and auto-rudder, warnings and the damage switch (81a3fb0). Phases 0-7 are done. The next phase needs the product owner's brief and a plan in plan mode first.
+## Current status: Phases 0-7 are signed off. Added after Phase 7 at the product owner's request: the **Pilot Roll Call** (named pilots who rise in rank with victories), approved by the product owner and committed. The next phase needs the product owner's brief and a plan in plan mode first.
+
+## Pilot Roll Call (D63)
+
+**Brief (product owner):** a Pilot Roll Call screen where a player enters a pilot's name and gets the lowest rank, rising in rank with enemy kills; adding named pilots is a requirement. Decided by the product owner: a pilot serves one side (chosen when enlisting) and flies only its aircraft; rank follows victories; drone kills do not count; the earlier unnamed record is kept as a pilot to name.
+
+**Done:**
+- **Main menu:** a **Pilot Roll Call** button and a line saying who is flying ("Flying as Lieutenant Albert Ball (RFC/RAF), 4 victories in 9 missions"). **Fly a mission** with no pilot opens the Roll Call first.
+- **Roll Call:** every pilot with rank, side, victories (drones apart; "Ace" from five), missions (and losses) and score; the pilot flying is highlighted. **Fly as**, **Rename** and **Retire** (asked on the page: "Retire Albert Ball? The record will be removed. Yes, retire / No"). **Enlist a new pilot**: a name and a side; the new pilot starts at the lowest rank and flies next. Names: 1 to 24 letters, numbers, spaces and ' - .; no two the same (ignoring capitals); the screen says why a name is refused. Up to 20 pilots.
+- **Ranks by victories:** 0 Second Lieutenant / Leutnant, 3 Lieutenant / Oberleutnant, 8 Captain / Hauptmann, 15 Major / Rittmeister. Drone kills are counted apart and do not promote. Mission points are kept as the pilot's **score**. Practice mode records nothing, as before.
+- **Mission orders** offer only the pilot's side's aircraft. **Results** show the pilot, rank, victories and score, and a promotion or "now an Ace".
+- **Your earlier record** (6 German missions) is waiting on the Roll Call as "(your earlier German record: give it a name)".
+- While a name is being typed, the game's keys (M, C, P...) do nothing.
+
+Checked in Chrome (settings backed up and restored): the old record asked for a name and was named by typing "Max Immelmann" (M and other keys did not mute, invert or change the camera); a duplicate name ("max immelmann") was refused; enlisting "Albert Ball" made that pilot the one flying; the menu line, the Allied-only aircraft list, a mission to the results screen (pilot, rank, victories, score; nothing recorded because practice mode was on), and retiring with the on-page question all worked; no console errors. 1,136 tests pass (plus 15 known deviations); `npm run build` works.
+
+**Please test (about 10 minutes):**
+1. Main menu > **Pilot Roll Call**: click **Name** next to your earlier German record, type a name, press Enter.
+2. **Enlist** an Allied pilot. Try a name already used: it is refused.
+3. **Back**: the menu says who is flying. **Fly a mission**: only the Camel and SPAD are offered. Fly (practice mode off) and shoot something down: the results show your pilot and record.
+4. Back on the Roll Call, **Fly as** the German pilot: now only the Dr.I and Albatros are offered.
+5. **Rename** one pilot, **Retire** one (answer No first, then Yes). Reload the page: everything is remembered.
+
+**Decided by the product owner:** the rank steps (3, 8, 15 victories) are accepted.
+
+**Known issues:** none yet.
 
 ## Phase 7 checkpoint 2: assists and warnings (D62)
 
