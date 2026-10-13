@@ -158,7 +158,7 @@ describe('saved mapping', () => {
     const veryOld = { axes: { yaw: { index: 2 }, throttle: { index: 3 } } }; // saved before either fix
     expect(mergeMapping(veryOld).axes.yaw.index).toBe(5);
     expect(mergeMapping(veryOld).axes.throttle.index).toBe(6);
-    expect(mergeMapping(null).version).toBe(3);
+    expect(mergeMapping(null).version).toBe(4);
   });
 
   it('the throttle slider defaults to axis 6, and an old saved default (axis 3) is replaced but a deliberate choice is kept', () => {

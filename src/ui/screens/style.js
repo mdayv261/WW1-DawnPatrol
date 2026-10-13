@@ -19,11 +19,25 @@ const CSS = `
 .dp-row { display: grid; grid-template-columns: 11rem 1fr; gap: 0.6rem; align-items: center; margin: 0.45rem 0; }
 .dp-row label { font-weight: bold; }
 .dp-card select, .dp-card input[type=range] { font: inherit; font-size: 1rem; padding: 0.2rem; background: #f7f0dc;
-  color: #2a2015; border: 1px solid #6b5530; }
+  color: #2a2015; border: 1px solid #6b5530; accent-color: #6b5530; }
 .dp-table { width: 100%; border-collapse: collapse; margin-top: 0.6rem; }
 .dp-table td { padding: 0.25rem 0.4rem; border-bottom: 1px dotted #9c8758; }
 .dp-table td:last-child { text-align: right; font-weight: bold; }
 .dp-small { font-size: 0.85rem; color: #5a4a30; text-align: center; margin-top: 1rem; }
+.dp-card.dp-wide { width: min(46rem, 94vw); }
+.dp-tabs { display: flex; gap: 0.4rem; justify-content: center; margin-bottom: 0.6rem; }
+.dp-card .dp-tabs button.on { background: #8a6c34; outline: 2px solid #2a2015; }
+.dp-msg { min-height: 1.4em; text-align: center; font-style: italic; color: #6b2f15; }
+.dp-keys { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.dp-keys td { padding: 0.15rem 0.3rem; border-bottom: 1px dotted #9c8758; }
+.dp-keys th { text-align: left; padding: 0.6rem 0.3rem 0.2rem; font-variant: small-caps; letter-spacing: 0.05em; }
+.dp-card .dp-keys button { font-size: 0.85rem; padding: 0.15rem 0.5rem; min-width: 5.5rem; }
+.dp-card .dp-keys button.dp-x { min-width: 0; padding: 0.15rem 0.4rem; background: #7a6a4a; }
+.dp-card .dp-keys button.listening { background: #b5482a; }
+.dp-bar { position: relative; width: 9rem; height: 0.7rem; background: #f7f0dc; border: 1px solid #6b5530; }
+.dp-bar span { position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1px; background: #4a3b24; }
+.dp-lit { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 50%; border: 1px solid #6b5530; background: #f7f0dc; }
+.dp-lit.on { background: #c9a227; }
 `;
 
 let injected = false;

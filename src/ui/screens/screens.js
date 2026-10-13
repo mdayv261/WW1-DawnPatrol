@@ -8,6 +8,8 @@ import { SKILLS, SKILL_ORDER } from '../../aircraft/aiData.js';
 import { QUALITY_ORDER } from '../../render/quality.js';
 import { STARTS, TIMES, MAX_ENEMIES, enemyChoices, cleanConfig } from '../../game/flow.js';
 import { formatTime } from '../../game/mission.js';
+import { createKeysTab } from './controlsKeys.js';
+import { createJoystickTab } from './controlsJoystick.js';
 
 const aircraftName = (id) => AIRCRAFT_LIST.find((a) => a.id === id)?.name ?? id;
 
@@ -16,7 +18,7 @@ export function createMainMenu({ onFly, onOptions }) {
   heading(s.card, 'Dawn Patrol', 'Western Front, 1917-1918');
   buttons(s.card, [['Fly a mission', onFly], ['Options', onOptions]]);
   const careerLine = paragraph(s.card, '', 'dp-small');
-  paragraph(s.card, 'Keyboard, mouse or joystick. H shows the keys in flight; Esc or P pauses.', 'dp-small');
+  paragraph(s.card, 'Keyboard, mouse or joystick: Options > Controls changes the keys and buttons, and the help in flight lists them. Esc pauses.', 'dp-small');
   const show = s.show;
   // careers: { allied, german } with { points, victories, missions }; rankFor(side, points).
   return { ...s, show(careers, rankFor) {
@@ -47,9 +49,9 @@ export function createSetup({ config, onFly, onBack }) {
   return { ...s, getConfig: () => cleanConfig(c) };
 }
 
-// Options: volume, graphics quality, HUD, practice mode. Each change is applied at once.
-// getOptions() is read each time the screen opens, so keys pressed in flight (U, P) show here.
-export function createOptions({ getOptions, quality, onChange, onQuality, onBack }) {
+// Options: volume, graphics quality, HUD, practice mode, and the Controls screen. Each change is
+// applied at once. getOptions() is read each time the screen opens, so keys pressed in flight show here.
+export function createOptions({ getOptions, quality, onChange, onQuality, onControls, onBack }) {
   const s = makeScreen();
   const o = { ...getOptions() };
   heading(s.card, 'Options');
@@ -75,7 +77,7 @@ export function createOptions({ getOptions, quality, onChange, onQuality, onBack
     o.practice = v === 'on';
     onChange({ ...o });
   });
-  buttons(s.card, [['Back', onBack]]);
+  buttons(s.card, [['Controls (keyboard and joystick)', onControls], ['Back', onBack]]);
   const show = s.show;
   return { ...s, show() {
     Object.assign(o, getOptions());
@@ -83,6 +85,43 @@ export function createOptions({ getOptions, quality, onChange, onQuality, onBack
     hud.value = o.hud ? 'on' : 'off';
     practice.value = o.practice ? 'on' : 'off';
     show();
+  } };
+}
+
+// Controls: the keyboard and joystick tabs (controlsKeys.js, controlsJoystick.js).
+// keys: { getBindings, onBindings, captureNext, onReset } for the keyboard tab.
+export function createControls({ keys, joystick, onBack }) {
+  const s = makeScreen();
+  s.card.classList.add('dp-wide');
+  heading(s.card, 'Controls');
+  const keysTab = createKeysTab(keys);
+  const joyTab = createJoystickTab(joystick);
+  let tab = 'keys';
+  const tabs = buttons(s.card, [['Keyboard', () => pick('keys')], ['Joystick', () => pick('joy')]], true);
+  tabs.classList.add('dp-tabs');
+  const [keysButton, joyButton] = tabs.children;
+  s.card.append(keysTab.root, joyTab.root);
+  function pick(t) {
+    tab = t;
+    keysTab.cancel();
+    joyTab.cancel();
+    keysTab.root.hidden = t !== 'keys';
+    joyTab.root.hidden = t !== 'joy';
+    keysButton.classList.toggle('on', t === 'keys');
+    joyButton.classList.toggle('on', t === 'joy');
+    (t === 'keys' ? keysTab : joyTab).show();
+  }
+  buttons(s.card, [['Back', () => {
+    keysTab.cancel();
+    joyTab.cancel();
+    onBack();
+  }]]);
+  const show = s.show;
+  return { ...s, show() {
+    show();
+    pick(tab);
+  }, update() {
+    if (tab === 'joy') joyTab.update();
   } };
 }
 

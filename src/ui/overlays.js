@@ -30,28 +30,11 @@ export function createDebugOverlay() {
   };
 }
 
-const HELP = [
-  'DAWN PATROL - controls',
-  '  Down / Up      pull back (nose up) / push forward',
-  '  Left / Right   roll',
-  '  Q / E          rudder left / right',
-  '  Insert/Delete or W/S   throttle up / down (mouse wheel too)',
-  '  PgUp/PgDn or T/G       trim nose up / down',
-  '  R restart the mission   U modern HUD   M sound on/off   (development builds: 1-4 / Shift+1-4 quick starts, N enemy, [ ] skill)',
-  '  Mouse: click to fly with the mouse, Esc to release, X centre stick,',
-  '         , and . sensitivity',
-  '  Joystick: stick = pitch/roll, twist = rudder, slider = throttle, hat = look',
-  '            trigger fire, 2 camera, 3/4 trim, 5 readout, 7 pause, 8 restart, 9 clear jam',
-  '            F2 joystick screen (test, learn, flip); press the trigger once if it is not found',
-  '  Space fire (hold)   B clear a gun jam   Y practice mode   Esc or P pause (end the mission, options)',
-  '  C camera (cockpit / chase / free)   V or right mouse: look around',
-  '  J instruments readout   L graphics quality   R restart   P pause   F3 debug   I invert pitch',
-  '  H hide this   F4 flight test panel (development builds only; its buttons also damage your own aircraft)',
-].join('\n');
-
-export function createHelp() {
+// The keys help (H). Its text comes from the player's keys and buttons (helpText in
+// src/input/bindings.js) and is replaced when they change.
+export function createHelp(text = '') {
   const el = panel('bottom: 10px; left: 10px;');
-  el.textContent = HELP;
+  el.textContent = text;
   let wanted = true; // H turns it on and off; it is hidden anyway while a menu is up
   let allowed = true;
   const apply = () => { el.style.display = wanted && allowed ? 'block' : 'none'; };
@@ -63,6 +46,9 @@ export function createHelp() {
     allow(yes) {
       allowed = yes;
       apply();
+    },
+    setText(t) {
+      el.textContent = t;
     },
   };
 }

@@ -2,24 +2,7 @@
 // can be tested directly. The browser wiring is in keyboard.js.
 
 import { createInput } from '../physics/controls.js';
-
-// Default key bindings (rebinding comes in a later phase). Insert/Delete and
-// Page Up/Page Down (trim, changed from Home/End in Phase 6) are the product
-// owner's choice; W/S and T/G also work because a Mac keyboard has no Insert
-// key (Mac: fn+Backspace = Delete, fn+Up = Page Up, fn+Down = Page Down).
-export const KEYS = {
-  pullBack: ['ArrowDown'], // stick back, nose up
-  pushForward: ['ArrowUp'], // stick forward, nose down
-  rollLeft: ['ArrowLeft'],
-  rollRight: ['ArrowRight'],
-  rudderLeft: ['KeyQ'],
-  rudderRight: ['KeyE'],
-  throttleUp: ['Insert', 'KeyW'],
-  throttleDown: ['Delete', 'KeyS'],
-  trimNoseUp: ['PageUp', 'KeyT'],
-  trimNoseDown: ['PageDown', 'KeyG'],
-  fire: ['Space'], // machine guns (held)
-};
+import { defaultBindings, HELD } from './bindings.js';
 
 const RAMP_UP = 1.6; // stick travel per second while a key is held (a tap gives a gentle input)
 const RAMP_DOWN = 5; // stick return per second after release
@@ -34,13 +17,23 @@ function moveToward(value, target, rate, dt) {
   return Math.abs(d) <= step ? target : value + Math.sign(d) * step;
 }
 
+// The keys come from the bindings (src/input/bindings.js): the defaults, or the player's own
+// from the Controls screen.
 export class InputMapper {
-  constructor(keys = KEYS) {
-    this.keys = keys;
+  constructor(bindings = defaultBindings()) {
+    this.bindings = bindings;
+    this.keys = bindings.keys; // action -> its keys
     this.held = new Set();
     this.input = createInput();
     this.invertPitch = false;
     this.lastKey = ''; // the last key pressed, as the browser reported it (the F3 screen shows it)
+  }
+
+  // Use new bindings at once (the Controls screen). Keys held now are let go.
+  setBindings(bindings) {
+    this.bindings = bindings;
+    this.keys = bindings.keys;
+    this.held.clear();
   }
 
   press(code) {
@@ -56,7 +49,7 @@ export class InputMapper {
   }
 
   isDown(action) {
-    return this.keys[action].some((c) => this.held.has(c));
+    return (this.keys[action] ?? []).some((c) => c !== null && this.held.has(c));
   }
 
   // Which stick axes the keyboard is holding (keys win over the mouse).
@@ -90,7 +83,7 @@ export class InputMapper {
   // True while the player holds any flight key (used to cancel a scripted
   // test pilot so the player can take over).
   pilotActive() {
-    return Object.keys(this.keys).some((action) => action !== 'fire' && this.isDown(action));
+    return [...HELD].some((action) => action !== 'fire' && this.isDown(action));
   }
 
   // Set the throttle and trim (used at the start of each flight).

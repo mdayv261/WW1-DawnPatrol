@@ -112,7 +112,7 @@ export function readJoystick(pad, mapping, memory) {
   const held = new Set();
   const pressedNow = [];
   for (const [action, i] of Object.entries(mapping.buttons)) {
-    if (!pressed(pad, i)) continue;
+    if (i === null || !pressed(pad, i)) continue; // null: no button for this action
     held.add(action);
     if (!memory.held.has(action)) pressedNow.push(action);
   }
@@ -152,6 +152,24 @@ export class AxisLearner {
       }
     });
     return best < 0 ? null : best;
+  }
+}
+
+// Finds the button pressed for a command: the first one pressed that was not already down
+// when learning began (a button held from before must be let go and pressed again).
+export class ButtonLearner {
+  constructor(pad) {
+    this.down = Array.from(pad?.buttons ?? []).map((b) => Boolean(b.pressed));
+  }
+
+  feed(pad) {
+    const list = Array.from(pad?.buttons ?? []);
+    let found = null;
+    list.forEach((b, i) => {
+      if (!b.pressed) this.down[i] = false;
+      else if (!this.down[i] && found === null) found = i;
+    });
+    return found;
   }
 }
 

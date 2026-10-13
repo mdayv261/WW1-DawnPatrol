@@ -37,7 +37,7 @@ export function createJoystickPanel(joystick) {
   const buttonsBox = root.appendChild(element('div', 'display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px;'));
   const hatLine = root.appendChild(element('div', 'margin-bottom: 6px;'));
   const learnLine = root.appendChild(element('div', 'min-height: 1.4em; margin-bottom: 4px; color: #ffd36b;'));
-  const settings = root.appendChild(element('pre', 'margin: 6px 0 0; white-space: pre;'));
+  const settings = root.appendChild(element('pre', 'margin: 6px 0 0; white-space: pre-wrap;'));
 
   const buttonRow = root.insertBefore(element('div'), settings);
   const addButton = (label, onClick) => {
@@ -102,7 +102,7 @@ export function createJoystickPanel(joystick) {
           .map((v, i) => `Axis ${String(i).padStart(2)} ${bar(v)} ${v.toFixed(2).padStart(5)}  ${used[i] ?? ''}`)
           .join('\n');
         const names = {};
-        for (const [action, i] of Object.entries(m.buttons)) names[i] = BUTTON_LABELS[action];
+        for (const [action, i] of Object.entries(m.buttons)) if (i !== null) names[i] = BUTTON_LABELS[action];
         buttonsBox.replaceChildren(
           ...Array.from(pad.buttons).map((b, i) => {
             const cell = element(
@@ -122,7 +122,8 @@ export function createJoystickPanel(joystick) {
       settings.textContent = [
         `Stick dead zone ${m.axes.roll.deadzone.toFixed(2)}   twist dead zone ${m.axes.yaw.deadzone.toFixed(2)}   curve ${m.expo.toFixed(1)}`,
         `Flipped: ${AXIS_FUNCTIONS.filter(([n]) => m.axes[n].invert).map(([, l]) => l.split(' ')[0]).join(', ') || 'none'}`,
-        'Buttons: 1 fire, 2 camera, 3/4 trim down/up, 5 readout, 6 centre mouse stick, 7 pause, 8 restart',
+        `Buttons: ${Object.entries(m.buttons).filter(([, i]) => i !== null).sort((x, y) => x[1] - y[1]).map(([a, i]) => `${i + 1} ${BUTTON_LABELS[a].toLowerCase()}`).join(', ')}`,
+        'Options > Controls > Joystick changes any button',
       ].join('\n');
     },
   };

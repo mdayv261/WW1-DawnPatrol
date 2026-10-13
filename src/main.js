@@ -6,7 +6,9 @@
 import { createScene } from './render/scene.js';
 import { CameraRig } from './render/cameraRig.js';
 import { AIRCRAFT_LIST } from './aircraft/index.js';
-import { attachKeyboard } from './input/keyboard.js';
+import { attachKeyboard, pressAction } from './input/keyboard.js';
+import { loadBindings, saveBindings, defaultBindings, helpText, keysText } from './input/bindings.js';
+import { BUTTON_LABELS } from './input/joystickMapping.js';
 import { attachMouse } from './input/mouse.js';
 import { attachJoystick } from './input/joystick.js';
 import { createJoystickPanel } from './ui/joystickPanel.js';
@@ -27,7 +29,7 @@ import { Flow, loadConfig, saveConfig, cleanConfig } from './game/flow.js';
 import { loadOptions, saveOptions } from './game/options.js';
 import { createSession } from './game/session.js';
 import { loadCareers, saveCareers, recordMission, rankFor } from './game/career.js';
-import { createMainMenu, createSetup, createOptions, createPause, createResults } from './ui/screens/screens.js';
+import { createMainMenu, createSetup, createOptions, createControls, createPause, createResults } from './ui/screens/screens.js';
 
 const DEV = import.meta.env.DEV;
 const canvas = document.getElementById('game');
@@ -65,7 +67,16 @@ const audio = createAudio();
 audio.setVolume(options.volume);
 for (const kind of ['pointerdown', 'keydown']) window.addEventListener(kind, () => audio.start(), { capture: true });
 
-const keyboard = attachKeyboard({
+// The player's keys (Options > Controls), and a key and button in words for the messages.
+let bindings = loadBindings(storage);
+const keyHint = (action) => {
+  const b = joystick.pad ? joystick.mapping.buttons[action] : null;
+  const k = keysText(bindings, action);
+  return `${k === '-' ? 'its key' : k}${b !== null && b !== undefined ? ` (joystick button ${b + 1})` : ''}`;
+};
+
+// What each key and joystick button does (the one-shot commands; held keys go to the InputMapper).
+const keyHandlers = {
   onSelect: (i, shift) => { if (DEV && i < AIRCRAFT_LIST.length) devStart(i, shift); },
   onRestart: () => { if (flow.flying) session.restart(); },
   onRecentre: () => {
@@ -76,7 +87,7 @@ const keyboard = attachKeyboard({
   onCamera: () => showNotice(`Camera: ${rig.cycle()}`),
   onLook: () => {
     rig.lookToggle = !rig.lookToggle;
-    showNotice(rig.lookToggle ? 'Looking around (mouse moves the view; V again to stop)' : 'Looking ahead');
+    showNotice(rig.lookToggle ? `Looking around (mouse moves the view; ${keyHint('look')} again to stop)` : 'Looking ahead');
   },
   onReadout: () => showNotice(overlays.readout.toggle() ? 'Instrument readout on' : 'Instrument readout off'),
   onQuality: () => applyQuality(nextQuality(qualityName)),
@@ -86,12 +97,12 @@ const keyboard = attachKeyboard({
   onPractice: () => setOptions({ ...options, practice: !options.practice }, true),
   onMute: () => {
     audio.setMuted(!audio.muted);
-    showNotice(audio.muted ? 'Sound off (M to turn it back on)' : 'Sound on', 2000);
+    showNotice(audio.muted ? `Sound off (${keyHint('mute')} to turn it back on)` : 'Sound on', 2000);
   },
   onHud: () => {
     if (!flow.flying) return;
     setOptions({ ...options, hud: !options.hud });
-    showNotice(options.hud ? 'Modern HUD on (U to hide)' : 'Modern HUD off', 2000);
+    showNotice(options.hud ? `Modern HUD on (${keyHint('hud')} to hide)` : 'Modern HUD off', 2000);
   },
   onPause: () => togglePause(),
   onEscape: () => togglePause(),
@@ -99,7 +110,9 @@ const keyboard = attachKeyboard({
   onHelp: () => overlays.help.toggle(),
   onTestPanel: () => overlays.testPanel?.toggle(),
   onJoystickPanel: () => overlays.joystickPanel.toggle(),
-});
+  onInvert: (on) => showNotice(on ? 'Pitch inverted' : 'Pitch normal'),
+};
+const keyboard = attachKeyboard(keyHandlers, bindings);
 
 const mouse = attachMouse(canvas, {
   onMove: (dx, dy) => {
@@ -110,21 +123,13 @@ const mouse = attachMouse(canvas, {
   onWheel: (change) => (rig.mode === 'free' ? rig.zoom(-change * 2000) : keyboard.nudgeThrottle(change)),
   onLookButton: (down) => { rig.lookButton = down; },
   onCapture: (captured) =>
-    showNotice(captured ? 'Mouse flying on (Esc to release, X to centre stick)' : 'Mouse released (click the game to fly with the mouse)', 3000),
+    showNotice(captured ? `Mouse flying on (Esc to release, ${keyHint('recentre')} to centre stick)` : 'Mouse released (click the game to fly with the mouse)', 3000),
   invertPitch: () => keyboard.invertPitch,
 });
 
 const joystick = attachJoystick({
   onNotice: (text) => showNotice(text, 3000),
-  onCamera: () => showNotice(`Camera: ${rig.cycle()}`),
-  onReadout: () => showNotice(overlays.readout.toggle() ? 'Instrument readout on' : 'Instrument readout off'),
-  onCentre: () => {
-    mouse.stick.centre();
-    showNotice('Stick centred');
-  },
-  onPause: () => togglePause(),
-  onRestart: () => { if (flow.flying) session.restart(); },
-  onClearJam: () => clearJam(),
+  onAction: (action) => pressAction(action, keyHandlers, keyboard), // a button does what its key does
 });
 overlays.joystickPanel = createJoystickPanel(joystick);
 
@@ -133,7 +138,7 @@ overlays.joystickPanel = createJoystickPanel(joystick);
 const session = createSession({
   parts, world, terrain, clouds, rig, keyboard, mouse, joystick, overlays, frameStats,
   notice: showNotice, noticeText: () => notice.text, noticeUntil: () => notice.until, quality: () => qualityName,
-  hudOn: () => options.hud, audio,
+  hudOn: () => options.hud, audio, keyHint,
 });
 if (DEV) overlays.testPanel = createTestPanel(AIRCRAFT_LIST, (i, id) => devStart(i, false, id), (id) => applyTestDamage(session.sim.damage, id, session.sim.surfaces));
 
@@ -160,6 +165,18 @@ function setOptions(next, announce = false) {
   if (announce) showNotice(options.practice ? 'Practice mode: enemy fire cannot hurt you' : 'Practice mode off: enemy fire is real', 2500);
 }
 
+// New keys from the Controls screen: used at once, saved, and shown in the help.
+function setBindings(b) {
+  bindings = b;
+  keyboard.setBindings(b);
+  saveBindings(storage, b);
+  updateHelp();
+}
+
+function updateHelp() {
+  overlays.help.setText(helpText(bindings, joystick.mapping, BUTTON_LABELS));
+}
+
 function clearJam() {
   if (!session.combat.gunBank) return;
   const jammed = session.combat.gunBank.guns.some((g) => g.jammed);
@@ -184,7 +201,18 @@ const screens = {
     getOptions: () => options, quality: qualityName,
     onChange: (o) => setOptions(o),
     onQuality: (q) => applyQuality(q),
+    onControls: () => flow.go('controls'),
     onBack: () => flow.back(),
+  }),
+  controls: createControls({
+    keys: {
+      getBindings: () => bindings,
+      onBindings: (b) => setBindings(b),
+      captureNext: (f) => keyboard.captureNext(f),
+      onReset: () => setBindings(defaultBindings()),
+    },
+    joystick,
+    onBack: () => flow.go('options'),
   }),
   paused: createPause({
     onResume: () => flow.go('flying'),
@@ -223,6 +251,7 @@ flow.onChange((to, from) => {
   else if (screens[to]) screens[to].show();
   if (to !== 'flying' && document.pointerLockElement) document.exitPointerLock(); // the mouse is for the menus now
   overlays.help.allow(to === 'flying'); // the keys help only in flight
+  if (from === 'controls') updateHelp(); // the joystick's buttons may have changed too
   // Leaving a mission for the menu: the idle aircraft goes back on the airfield behind the menus.
   if (to === 'menu' && (from === 'paused' || from === 'results')) idle();
 });
@@ -257,6 +286,7 @@ function changeSkill(step) {
 // ---- the frame loop ------------------------------------------------------------------------
 
 idle();
+updateHelp();
 if (DEV && SKILL_ORDER.includes(params.get('skill'))) session.combat.skill = params.get('skill');
 screens.menu.show(careers, rankFor);
 overlays.help.allow(false);
@@ -269,8 +299,13 @@ function showError(err) {
 }
 window.addEventListener('error', (e) => showError(e.error ?? e.message));
 
+let controlsShownAt = 0;
 function step(realDt, now) {
   const alpha = session.update(realDt, flow.flying);
+  if (flow.state === 'controls' && now - controlsShownAt > 100) { // the joystick tab's live bars
+    controlsShownAt = now;
+    screens.controls.update();
+  }
   if (flow.flying && session.result) flow.go('results'); // the mission is over
   session.draw(realDt, alpha, now, !flow.flying);
 }

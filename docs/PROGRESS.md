@@ -2,7 +2,28 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 6 (game loop, HUD and audio) signed off by the product owner, in three commits: menus and missions (18b3036), cockpits and HUD (6e87681), sound (cae1ae3). Phases 0-6 are done. Phase 7 is next; it needs the product owner's brief and a plan in plan mode first.
+## Current status: Phase 7 (controls screen and assists): checkpoint 1 (the Controls screen) approved by the product owner and committed; checkpoint 2 (auto-rudder, stall and G warnings, structural damage switch) is next. Phases 0-6 are signed off (Phase 6 in 18b3036, 6e87681, cae1ae3).
+
+## Phase 7 checkpoint 1: the Controls screen (D61)
+
+**Brief (product owner):** a settings screen for rebinding both keyboard and joystick controls; options for auto-rudder, stall warning and a G warning / airframe structural damage (checkpoint 2).
+
+**Done:** **Options > Controls (keyboard and joystick)** opens a new screen with two tabs.
+- **Keyboard:** every flying key in four groups (Flying, Guns, View, Game), two keys each. Click a key, press the new one (Esc cancels); **x** clears it; **Reset keyboard to the defaults**. A key does one thing only: giving it to a new action takes it from the old one, and the line at the top says so ("E was rudder right: now unassigned there"). Esc, Tab and the F keys cannot be used. The defaults are exactly the keys the game had.
+- **Joystick:** the four axes with a live bar, **Learn** and **Flip**; the hat with **Learn**; sliders for the stick and twist dead zones and the curve; and every command with its button: **Set**, then press the button; **x** takes it off. Any keyboard command can now go on a button (new ones: look around, modern HUD, sound on/off, practice mode, invert pitch, graphics quality, show the keys; unassigned until you set them). A light shows each button while pressed. **Reset joystick to the defaults**.
+- Everything is saved at once and works straight away in flight. The **H** help, and messages such as "Gun jammed: press B", show your own keys and buttons. F2 still shows the live joystick test panel.
+- Fixed keys: Esc (pause and menus), F2 / F3 / F4, and the development quick starts.
+
+Checked in Chrome: rebinding rudder left to E (taken from rudder right) worked on screen, was remembered after a reload, E then gave left rudder and Q nothing, the arrows still flew, and the help showed "E / -" for the rudder; no console errors. (A bug found here, where a key lookup broke all flying keys after the change, was fixed and is now covered by a test of the real keyboard handler.) The joystick tab could not be tried with a stick in the automated browser: please try it. 1,112 tests pass (plus 15 known deviations); `npm run build` works.
+
+**Please test (about 10 minutes):**
+1. Main menu > **Options > Controls (keyboard and joystick)**. On **Keyboard**, click the key next to "Fire (hold)", press **F**. Fly a mission: F fires, Space does not. Press **H**: the help shows F.
+2. Give an action a key already in use (for example rudder left to **E**) and read the message; check rudder right is now empty.
+3. Reload the page: your keys are still there. Then **Reset keyboard to the defaults**.
+4. **Joystick** tab (stick plugged in, press the trigger once): move the stick and twist and watch the bars; press buttons and watch the lights. **Set** "Sound on / off", press a spare button (10, 11 or 12), fly and press it: the sound toggles. Try **Learn** and **Flip** on an axis, and the sliders.
+5. **Reset joystick to the defaults** at the end if you want your old set-up back.
+
+**Known issues:** none yet.
 
 Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft models (48df111), terrain (c3b90ec), airfields and detail (dee316a), and checkpoint 3 (quality levels, pixel budget, frame-rate readout, cirrus). Phase 4 must not start until the product owner confirms Phase 3.
 
@@ -388,7 +409,7 @@ Start: in Terminal, in the project folder, run `npm run dev`, open http://localh
 | Left / Right arrow | Roll |
 | Q / E | Rudder left / right |
 | Insert / Delete, or W / S | Throttle up / down (stays where left). Mac: fn+Delete is Delete. The mouse wheel works the throttle too. |
-| Page Up / Page Down, or T / G | Trim nose up / down. Mac: fn+Up is Page Up, fn+Down is Page Down. (Home/End until Phase 6.) |
+| Page Up / Page Down, or T / G | Trim nose up / down. Mac: fn+Up is Page Up, fn+Down is Page Down. (Home/End until Phase 6.) From Phase 7 every key in this table except Esc and the F keys can be changed in Options > Controls. |
 | 1 2 3 4 | Camel, SPAD, Dr.I, Albatros on the airfield, engine idling, chocks in (they come away when you open the throttle) |
 | Shift + 1-4 | The same aircraft in the air at 1,000 m, trimmed |
 | C | Camera: chase, free-look, cockpit |
@@ -455,4 +476,5 @@ Still open:
 - **Phase 4: Weapons and damage.** Done and signed off. Synchronised machine guns firing through the propeller, bullet ballistics with gravity and drag, limited ammunition and gun jams. Component damage to the engine, fuel, pilot, wings and control cables; damage changes the flight model. Acceptance: tests confirm bullet drop and travel time; a damaged wing causes a measurable roll.
 - **Phase 5: AI opponents.** Done and signed off. AI pilots on the player's flight model and controls, with patrol, engage, attack, evade and disengage; the six manoeuvres of the spec; Novice, Regular and Ace skill levels plus the Drone. Acceptance: see "Phase 5 checkpoint 3 and acceptance test" above.
 - **Phase 6: Game loop, HUD and audio.** Done and signed off. Start menu, mission setup, pause and results; period cockpit instruments and an optional modern HUD; engine, gun, wind and hit sounds. Acceptance: a full mission runs from menu to result screen and back without reloading the page.
-- Later phases: not yet defined (Phase 7 includes gamepad and joystick support, per the spec).
+- **Phase 7: Controls screen and assists.** In progress. Rebinding of keyboard and joystick controls; options for auto-rudder, stall warning, G warning and structural damage. Proposed acceptance: a key and a joystick button rebound on the Controls screen work in flight and survive a reload, and each of the four options visibly changes the flight when switched on.
+- Later phases: not yet defined (other gamepads, per the spec).

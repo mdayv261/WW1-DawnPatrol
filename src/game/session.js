@@ -34,7 +34,7 @@ const JOYSTICK_HINT = 'Joystick not detected: click the game window and press th
 
 // ctx: { parts (createScene's result), world, terrain, clouds, rig, keyboard, mouse, joystick,
 //        overlays: { debug, banner, readout, combatHud, testPanel, joystickPanel }, notice(text, ms),
-//        frameStats, quality(), hudOn(), audio (createAudio()) }
+//        frameStats, quality(), hudOn(), audio (createAudio()), keyHint(action): its key and button in words }
 export function createSession(ctx) {
   const { parts, world, terrain, clouds, rig, keyboard, mouse, joystick, overlays, notice } = ctx;
   const { scene, camera, renderer, ground, groundTile } = parts;
@@ -258,7 +258,7 @@ export function createSession(ctx) {
     for (const text of combat.messages.splice(0)) notice(text, 3000);
     for (const text of sim.damage.events.splice(0)) notice(text, 3000); // the player's own damage
     const jammed = Boolean(combat.gunBank?.guns.some((g) => g.jammed));
-    if (jammed && !s.wasJammed) notice('Gun jammed: press B (joystick button 9) to clear it', 3500);
+    if (jammed && !s.wasJammed) notice(`Gun jammed: press ${ctx.keyHint('clearJam')} to clear it`, 3500);
     s.wasJammed = jammed;
     camera.updateMatrixWorld();
     if (ctx.audio) feedAudio(paused);

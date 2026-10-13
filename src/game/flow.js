@@ -1,17 +1,18 @@
 // The game's screens and how one leads to another, with no drawing: the main menu, mission
-// setup, options, flying, paused and results. Also the mission settings the player chooses,
+// setup, options (and its controls screen), flying, paused and results. Also the mission settings the player chooses,
 // cleaned up and remembered in the browser. The screens themselves are in src/ui/screens/.
 
 import { AIRCRAFT_LIST } from '../aircraft/index.js';
 import { SKILL_ORDER } from '../aircraft/aiData.js';
 
-export const STATES = ['menu', 'setup', 'options', 'flying', 'paused', 'results'];
+export const STATES = ['menu', 'setup', 'options', 'controls', 'flying', 'paused', 'results'];
 
 // Where each screen may go next.
 const NEXT = {
   menu: ['setup', 'options'],
   setup: ['menu', 'flying'],
-  options: ['menu', 'paused'], // options goes back to where it was opened from
+  options: ['menu', 'paused', 'controls'], // options goes back to where it was opened from
+  controls: ['options'],
   flying: ['paused', 'results'],
   paused: ['flying', 'options', 'results', 'menu'],
   results: ['flying', 'setup', 'menu'],
@@ -32,7 +33,7 @@ export class Flow {
   go(to) {
     if (!this.can(to)) throw new Error(`Cannot go from ${this.state} to ${to}`);
     const from = this.state;
-    if (to === 'options') this.optionsFrom = from;
+    if (to === 'options' && from !== 'controls') this.optionsFrom = from; // back from controls keeps it
     this.state = to;
     for (const f of this.listeners) f(to, from);
     return to;

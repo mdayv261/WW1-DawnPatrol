@@ -12,7 +12,9 @@ export const STORE_KEY = 'dawnPatrol.joystick';
 // Bumped when a default changes, so a saved copy of the old default is replaced.
 // 2: the throttle slider is on axis 6 on the product owner's Extreme 3D Pro (was 3).
 // 3: the twist handle (rudder) is on axis 5 (was 2).
-export const MAPPING_VERSION = 3;
+// 4: any command can go on a button, a button can be unassigned (null), and "centre" is now
+//    "recentre" (the keyboard's name for it). Phase 7.
+export const MAPPING_VERSION = 4;
 
 export const DEFAULT_MAPPING = {
   axes: {
@@ -25,19 +27,31 @@ export const DEFAULT_MAPPING = {
   // How the 8-way hat is reported: 'axis' (one axis with 8 values), 'axes2'
   // (an x axis and a y axis) or 'buttons' (four buttons).
   hat: { type: 'axis', index: 9 },
-  // Buttons are 0-based here; the stick prints them 1-based (trigger = 1).
+  // Buttons are 0-based here; the stick prints them 1-based (trigger = 1). null = no button.
+  // fire, trimDown and trimUp work while held; the rest are the keyboard's one-shot commands
+  // (src/input/bindings.js) and do the same thing.
   buttons: {
     fire: 0, // trigger (held)
     camera: 1, // thumb button
     trimDown: 2, // top buttons (held)
     trimUp: 3,
     readout: 4,
-    centre: 5,
+    recentre: 5,
     pause: 6,
     restart: 7,
     clearJam: 8, // button 9 on the stick
+    look: null,
+    hud: null,
+    mute: null,
+    practice: null,
+    invertPitch: null,
+    quality: null,
+    help: null,
   },
 };
+
+// Buttons that work while held (the others act once per press).
+export const HELD_BUTTONS = new Set(['fire', 'trimDown', 'trimUp']);
 
 export const BUTTON_LABELS = {
   fire: 'Fire',
@@ -45,14 +59,37 @@ export const BUTTON_LABELS = {
   trimDown: 'Trim nose down',
   trimUp: 'Trim nose up',
   readout: 'Instrument readout',
-  centre: 'Centre mouse stick',
+  recentre: 'Centre mouse stick',
   pause: 'Pause',
   restart: 'Restart',
   clearJam: 'Clear gun jam',
+  look: 'Look around',
+  hud: 'Modern HUD',
+  mute: 'Sound on / off',
+  practice: 'Practice mode',
+  invertPitch: 'Invert pitch',
+  quality: 'Graphics quality',
+  help: 'Show the keys',
 };
 
 const num = (v, fallback, lo, hi) => (typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : fallback);
 const index = (v, fallback) => (Number.isInteger(v) && v >= 0 && v < 64 ? v : fallback);
+
+// Give button `i` (or null) to `action`. A button does one thing only, so it is taken from
+// wherever it was. Returns the action that lost it, or null. Changes the mapping in place.
+export function assignButton(mapping, action, i) {
+  let moved = null;
+  if (i !== null) {
+    for (const [name, b] of Object.entries(mapping.buttons)) {
+      if (b === i && name !== action) {
+        mapping.buttons[name] = null;
+        moved = name;
+      }
+    }
+  }
+  mapping.buttons[action] = i;
+  return moved;
+}
 
 // Merge a saved mapping over the defaults, ignoring anything malformed so a
 // corrupt saved value can never break the controls.
@@ -78,9 +115,28 @@ export function mergeMapping(saved) {
     };
     if ('deadzone' in d.axes[name]) axes[name].deadzone = num(a.deadzone, d.axes[name].deadzone, 0, 0.5);
   }
+  // Buttons. The player's own choices first (null = deliberately unassigned), then the
+  // defaults for the rest where the button is still free: a button does one thing only.
+  // "centre" was renamed "recentre".
+  const mine = { ...(s.buttons && typeof s.buttons === 'object' && !Array.isArray(s.buttons) ? s.buttons : {}) };
+  if (!('recentre' in mine) && 'centre' in mine) mine.recentre = mine.centre;
   const buttons = {};
-  for (const name of Object.keys(d.buttons)) buttons[name] = index(s.buttons?.[name], d.buttons[name]);
-  return { version: MAPPING_VERSION, axes, expo: num(s.expo, d.expo, 0, 1), hat: mergeHat(s.hat), buttons };
+  const used = new Set();
+  for (const name of Object.keys(d.buttons)) {
+    if (mine[name] === null) buttons[name] = null;
+    else if (index(mine[name], null) !== null && !used.has(mine[name])) {
+      buttons[name] = mine[name];
+      used.add(mine[name]);
+    }
+  }
+  for (const name of Object.keys(d.buttons)) {
+    if (name in buttons) continue;
+    const v = d.buttons[name];
+    buttons[name] = v !== null && !used.has(v) ? v : null;
+    if (buttons[name] !== null) used.add(v);
+  }
+  const ordered = Object.fromEntries(Object.keys(d.buttons).map((name) => [name, buttons[name]]));
+  return { version: MAPPING_VERSION, axes, expo: num(s.expo, d.expo, 0, 1), hat: mergeHat(s.hat), buttons: ordered };
 }
 
 function mergeHat(h) {
