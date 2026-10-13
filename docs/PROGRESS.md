@@ -2,7 +2,7 @@
 
 Read this at the start of every session.
 
-## Current status: Phases 0-7 are signed off. Added after Phase 7 at the product owner's request: the **Pilot Roll Call** (named pilots who rise in rank with victories), approved by the product owner and committed. The next phase needs the product owner's brief and a plan in plan mode first.
+## Current status: Phases 0-7 and the Pilot Roll Call are done. Being published on GitHub Pages (D64): https://mdayv261.github.io/WW1-DawnPatrol/ (repository github.com/mdayv261/WW1-DawnPatrol), deployed automatically on each push to main. The next phase needs the product owner's brief and a plan in plan mode first.
 
 ## Pilot Roll Call (D63)
 
