@@ -123,9 +123,12 @@ describe('the synchroniser', () => {
     expect(fired).toBeGreaterThan(50);
   });
 
-  it('the rate falls as the engine runs slower (longer waits for a gap)', () => {
-    const rate = (rpm) => fire(ac, rpm, 10, seededRandom(1), noJams).shots.filter((s) => s.gun === 0).length / 10;
-    expect(rate(200)).toBeLessThan(rate(1200));
+  it('a slowly turning propeller holds the guns back (each blade covers the muzzle for longer)', () => {
+    // Between 200 and 1,200 rpm the loss is a few percent and goes up and down as the gun's own
+    // rhythm drifts in and out of step with the blades; at a crawl each blade costs about a round.
+    const rate = (rpm, tweak = noJams) => fire(ac, rpm, 20, seededRandom(1), tweak).shots.filter((s) => s.gun === 0).length / 20;
+    const clear = rate(0, (bank) => { noJams(bank); bank.propAngle = Math.PI / 2; }); // stopped between the blades
+    expect(rate(20)).toBeLessThan(clear * 0.95); // about 11% fewer in all four aircraft
     expect(rate(1200)).toBeGreaterThan(7); // about 8.3 per gun per second at 500 per minute
   });
 

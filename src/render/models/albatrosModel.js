@@ -6,7 +6,7 @@
 import { Group } from 'three';
 import * as P from './parts.js';
 import * as M from './livery.js';
-import { anchors, wingPlan, wingY, addSurfaces } from './layout.js';
+import { cockpitSpan, anchors, wingPlan, wingY, addSurfaces } from './layout.js';
 
 const WOOD = 0xb98c52; // natural plywood fuselage
 const GREEN = 0x3e6a38; // nose and tail (Jasta 46)
@@ -27,25 +27,25 @@ export function createAlbatros(ac) {
   const metal = P.lambert(0x6e7378);
   const strutMat = P.lambert(0x9a7b4f);
   const wingMat = P.vertexColoured();
-  const wingColours = [LOZENGE_TOP, LOZENGE_TOP, LOZENGE_TOP, LOZENGE_TOP, LOZENGE_UNDER, LOZENGE_UNDER];
+  const wingColours = [LOZENGE_TOP, LOZENGE_TOP, LOZENGE_TOP, LOZENGE_UNDER, LOZENGE_UNDER, LOZENGE_UNDER]; // upper surface, underside
 
   const D = v.fuselageDepth;
   const W = v.fuselageWidth;
   const cd = v.cowlingDiameter;
   const stations = [
     { x: 0.36 * L, w: cd * 0.95, h: cd * 1.0, y: 0, p: 2 },
-    { x: 0.2 * L, w: W * 1.0, h: D * 0.95, y: 0.02, p: 2 },
-    { x: 0.0, w: W, h: D, y: 0.02, p: 2 },
+    // The nose broadens toward the engine (widened in Phase 6: it looked too narrow from the cockpit).
+    { x: 0.2 * L, w: W * 1.12, h: D * 0.95, y: 0.02, p: 2 },
+    { x: 0.0, w: W * 1.06, h: D, y: 0.02, p: 2 },
     { x: -0.15 * L, w: W * 0.9, h: D * 0.85, y: 0.0, p: 2 },
     { x: -0.3 * L, w: W * 0.55, h: D * 0.6, y: 0.02, p: 2 },
     { x: -0.48 * L, w: W * 0.28, h: D * 0.3, y: 0.05, p: 2 },
     { x: tailEnd, w: 0.08, h: 0.2, y: 0.08 },
   ];
   // The nose (cowling panels) is green, the rest natural wood: two lofts.
-  group.add(P.nose(P.fuselage(stations.slice(0, 2), green, 12))); // hidden in the cockpit view
-  const eyeX = -ac.cockpit.eyeBehind;
-  group.add(P.fuselageSplit(stations.slice(1), eyeX, wood, 12));
-  group.add(P.nose(P.cone(0.36, SPINNER, green, a.propX + SPINNER / 2, 12))); // spinner
+  group.add(P.fuselage(stations.slice(0, 2), green, 12));
+  group.add(P.fuselageSplit(stations.slice(1), cockpitSpan(ac), wood, 12));
+  group.add(P.cone(0.36, SPINNER, green, a.propX + SPINNER / 2, 12)); // spinner
   group.add(P.nose(P.box(0.5, 0.02, 0.36, dark, -0.02 * L, D / 2 - 0.005, 0))); // cockpit opening
   group.add(P.strut([0.2 * L, D * 0.35, 0.3], [0.02 * L, D * 0.75, 0.26], 0.07, 0.07, metal)); // exhaust pipe
 
@@ -107,5 +107,5 @@ export function createAlbatros(ac) {
 
   const prop = P.propeller(ac.propeller.diameter, a.propX, P.lambert(0x6b4b2a), { hub: 0.12, chord: 0.18 });
   group.add(prop);
-  return { group, prop, controls };
+  return { group, prop, controls, stations: stations.slice(1) };
 }

@@ -48,9 +48,10 @@ export function createSetup({ config, onFly, onBack }) {
 }
 
 // Options: volume, graphics quality, HUD, practice mode. Each change is applied at once.
-export function createOptions({ options, quality, onChange, onQuality, onBack }) {
+// getOptions() is read each time the screen opens, so keys pressed in flight (U, P) show here.
+export function createOptions({ getOptions, quality, onChange, onQuality, onBack }) {
   const s = makeScreen();
-  const o = { ...options };
+  const o = { ...getOptions() };
   heading(s.card, 'Options');
   const vol = el('input');
   vol.type = 'range';
@@ -66,16 +67,23 @@ export function createOptions({ options, quality, onChange, onQuality, onBack })
   row.append(l, vol);
   s.card.appendChild(row);
   choice(s.card, 'Graphics quality', QUALITY_ORDER.map((q) => [q, q[0].toUpperCase() + q.slice(1)]), quality, (v) => onQuality(v));
-  choice(s.card, 'Modern HUD', [['off', 'Off (period instruments only)'], ['on', 'On']], o.hud ? 'on' : 'off', (v) => {
+  const hud = choice(s.card, 'Modern HUD', [['off', 'Off (period instruments only)'], ['on', 'On']], o.hud ? 'on' : 'off', (v) => {
     o.hud = v === 'on';
     onChange({ ...o });
   });
-  choice(s.card, 'Practice mode', [['off', 'Off'], ['on', 'On (enemy fire cannot hurt you)']], o.practice ? 'on' : 'off', (v) => {
+  const practice = choice(s.card, 'Practice mode', [['off', 'Off'], ['on', 'On (enemy fire cannot hurt you)']], o.practice ? 'on' : 'off', (v) => {
     o.practice = v === 'on';
     onChange({ ...o });
   });
   buttons(s.card, [['Back', onBack]]);
-  return s;
+  const show = s.show;
+  return { ...s, show() {
+    Object.assign(o, getOptions());
+    vol.value = String(Math.round(o.volume * 100));
+    hud.value = o.hud ? 'on' : 'off';
+    practice.value = o.practice ? 'on' : 'off';
+    show();
+  } };
 }
 
 export function createPause({ onResume, onRestart, onOptions, onEnd, onQuit }) {

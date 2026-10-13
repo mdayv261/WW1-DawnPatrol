@@ -6,7 +6,8 @@
 import { Group } from 'three';
 import * as P from './parts.js';
 import * as M from './livery.js';
-import { anchors, wingPlan, wingY, strutBay, addSurfaces } from './layout.js';
+import { cockpitSpan, cockpitStrutTwins, anchors, wingPlan, wingY, strutBay, addSurfaces } from './layout.js';
+import { COCKPITS } from '../../aircraft/cockpits.js';
 
 const GREEN = 0x56633a; // upper surfaces and body (Smithsonian: green and brown camouflage)
 const GREY = 0xb3b6ae; // undersurfaces (Smithsonian: gray)
@@ -23,7 +24,7 @@ export function createSpad(ac) {
   const dark = P.lambert(0x222222);
   const wood = P.lambert(WOOD);
   const wingMat = P.vertexColoured();
-  const wingColours = [GREEN, GREEN, GREEN, GREEN, GREY, GREY];
+  const wingColours = [GREEN, GREEN, GREEN, GREY, GREY, GREY]; // upper surface, underside
 
   const D = v.fuselageDepth;
   const W = v.fuselageWidth;
@@ -37,25 +38,32 @@ export function createSpad(ac) {
     { x: -0.49 * L, w: W * 0.3, h: D * 0.32, y: 0 },
     { x: a.tailEnd, w: 0.08, h: 0.2, y: 0.05 },
   ];
-  const eyeX = -ac.cockpit.eyeBehind;
-  group.add(P.fuselageSplit(stations, eyeX, body, 10));
-  group.add(P.nose(P.box(0.06, cd * 0.85, cd * 0.7, metal, a.noseX - 0.01, 0, 0))); // radiator face
-  group.add(P.nose(P.cylinderX(0.12, 0.14, 0.1, metal, a.propX - 0.04, 0, 0, 10))); // propeller boss
-  for (const s of [-1, 1]) group.add(P.nose(P.box(0.5, 0.06, 0.06, metal, 0.18 * L, cd * 0.45, s * 0.2))); // exhaust pipes
+  group.add(P.fuselageSplit(stations, cockpitSpan(ac), body, 10));
+  group.add(P.box(0.06, cd * 0.85, cd * 0.7, metal, a.noseX - 0.01, 0, 0)); // radiator face
+  group.add(P.cylinderX(0.12, 0.14, 0.1, metal, a.propX - 0.04, 0, 0, 10)); // propeller boss
+  for (const s of [-1, 1]) group.add(P.box(0.5, 0.06, 0.06, metal, 0.18 * L, cd * 0.45, s * 0.2)); // exhaust pipes
   group.add(P.nose(P.box(0.5, 0.02, 0.36, dark, -0.03 * L, D / 2 - 0.005, 0))); // cockpit opening
 
   const [upper, lower] = wingPlan(ac);
   const controls = { ailerons: [], elevators: [], rudder: null };
   const AILERON = { from: 0.5, to: 0.88, depth: 0.27 }; // upper wing only (an assumption: no source found)
-  group.add(P.wing({ ...upper, thickness: 0.08, tip: 'round', colors: wingColours, material: wingMat, cuts: [AILERON] }));
-  addSurfaces(group, controls.ailerons, upper, AILERON, 0.08, wingColours, wingMat, 'aileron');
+  // The upper wing and its ailerons in their own group, so the cockpit view can narrow it (see COCKPITS).
+  const upperWing = new Group();
+  upperWing.userData.trailingX = upper.x - upper.chord / 2;
+  upperWing.add(P.wing({ ...upper, thickness: 0.08, tip: 'round', colors: wingColours, material: wingMat, cuts: [AILERON] }));
+  addSurfaces(upperWing, controls.ailerons, upper, AILERON, 0.08, wingColours, wingMat, 'aileron');
+  group.add(upperWing);
   group.add(P.wing({ ...lower, thickness: 0.08, tip: 'round', colors: wingColours, material: wingMat }));
   const half = upper.span / 2;
-  for (const f of [0.3, 0.68]) for (const m of strutBay(upper, lower, f * half, wood, { spread: 0.2, chordwise: 0.1 })) group.add(m);
-  for (const s of [-1, 1]) {
-    group.add(P.strut([upper.x + 0.3, D / 2 - 0.05, s * 0.2], [upper.x + 0.3, wingY(upper, 0.5) - 0.05, s * 0.6], 0.06, 0.035, wood));
-    group.add(P.strut([upper.x - 0.3, D / 2 - 0.05, s * 0.18], [upper.x - 0.3, wingY(upper, 0.5) - 0.05, s * 0.5], 0.06, 0.035, wood));
+  const struts = [];
+  for (const f of [0.3, 0.68]) struts.push(...strutBay(upper, lower, f * half, wood, { spread: 0.2, chordwise: 0.1 }));
+  for (const s of [-1, 1]) { // cabane struts from the fuselage to the upper wing
+    struts.push(P.strut([upper.x + 0.3, D / 2 - 0.05, s * 0.2], [upper.x + 0.3, wingY(upper, 0.5) - 0.05, s * 0.6], 0.06, 0.035, wood));
+    struts.push(P.strut([upper.x - 0.3, D / 2 - 0.05, s * 0.18], [upper.x - 0.3, wingY(upper, 0.5) - 0.05, s * 0.5], 0.06, 0.035, wood));
   }
+  for (const m of struts) group.add(m);
+  // The cockpit view draws the upper wing shorter: struts there that reach into the shortened wing.
+  for (const m of cockpitStrutTwins(struts, upper, COCKPITS.spad13.upperWingChord, wood)) group.add(m);
 
   // Tail: rounded tailplane, fin and rudder.
   const tailPlan = { x: -0.55 * L, y: 0.05, span: v.tailSpan, chord: v.tailChord, dihedral: 0 };
@@ -102,5 +110,5 @@ export function createSpad(ac) {
 
   const prop = P.propeller(ac.propeller.diameter, a.propX, P.lambert(0x6b4b2a), { hub: 0.14, chord: 0.18 });
   group.add(prop);
-  return { group, prop, controls };
+  return { group, prop, controls, stations, upperWing };
 }

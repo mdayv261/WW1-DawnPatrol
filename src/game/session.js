@@ -4,7 +4,8 @@
 // left over between missions.
 
 import { Vector3 } from 'three';
-import { createAircraftMesh, setControlSurfaces } from '../render/aircraftMesh.js';
+import { createAircraftMesh, setControlSurfaces, setUpperWingChord } from '../render/aircraftMesh.js';
+import { COCKPITS } from '../aircraft/cockpits.js';
 import { createCockpit } from '../render/cockpit.js';
 import { createInstrumentPanel } from '../ui/instrumentPanel.js';
 import { readoutText } from '../ui/instrumentMath.js';
@@ -23,13 +24,17 @@ import { damagedDeflections, damageLines, pilotDead } from '../physics/damage.js
 import { showDamage } from '../render/damageView.js';
 import { perfLines } from '../ui/perfStats.js';
 import { startMission } from './mission.js';
-import { applyTimeOfDay } from '../render/sky.js';
+import { enemyLabel } from '../ui/hudMath.js';
+import { applyTimeOfDay, skyFor } from '../render/sky.js';
+import { skyEnvironment } from '../render/cockpit/environment.js';
+import { setEnvironment } from '../render/cockpit/materials.js';
+import { QUALITY_LEVELS } from '../render/quality.js';
 
 const JOYSTICK_HINT = 'Joystick not detected: click the game window and press the trigger (Chrome shows it only after a button press)';
 
 // ctx: { parts (createScene's result), world, terrain, clouds, rig, keyboard, mouse, joystick,
 //        overlays: { debug, banner, readout, combatHud, testPanel, joystickPanel }, notice(text, ms),
-//        frameStats, quality() }
+//        frameStats, quality(), hudOn() }
 export function createSession(ctx) {
   const { parts, world, terrain, clouds, rig, keyboard, mouse, joystick, overlays, notice } = ctx;
   const { scene, camera, renderer, ground, groundTile } = parts;
@@ -51,8 +56,11 @@ export function createSession(ctx) {
     watcher: null, // its watcher (null for the idle aircraft behind the menus)
     result: null, // set when the mission has ended
     model: null,
-    cockpit: null,
+    cockpit: null, // { group, materials, animate }
     panel: null,
+    sky: skyFor('day'), // the time of day's colours and sun
+    env: null, // the sky picture the cockpit's metal and glass reflect
+    shadowSize: 0, // the sun's shadow map size in use (0 = no shadows)
     runner: null, // development: a scripted test pilot
     scenarioLabel: '',
     wasJammed: false,
@@ -65,9 +73,21 @@ export function createSession(ctx) {
     if (s.model) scene.remove(s.model.group);
     s.model = createAircraftMesh(ac);
     scene.add(s.model.group);
-    s.panel = createInstrumentPanel(ac);
-    s.cockpit = createCockpit(ac, s.panel.texture);
-    s.model.group.add(s.cockpit);
+    s.panel = createInstrumentPanel(ac, ctx.quality() === 'high' ? 512 : 256);
+    s.cockpit = createCockpit(ac, s.panel, s.model);
+    s.model.group.add(s.cockpit.group);
+    // Shadows on the cockpit come from the cockpit itself and the wings and struts above it.
+    s.model.group.traverse((o) => { if (o.isMesh) o.castShadow = !o.material.transparent; });
+    if (!s.env) s.env = skyEnvironment(renderer, s.sky);
+    setEnvironment(s.cockpit.materials, s.env);
+  }
+
+  // The light of the mission's time of day, and the sky the cockpit reflects.
+  function setTimeOfDay(time) {
+    s.sky = applyTimeOfDay({ ...parts, clouds }, time);
+    s.env?.dispose();
+    s.env = skyEnvironment(renderer, s.sky);
+    setEnvironment(s.cockpit.materials, s.env);
   }
 
   function afterStart(ac, input) {
@@ -89,7 +109,7 @@ export function createSession(ctx) {
     buildAircraft(ac);
     const { input, watcher } = startMission(config, { sim, combat, world });
     s.watcher = watch ? watcher : null;
-    applyTimeOfDay({ ...parts, clouds }, config.timeOfDay);
+    setTimeOfDay(config.timeOfDay);
     s.scenarioLabel = `${ac.name}: mission`;
     afterStart(ac, input);
   };
@@ -149,6 +169,26 @@ export function createSession(ctx) {
     }).alpha;
   };
 
+  // Sun shadows in the cockpit view (Medium and High quality): the sun's shadow camera is a small
+  // box round the cockpit, moved with the aircraft (a directional light's position only sets its direction).
+  const sunDir = new Vector3();
+  function cockpitShadows(inCockpit, position) {
+    const size = QUALITY_LEVELS[ctx.quality()]?.shadowMap ?? 0;
+    const on = inCockpit && size > 0;
+    renderer.shadowMap.autoUpdate = on;
+    if (s.shadowSize !== size) { // the quality changed: a new shadow map, or none
+      s.shadowSize = size;
+      parts.sun.castShadow = size > 0;
+      if (size > 0) parts.sun.shadow.mapSize.set(size, size);
+      parts.sun.shadow.map?.dispose();
+      parts.sun.shadow.map = null;
+    }
+    if (!on) return;
+    sunDir.set(...s.sky.sunDirection).normalize();
+    parts.sun.target.position.copy(position);
+    parts.sun.position.copy(position).addScaledVector(sunDir, 6);
+  }
+
   // Draw one frame. paused: the game is paused or a menu is up (no gun sight, no messages).
   s.draw = (realDt, alpha, now, paused) => {
     const { position, quaternion } = sim.interpolate(alpha);
@@ -167,8 +207,13 @@ export function createSession(ctx) {
 
     terrain.update(camera.position, 3); // new ground, a few milliseconds a frame at most
     clouds.update(camera.position, now / 1000);
-    s.cockpit.visible = rig.mode === 'cockpit';
-    for (const part of model.hideInCockpit) part.visible = !s.cockpit.visible;
+    const inCockpit = rig.mode === 'cockpit';
+    s.cockpit.group.visible = inCockpit;
+    for (const part of model.hideInCockpit) part.visible = !inCockpit;
+    for (const part of model.showInCockpit) part.visible = inCockpit;
+    setUpperWingChord(model, inCockpit ? (COCKPITS[sim.aircraft.id].upperWingChord ?? 1) : 1);
+    if (inCockpit) s.cockpit.animate(sim.surfaces, s.panel.values);
+    cockpitShadows(inCockpit, position);
     rig.update(sim.aircraft, position, quaternion, realDt);
 
     // The fight: tracers, strikes, enemy aircraft, the gun sight and the gun status.
@@ -181,7 +226,11 @@ export function createSession(ctx) {
     if (jammed && !s.wasJammed) notice('Gun jammed: press B (joystick button 9) to clear it', 3500);
     s.wasJammed = jammed;
     camera.updateMatrixWorld();
-    overlays.combatHud.update(combat.sightPoint(sim, sightPoint), camera, !sim.crashed && !paused, paused ? '' : combatText(combat, sim.damage));
+    const hudOn = ctx.hudOn() && !paused;
+    overlays.hud.show(hudOn);
+    // With the modern HUD on, it carries the guns, fuel and damage, so the status line is hidden.
+    // In the cockpit you aim with the guns' own ring-and-bead sight, so the drawn gun sight is only shown outside.
+    overlays.combatHud.update(combat.sightPoint(sim, sightPoint), camera, !sim.crashed && !paused && !inCockpit, paused || hudOn ? '' : combatText(combat, sim.damage));
 
     if (now - s.lastOverlay > 100) {
       s.lastOverlay = now;
@@ -203,8 +252,16 @@ export function createSession(ctx) {
       if (import.meta.env.DEV && overlays.testPanel?.visible) overlays.testPanel.update(sim, s.runner, s.scenarioLabel);
       if (overlays.joystickPanel.visible) overlays.joystickPanel.update();
       const heading = attitude(sim.state).heading;
-      if (rig.mode === 'cockpit') s.panel.update(sim.diag, heading);
-      overlays.readout.set(paused ? '' : readoutText(sim.aircraft, sim.diag, heading), rig.mode !== 'cockpit');
+      if (hudOn) {
+        const me = sim.state.position;
+        overlays.hud.update({
+          aircraft: sim.aircraft, diag: sim.diag, velocityY: sim.state.velocity.y, heading, throttle: sim.surfaces?.throttle ?? 0, damage: sim.damage,
+          gunText: combat.gunBank ? `GUNS ${combat.gunBank.statusText()}` : '', camera,
+          enemies: combat.agents.filter((a) => !a.crashed).map((a) => ({ position: a.state.position, label: enemyLabel(a.aircraft.name, a.state.position.distanceTo(me)) })),
+        });
+      }
+      if (inCockpit) s.panel.update({ diag: sim.diag, heading, damage: sim.damage, throttle: sim.surfaces?.throttle ?? 0, time: sim.time });
+      overlays.readout.set(paused ? '' : readoutText(sim.aircraft, sim.diag, heading), !inCockpit);
     }
     renderer.render(scene, camera);
   };

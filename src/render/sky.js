@@ -12,6 +12,10 @@ export const SKY = {
   sunIntensity: 2.2,
   skyLight: 0xbfd8f0, // the soft light from the sky...
   groundLight: 0x5d7f3a, // ...and bounced up from the ground
+  // Sunlight bounced up off the fields onto anything facing down (wing and fuselage undersides): a light
+  // that shines only upward, so undersides show their colours in shade without brightening the ground.
+  bounceColour: 0xe2dccb,
+  bounceIntensity: 2.2,
   ambientIntensity: 1.0,
   hazeNear: 3000, // m: where the haze starts to hide the ground
   hazeFar: 25000, // m: where it hides everything
@@ -29,11 +33,11 @@ export const TIME_OF_DAY = {
   day: {},
   dawn: {
     horizon: 0xe6c3a6, zenith: 0x4b6ea3, sunDirection: [0.92, 0.14, -0.2], sunColour: 0xffc890, sunIntensity: 1.6,
-    skyLight: 0xc8b8c4, groundLight: 0x4e5a34, ambientIntensity: 0.75, hazeNear: 2200, hazeFar: 21000, cirrus: 0.6, cloudTint: 0xf2d6c2,
+    skyLight: 0xc8b8c4, groundLight: 0x4e5a34, bounceColour: 0xe0cdb6, bounceIntensity: 1.5, ambientIntensity: 0.75, hazeNear: 2200, hazeFar: 21000, cirrus: 0.6, cloudTint: 0xf2d6c2,
   },
   dusk: {
     horizon: 0xe2a47c, zenith: 0x34507e, sunDirection: [-0.9, 0.12, 0.3], sunColour: 0xff9c5c, sunIntensity: 1.4,
-    skyLight: 0xb89ca8, groundLight: 0x46502c, ambientIntensity: 0.65, hazeNear: 2500, hazeFar: 22000, cirrus: 0.7, cloudTint: 0xe8b090,
+    skyLight: 0xb89ca8, groundLight: 0x46502c, bounceColour: 0xdcc2a8, bounceIntensity: 1.3, ambientIntensity: 0.65, hazeNear: 2500, hazeFar: 22000, cirrus: 0.7, cloudTint: 0xe8b090,
   },
 };
 
@@ -56,6 +60,10 @@ export function applyTimeOfDay(parts, time) {
   parts.hemisphere.color.set(s.skyLight);
   parts.hemisphere.groundColor.set(s.groundLight);
   parts.hemisphere.intensity = s.ambientIntensity;
+  if (parts.bounce) {
+    parts.bounce.groundColor.set(s.bounceColour);
+    parts.bounce.intensity = s.bounceIntensity;
+  }
   const u = parts.sky.material.uniforms;
   u.horizon.value.set(s.horizon);
   u.zenith.value.set(s.zenith);

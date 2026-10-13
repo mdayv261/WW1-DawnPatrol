@@ -53,8 +53,8 @@ export const camel = {
   },
   // Pilot's eye, body axes from the centre of gravity (E). Rendering only.
   cockpit: {
-    eyeBehind: 0.63, // m behind the centre of gravity
-    eyeAbove: 0.6, // m above the centre of gravity
+    eyeBehind: 0.72, // m behind the centre of gravity (E) far enough back to see the whole instrument board, near enough that the upper wing fills the top of the view
+    eyeAbove: 0.76, // m above the centre of gravity (E) a little above the top of the guns, so the pilot sights along them
   },
   // Shape for the 3D model (rendering only), m unless noted. M = sourced, E = estimate.
   visual: {
@@ -82,7 +82,7 @@ export const camel = {
     rounds: 250, // per gun, King, 250 rounds per gun at first (M)
     synchroniser: 'Sopwith-Kauper rod gear on early aircraft, Constantinesco hydraulic gear later (M)',
     muzzleX: 1.72, // m ahead of the centre of gravity: about 0.30 of the length, just behind the propeller plane (E)
-    muzzleY: 0.56, // m above the centre of gravity: on top of the cowling (E)
+    muzzleY: 0.645, // m above the centre of gravity: on top of the cowling (E) its top is 0.60 m (cowling centre 0.05 + radius 0.55), plus the jacket's radius
     muzzleZ: 0.13, // m each side of the centre line: the two guns sit this far left and right (E)
   },
   // Fuel carried (kg) and the structure's strength; see docs/AIRCRAFT_DATA.md for sources and reasons.

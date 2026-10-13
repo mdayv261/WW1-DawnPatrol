@@ -42,8 +42,19 @@ export function createScene(canvas, maxPixels = Infinity) {
   const sun = new THREE.DirectionalLight(SKY.sunColour, SKY.sunIntensity);
   sun.position.copy(sunDirection()).multiplyScalar(1000);
   scene.add(sun);
+  scene.add(sun.target);
+  // The sun casts shadows only on the cockpit (see game/session.js): a small box round it.
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
+  renderer.shadowMap.autoUpdate = false;
+  Object.assign(sun.shadow.camera, { left: -1.8, right: 1.8, top: 1.8, bottom: -1.8, near: 0.5, far: 14 });
+  sun.shadow.bias = -0.0004;
+  sun.shadow.normalBias = 0.01;
   const hemisphere = new THREE.HemisphereLight(SKY.skyLight, SKY.groundLight, SKY.ambientIntensity);
   scene.add(hemisphere);
+  // Sunlight bounced up from the fields: black from above, so it lights only surfaces facing down.
+  const bounce = new THREE.HemisphereLight(0x000000, SKY.bounceColour, SKY.bounceIntensity);
+  scene.add(bounce);
 
   // Placeholder viewpoint: 300 m up, looking toward the horizon.
   const camera = new THREE.PerspectiveCamera(60, 1, 1, CAMERA_FAR);
@@ -65,7 +76,7 @@ export function createScene(canvas, maxPixels = Infinity) {
   resize();
 
   return {
-    renderer, scene, camera, ground, groundTile: FIELD_SIZE, view, sun, hemisphere, sky,
+    renderer, scene, camera, ground, groundTile: FIELD_SIZE, view, sun, hemisphere, bounce, sky,
     setMaxPixels(n) {
       pixelBudget = n;
       resize();

@@ -28,7 +28,7 @@ describe('times of day', () => {
     const scene = new Scene();
     scene.background = new Color(SKY.horizon);
     scene.fog = new Fog(SKY.horizon, SKY.hazeNear, SKY.hazeFar);
-    const parts = { scene, sun: new DirectionalLight(), hemisphere: new HemisphereLight(), sky: createSky(1000), clouds: { setHaze: (...a) => { parts.haze = a; } } };
+    const parts = { scene, sun: new DirectionalLight(), hemisphere: new HemisphereLight(), bounce: new HemisphereLight(0x000000), sky: createSky(1000), clouds: { setHaze: (...a) => { parts.haze = a; } } };
     applyTimeOfDay(parts, 'dusk');
     const d = skyFor('dusk');
     expect(scene.background.getHex()).toBe(d.horizon);
@@ -37,6 +37,11 @@ describe('times of day', () => {
     expect(parts.sun.intensity).toBe(d.sunIntensity);
     expect(parts.sun.position.x).toBeLessThan(0);
     expect(parts.hemisphere.intensity).toBe(d.ambientIntensity);
+    // The light bounced up from the fields: only from below (black from above), dimmer at dusk.
+    expect(parts.bounce.groundColor.getHex()).toBe(d.bounceColour);
+    expect(parts.bounce.intensity).toBe(d.bounceIntensity);
+    expect(parts.bounce.color.getHex()).toBe(0);
+    expect(d.bounceIntensity).toBeLessThan(SKY.bounceIntensity);
     expect(parts.sky.material.uniforms.zenith.value.getHex()).toBe(d.zenith);
     expect(parts.haze[0]).toBe(d.horizon);
     expect(parts.haze[3]).toBe(d.cloudTint);

@@ -51,7 +51,7 @@ export const spad13 = {
   // Pilot's eye, body axes from the centre of gravity (E). Rendering only.
   cockpit: {
     eyeBehind: 0.69, // m behind the centre of gravity
-    eyeAbove: 0.6, // m above the centre of gravity
+    eyeAbove: 0.64, // m above the centre of gravity (E) a little above the top of the guns, so the pilot sights along them
   },
   // Shape for the 3D model (rendering only), m unless noted. M = sourced, E = estimate.
   visual: {

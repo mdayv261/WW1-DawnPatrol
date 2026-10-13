@@ -7,7 +7,7 @@
 import { Group } from 'three';
 import * as P from './parts.js';
 import * as M from './livery.js';
-import { anchors, wingPlan, wingY, singleStrut, addSurfaces } from './layout.js';
+import { cockpitSpan, anchors, wingPlan, wingY, singleStrut, addSurfaces } from './layout.js';
 
 const RED = 0xc4281c; // vermilion (NASM fabric from 425/17)
 const BLACK = 0x111111;
@@ -25,16 +25,16 @@ export function createDr1(ac) {
   const D = v.fuselageDepth;
   const W = v.fuselageWidth;
   const stations = [
-    { x: 0.272 * L, w: W * 1.0, h: D * 1.0, y: 0, p: 4 },
-    { x: 0.1 * L, w: W * 1.05, h: D * 1.05, y: 0.02, p: 4 },
+    // The nose broadens toward the engine (widened in Phase 6: it looked too narrow from the cockpit).
+    { x: 0.272 * L, w: W * 1.12, h: D * 1.0, y: 0, p: 4 },
+    { x: 0.1 * L, w: W * 1.15, h: D * 1.05, y: 0.02, p: 4 },
     { x: -0.1 * L, w: W * 0.95, h: D * 0.95, y: 0.0, p: 4 },
     { x: -0.3 * L, w: W * 0.6, h: D * 0.6, y: 0.02, p: 4 },
     { x: -0.49 * L, w: W * 0.28, h: D * 0.32, y: 0.05, p: 4 },
     { x: a.tailEnd, w: 0.08, h: 0.2, y: 0.08 },
   ];
-  const eyeX = -ac.cockpit.eyeBehind;
-  group.add(P.fuselageSplit(stations, eyeX, red, 10));
-  group.add(P.nose(P.cylinderX(v.cowlingDiameter / 2, v.cowlingDiameter / 2 * 0.98, 0.5, red, a.noseX - 0.25, 0.02))); // hidden in the cockpit view
+  group.add(P.fuselageSplit(stations, cockpitSpan(ac), red, 10));
+  group.add(P.cylinderX(v.cowlingDiameter / 2, v.cowlingDiameter / 2 * 0.98, 0.5, red, a.noseX - 0.25, 0.02));
   group.add(P.nose(P.box(0.5, 0.02, 0.34, dark, -0.05 * L, D / 2 - 0.005, 0))); // cockpit opening
 
   // Three wings, top first; middle wing at the top of the fuselage.
@@ -46,7 +46,9 @@ export function createDr1(ac) {
   for (const m of [...singleStrut(upper, middle, 1.9, red, { chordwise: 0.12 }), ...singleStrut(middle, lower, 1.9, red, { chordwise: 0.12 })]) group.add(m);
   for (const s of [-1, 1]) { // inverted-V cabane struts to the upper wing
     group.add(P.strut([upper.x + 0.25, middle.y + 0.05, s * 0.18], [upper.x + 0.1, wingY(upper, 0.7) - 0.05, s * 0.75], 0.06, 0.035, red));
-    group.add(P.strut([upper.x - 0.25, middle.y + 0.05, s * 0.18], [upper.x - 0.1, wingY(upper, 0.7) - 0.05, s * 0.75], 0.06, 0.035, red));
+    const rear = P.strut([upper.x - 0.25, middle.y + 0.05, s * 0.18], [upper.x - 0.1, wingY(upper, 0.7) - 0.05, s * 0.75], 0.06, 0.035, red);
+    if (s > 0) rear.name = 'cabaneRear'; // the airspeed dial is clamped to it (render/cockpit/build.js)
+    group.add(rear);
   }
 
   // Tail: tailplane and a comma-shaped rudder (no fixed fin).
@@ -82,5 +84,5 @@ export function createDr1(ac) {
 
   const prop = P.propeller(ac.propeller.diameter, a.propX, P.lambert(0x6b4b2a), { hub: 0.14, chord: 0.17 });
   group.add(prop);
-  return { group, prop, controls };
+  return { group, prop, controls, stations };
 }

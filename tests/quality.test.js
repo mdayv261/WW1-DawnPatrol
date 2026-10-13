@@ -67,7 +67,7 @@ describe('pixel budget', () => {
 
 describe('sky definition', () => {
   it('has real colours, a sun above the horizon and haze that starts before it ends', () => {
-    for (const k of ['horizon', 'zenith', 'sunColour', 'skyLight', 'groundLight']) expect(Number.isInteger(SKY[k])).toBe(true);
+    for (const k of ['horizon', 'zenith', 'sunColour', 'skyLight', 'groundLight', 'bounceColour']) expect(Number.isInteger(SKY[k])).toBe(true);
     const sun = sunDirection();
     expect(sun.length()).toBeCloseTo(1, 9);
     expect(sun.y).toBeGreaterThan(0.2);

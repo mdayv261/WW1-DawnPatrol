@@ -10,15 +10,29 @@ import { createAlbatros } from './models/albatrosModel.js';
 
 const BUILDERS = { camel: createCamel, spad13: createSpad, dr1: createDr1, albatros: createAlbatros };
 
-// Returns { group, prop, hideInCockpit }: prop is the spinning propeller group;
-// hideInCockpit lists the nose parts to hide in the cockpit view.
+// Returns { group, prop, hideInCockpit, showInCockpit }: prop is the spinning propeller group;
+// hideInCockpit lists the parts to hide in the cockpit view, showInCockpit those shown only there.
 export function createAircraftMesh(ac) {
   const build = BUILDERS[ac.id];
   if (!build) throw new Error(`No 3D model for aircraft "${ac.id}"`);
   const model = build(ac);
   const hideInCockpit = [];
-  model.group.traverse((o) => { if (o.userData?.cockpitHide) hideInCockpit.push(o); });
-  return { ...model, hideInCockpit, controls: model.controls };
+  const showInCockpit = [];
+  model.group.traverse((o) => {
+    if (o.userData?.cockpitHide) hideInCockpit.push(o);
+    if (o.userData?.cockpitOnly) showInCockpit.push(o);
+  });
+  return { ...model, hideInCockpit, showInCockpit, controls: model.controls };
+}
+
+// Shorten the upper wing front to back by `factor` (1 = as built), keeping its trailing edge (the
+// edge nearest the pilot) in place, for the cockpit view (COCKPITS: upperWingChord). Only the
+// drawing changes; the flight model and hit boxes do not.
+export function setUpperWingChord(model, factor) {
+  const w = model.upperWing;
+  if (!w || w.scale.x === factor) return;
+  w.scale.x = factor;
+  w.position.x = w.userData.trailingX * (1 - factor);
 }
 
 // Move the model's control surfaces to the positions the physics has them at.

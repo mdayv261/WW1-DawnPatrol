@@ -17,8 +17,9 @@ const hex = (c) => [((c >> 16) & 255) / 255, ((c >> 8) & 255) / 255, (c & 255) /
 
 // A tube through a list of rings (each ring a list of [x, y, z] points, the
 // same count in every ring), optionally closed at the ends. Flat-shaded.
-// `colors`: optional list of colours, one per ring point, for vertex colouring.
-export function loft(rings, { capStart = true, capEnd = true, colors = null } = {}) {
+// `colors`: optional list of colours, one per ring point, for vertex colouring; with `faceColors`
+// each colour fills the whole face from that ring point to the next (no blending between them).
+export function loft(rings, { capStart = true, capEnd = true, colors = null, faceColors = false } = {}) {
   const positions = [];
   const shades = [];
   const n = rings[0].length;
@@ -33,8 +34,9 @@ export function loft(rings, { capStart = true, capEnd = true, colors = null } = 
       const b = rings[i][k];
       const c = rings[i + 1][k];
       const d = rings[i + 1][j];
-      push(a, j); push(b, k); push(c, k);
-      push(a, j); push(c, k); push(d, j);
+      const kc = faceColors ? j : k; // the face's own colour, or a blend from point to point
+      push(a, j); push(b, kc); push(c, kc);
+      push(a, j); push(c, kc); push(d, j);
     }
   }
   const cap = (ring, flip) => {
@@ -72,14 +74,17 @@ export function fuselage(stations, material, segments = 8) {
   return new Mesh(loft(sorted.map((s) => fuselageRing(s, segments))), material);
 }
 
-// The fuselage in two lofts split at x: the part ahead of x (tagged as nose,
-// hidden in the cockpit view) and the part behind it.
-export function fuselageSplit(stations, x, material, segments = 8) {
-  const at = { x, ...fuselageAt(stations, x) };
-  const front = [...stations.filter((s) => s.x > x), at];
-  const rear = [at, ...stations.filter((s) => s.x < x)];
+// The fuselage in three lofts, split at the back and front of the cockpit opening ([back, front]):
+// the part behind, the cockpit section (tagged as nose: hidden in the cockpit view, where the
+// cockpit draws its own walls, rim and decking) and the part ahead.
+export function fuselageSplit(stations, [back, front], material, segments = 8) {
+  const at = (x) => ({ ...stations[0], x, ...fuselageAt(stations, x) });
+  const ahead = [...stations.filter((s) => s.x > front), at(front)];
+  const section = [at(front), ...stations.filter((s) => s.x < front && s.x > back), at(back)];
+  const rear = [at(back), ...stations.filter((s) => s.x < back)];
   const g = new Group();
-  g.add(nose(fuselage(front, material, segments)));
+  g.add(fuselage(ahead, material, segments));
+  g.add(nose(fuselage(section, material, segments)));
   g.add(fuselage(rear, material, segments));
   return g;
 }
@@ -109,7 +114,8 @@ const TIPS = {
 
 // A wing centred on the aircraft: span, chord and thickness in metres, centred
 // at (x, y) (mid-chord at the root), with dihedral (radians) and a rounded or
-// square tip. `colors` colours the six ring points (top, bottom, edges).
+// square tip. `colors` colours the six faces round the section: the first three the upper
+// surface (leading edge to trailing edge), the last three the underside.
 export function wing({ span, chord, thickness = 0.07, dihedral = 0, tip = 'round', x = 0, y = 0, colors = null, material, part = 'wing', cuts = [] }) {
   const half = span / 2;
   // Trailing-edge cut-outs for hinged surfaces: { from, to (fractions of the
@@ -153,7 +159,7 @@ export function wing({ span, chord, thickness = 0.07, dihedral = 0, tip = 'round
       [mid + ch * 0.25, cy - t * 0.45, z],
     ];
   });
-  const mesh = new Mesh(loft(rings, { colors }), material);
+  const mesh = new Mesh(loft(rings, { colors, faceColors: true }), material);
   mesh.userData = { part, span, chord }; // for the tests
   return mesh;
 }
@@ -221,6 +227,7 @@ export function strut(a, b, chordwise, thin, material) {
   const to = new Vector3(...b);
   const dir = to.clone().sub(from);
   const m = new Mesh(new BoxGeometry(dir.length(), chordwise, thin), material);
+  m.userData.ends = [a, b];
   m.position.copy(from).add(to).multiplyScalar(0.5);
   m.quaternion.copy(new Quaternion().setFromUnitVectors(new Vector3(1, 0, 0), dir.normalize()));
   return m;
@@ -280,6 +287,13 @@ export function propeller(diameter, x, bladeMaterial, { hub = 0.12, chord = 0.16
 // cockpit draws its own decking and guns in front of the pilot.
 export function nose(mesh) {
   mesh.userData.cockpitHide = true;
+  return mesh;
+}
+
+// Mark a mesh as shown only in the cockpit view (hidden outside).
+export function cockpitOnly(mesh) {
+  mesh.userData.cockpitOnly = true;
+  mesh.visible = false;
   return mesh;
 }
 

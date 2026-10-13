@@ -4,7 +4,12 @@
 
 import { gearGeometry } from '../../physics/ground.js';
 import { common } from '../../aircraft/common.js';
-import { strut, hinged } from './parts.js';
+import { strut, hinged, nose, cockpitOnly } from './parts.js';
+import { COCKPITS } from '../../aircraft/cockpits.js';
+
+// Where the fuselage is split round the cockpit (see fuselageSplit): from the back of the opening
+// to just ahead of the instrument board, so the cut end of the fuselage ahead is behind the board.
+export const cockpitSpan = (ac) => [COCKPITS[ac.id].opening.back, COCKPITS[ac.id].panel.x + 0.03];
 
 export function anchors(ac) {
   const L = ac.geometry.length;
@@ -86,6 +91,25 @@ export function strutBay(upper, lower, z, material, { spread = 0.25, chordwise =
     }
   }
   return out;
+}
+
+// For an aircraft whose upper wing the cockpit view draws shorter (COCKPITS: upperWingChord, kept
+// at its trailing edge), each strut up to that wing gets a twin shown only in the cockpit view,
+// whose top end moves with the shortened wing and goes up into it (to its centre line); the
+// original is hidden there. struts: meshes made by strut(); k: the upper wing's depth in the
+// cockpit view; returns the twins (add them to the model).
+export function cockpitStrutTwins(struts, upper, k, material) {
+  const te = upper.x - upper.chord / 2;
+  return struts.map((m) => {
+    nose(m);
+    const [a, b] = m.userData.ends;
+    const [low, high] = a[1] < b[1] ? [a, b] : [b, a];
+    const top = [te + (high[0] - te) * k, wingY(upper, high[2]), high[2]];
+    const p = m.geometry.parameters;
+    const twin = cockpitOnly(strut(low, top, p.height, p.depth, material));
+    twin.userData.part = 'cockpitStrut';
+    return twin;
+  });
 }
 
 // A single strut each side at x (between the wings' mid-chords by default).

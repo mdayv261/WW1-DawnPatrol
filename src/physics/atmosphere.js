@@ -29,6 +29,12 @@ export function atmosphere(altitude) {
   return { temperature, pressure, density, soundSpeed };
 }
 
+// The altitude (m) at which the standard atmosphere has this pressure (Pa): the inverse of
+// atmosphere() in the troposphere, which is all a period altimeter's scale covers.
+export function altitudeForPressure(pressure) {
+  return (ISA.T0 / ISA.LAPSE) * (1 - Math.pow(pressure / ISA.P0, (ISA.R * ISA.LAPSE) / G));
+}
+
 // Air density relative to sea level (the "sigma" used for engine power).
 export function densityRatio(altitude) {
   return atmosphere(altitude).density / ISA.RHO0;

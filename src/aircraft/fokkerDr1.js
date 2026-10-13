@@ -52,8 +52,8 @@ export const fokkerDr1 = {
   },
   // Pilot's eye, body axes from the centre of gravity (E). Rendering only.
   cockpit: {
-    eyeBehind: 0.63, // m behind the centre of gravity
-    eyeAbove: 0.6, // m above the centre of gravity
+    eyeBehind: 1.0, // m behind the centre of gravity (E) behind the middle wing, far enough back to see the whole panel under the raised guns
+    eyeAbove: 0.72, // m above the centre of gravity (E) a little above the top of the guns, so the pilot sights along them
   },
   // Shape for the 3D model (rendering only), m unless noted. M = sourced, E = estimate.
   visual: {
@@ -63,7 +63,7 @@ export const fokkerDr1 = {
     tailChord: 0.7, // tailplane chord (E)
     finHeight: 0.9, // rudder height; there is no fixed fin (E)
     fuselageDepth: 0.85, // greatest fuselage depth (E)
-    fuselageWidth: 0.62, // greatest fuselage width (E)
+    fuselageWidth: 0.68, // greatest fuselage width (E) widened 10% for a roomier cockpit (product owner)
     cowlingDiameter: 1.04, // engine cowling (E)
   },
   aero: {
@@ -80,8 +80,8 @@ export const fokkerDr1 = {
     rounds: 500, // per gun, Herris and Phillips: 500 rounds per gun on the prototype V.5 (M)
     synchroniser: 'mechanical interrupter gear (the maker and type were not found in an allowed source)',
     muzzleX: 1.73, // m ahead of the centre of gravity: about 0.30 of the length, just behind the propeller plane (E)
-    muzzleY: 0.52, // m above the centre of gravity: on top of the cowling (E)
-    muzzleZ: 0.14, // m each side of the centre line: the two guns sit this far left and right (E)
+    muzzleY: 0.59, // m above the centre of gravity: on top of the cowling (E) its top is 0.54 m (centre 0.02 + radius 0.52), plus the jacket's radius; the guns stood on posts above the decking
+    muzzleZ: 0.17, // m each side of the centre line: the two guns sit this far left and right (E) as in a photograph of a replica (S52)
   },
   // Fuel carried (kg) and the structure's strength; see docs/AIRCRAFT_DATA.md for sources and reasons.
   fuel: { capacity: 54 },

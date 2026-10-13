@@ -30,10 +30,11 @@ describe('cockpit instruments', () => {
     expect(t.angle).toBeGreaterThan(0);
   });
 
-  it('the slip ball moves away from the wind and stops at the ends', () => {
-    expect(slipBall(0.1)).toBeLessThan(0);
-    expect(slipBall(-0.1)).toBeGreaterThan(0);
-    expect(slipBall(5)).toBe(-1);
+  it('the slip ball rolls to the side the aircraft slips to, and stops at the ends', () => {
+    // Positive sideslip: moving sideways to the right (wind from the right), as in a slip to the right.
+    expect(slipBall(0.1)).toBeGreaterThan(0);
+    expect(slipBall(-0.1)).toBeLessThan(0);
+    expect(slipBall(5)).toBe(1);
   });
 
   it('the compass reads 0-360 degrees, north at 0, east at 90', () => {

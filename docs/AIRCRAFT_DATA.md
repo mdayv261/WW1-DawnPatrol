@@ -74,6 +74,13 @@ All values are stored in SI units. The original figure and unit from the source 
 | S44 | Western Front Association, "The .303 Cartridge" (2008): 174 grains, about 2,400 ft/s | https://www.westernfrontassociation.com/world-war-i-articles/2008/may/the-303-cartridge/ | Society article |
 | S45 | JBM Ballistics: G1 drag function tabulated by R. McCoy (mcg1.txt), from E. Lowry, Exterior Ballistics of Small Arms Projectiles (Winchester-Western, 1965) | https://jbmballistics.com/downloads.html | Published standard drag table |
 | S46 | H. Weyl, Fokker: The Creative Years (Putnam), as quoted on the flyingmachines.ru Dr.I page: Dr.I V.4 prototype wing load test (ultimate load factor 7.92), acceptance fuel, and von Tutschek's claimed dive speed | https://flyingmachines.ru/Site2/Crafts/Craft25493.htm | Reference book (transcription) |
+| S47 | Smithsonian National Air and Space Museum, photograph "Cockpit of the Sopwith F.1 Camel" (B6291), CC0: R.P.M. upper left, compass upper centre, AIR SPEED upper right, HEIGHT lower centre, AIR (tank pressure) gauge lower right, two brass switches lower left | https://airandspace.si.edu/multimedia-gallery/image/nasm2017-02779-sjpg | Museum photograph of an original aircraft |
+| S48 | National Museum of the US Air Force image gallery, "SPAD XIII tachometer, Jaeger Paris Type AM" | https://www.nationalmuseum.af.mil/Upcoming/Photos/igphoto/2001067343/ (and igphoto 2001067342) | Museum record (read through a search-result summary only) |
+| S49 | The Vintage Aviator (NZ), Albatros D.Va page: airspeed anemometer on the right-hand wing strut (km/h), tachometer in front of the pilot, small fuel tank air pressure gauge, a fuel gauge; no oil pressure or temperature indication | https://www.thevintageaviator.co.nz/node/232 | Museum-quality reproduction maker's page (their replica, built from originals) |
+| S50 | Australian War Memorial, Albatros D.Va D.5390/17 (captured 1917): Morell tachometer, petrol and oil pressure gauges (Maximall); a British airspeed indicator fitted later and removed; no altimeter mountings found; the watch and probably the compass souvenired at capture | https://www.awm.gov.au/articles/blog/conservation-of-the-albatros-dva and https://www.awm.gov.au/articles/blog/capturing-albatros | Museum conservation articles (read through search-result summaries only) |
+| S51 | Smithsonian National Air and Space Museum, "Simple Altimeter, Adjustable, French", L. Hatot, ca. 1917 (A19570033000): range 0-5,000 m in one turn, black outer ring with figures 0-4, silver dial with a barometer scale in cm of mercury, "AVIATION MILITAIRE", "BAROMÈTRE ALTIMÈTRE COMPENSÉ", single needle, knurled setting knob | https://airandspace.si.edu/collection-objects/simple-altimeter-adjustable-french/nasm_A19570033000 | Museum object record and photograph |
+| S52 | Alamy stock photograph "The cockpit and guns on a WWI German Fokker DR1 fighter Triplane in a hanger at the Military Aviation Museum in Virginia Beach" (image ID FW7A0H): a flying replica with modern instruments. Used only as a visual reference for the 3D cockpit (the padded rim arching over a wooden panel, the guns on steel posts with a ring sight on each, the red metal decking); nothing from it is copied into the game | https://www.alamy.com/stock-photo-the-cockpit-and-guns-on-a-wwi-german-fokker-dr1-fighter-triplane-in-101575281.html | Photograph of a modern replica (low confidence for period detail) |
+| S53 | Rise of Flight (a commercial flight simulator), store page for its Fokker Dr.I, cockpit picture: the guns close together over the centre with a leather pad on each breech and a ring sight on each gun, a riveted steel bulkhead with the rev counter between the breeches, dials on the right-hand wall, a thin leather rim, dark steel tubes, a plank floor | https://riseofflight.ru/store/aircraft/fokker-dri/ | A game's rendering, chosen by the product owner as the look of the Dr.I cockpit; used only as a visual reference, nothing copied; not historical evidence |
 
 Transcriptions on flyingmachines.ru reproduce the named books' tables; values from them are rated medium because the transcription itself was not checked against the printed book.
 
@@ -110,7 +117,7 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Armament | 2 x Vickers .303 in (7.7 mm), synchronised | — | two Vickers .303 | S1, S4 | high | Ballistics are not recorded yet (see gaps). |
 | Rounds carried per gun (`guns.rounds`) | 250 | rounds | — | S23 | medium | King (S23): 250 rounds per gun at first, "later increased"; the same page gives a total of 600 for the two guns. The first figure is used. |
 | Gun muzzle ahead of the CG (`guns.muzzleX`) | 1.72 | m | — | ASSUMPTION | estimate | Not found. About 0.30 of the length, just behind the propeller plane; places the guns on top of the nose as the sources describe. Shots are timed so they pass between the propeller blades. |
-| Gun muzzle above the CG (`guns.muzzleY`) | 0.56 | m | — | ASSUMPTION | estimate | Not found. On top of the cowling, above the engine, as drawn on the model. |
+| Gun muzzle above the CG (`guns.muzzleY`) | 0.645 | m | — | ASSUMPTION | estimate | Not found. On top of the cowling, above the engine: the cowling's top is 0.60 m (centre 0.05 m + radius 0.55 m), plus the barrel jacket's radius. Was 0.56, which put the barrels inside the nose (Phase 6, found when the product owner asked for the guns to show as on the SPAD). |
 | Gun muzzle each side of the centre line (`guns.muzzleZ`) | 0.13 | m | — | ASSUMPTION | estimate | Not found. The two guns are mounted on top of the nose, a few inches apart (S22, S23 for the Camel); the guns are parallel to the aircraft's axis. |
 | Fuel carried (`fuel.capacity`) | 78 | kg | — | ASSUMPTION | estimate | The tank size was not found. S22 and S24 give an endurance of about 2.5 hours; 78 kg is 2.5 hours at this model's cruise fuel use (80% of rated power at 0.40 kg per kWh, 31 kg an hour). Only the burn time depends on it; the aircraft's mass does not change as fuel burns. |
 | Ultimate load factor (`structure.ultimateLoad`) | 6 | g | — | ASSUMPTION | estimate | No strength test or design load found for the Camel. A typical design figure for a WWI fighter, a little below the Fokker prototype's tested 7.92 (S46) because the Camel is lighter built. Tune by flying. |
@@ -131,8 +138,8 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Main wheel contact ahead of the CG (`gear.mainAhead`) | 0.08 | fraction of length | — | ASSUMPTION | estimate | Not found. Places the wheel contact about 18 degrees ahead of the CG in the level attitude, the usual tail-dragger layout; less would nose over too easily, more would make lifting the tail hard. |
 | Tailskid behind the CG (`gear.tailAt`) | 0.62 | fraction of length | — | ASSUMPTION | estimate | Not found. The skid sits near the tail post; matches the drawn model. |
 | Three-point ground attitude (`gear.groundAngle`) | 0.192 | rad | about 11 degrees | ASSUMPTION | estimate | Not found. Typical nose-up angle of a WWI tail-dragger at rest. |
-| Pilot's eye behind the CG (`cockpit.eyeBehind`) | 0.63 | m | — | ASSUMPTION | estimate | Not found. About 11% of the length behind the CG; used only to place the cockpit camera. |
-| Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.6 | m | — | ASSUMPTION | estimate | Not found. Sitting eye height above the fuselage centre line; camera only. |
+| Pilot's eye behind the CG (`cockpit.eyeBehind`) | 0.72 | m | — | ASSUMPTION | estimate | Not found. Was 0.63 (about 11% of the length); moved back in Phase 6 when the guns and eye were raised, so the whole instrument board stays in view below the guns while the upper wing still fills the top of the view. Camera, 3D cockpit and the pilot's hit box. |
+| Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.76 | m | — | ASSUMPTION | estimate | Not found. A little above the top of the guns (their centre line is `guns.muzzleY`), because the pilot aimed by sighting along them through the ring sight. Camera and 3D cockpit only. Was 0.6 before the 3D cockpit (Phase 6), then 0.7; raised with the guns. |
 | Wing chord (`visual.chord`) | 1.37 | m | 4 ft 6 in | S32, S37 | medium | Both wings. S37 (Flight, 1918, quoted on the page) gives 1.37 m. |
 | Wing stagger (`visual.stagger`) | 0.457 | m | 18 in | S32, S37 | medium | Upper wing ahead of the lower, at the fuselage. |
 | Lower wing dihedral (`visual.lowerDihedral`) | 0.0873 | rad | 5 degrees | S37 | medium | The upper wing has no dihedral (S37). |
@@ -196,7 +203,7 @@ AIAA Paper 2005-119 (Eberhardt, Museum of Flight WWI fighters; full text not acc
 | Tailskid behind the CG (`gear.tailAt`) | 0.62 | fraction of length | — | ASSUMPTION | estimate | Not found. The skid sits near the tail post; matches the drawn model. |
 | Three-point ground attitude (`gear.groundAngle`) | 0.192 | rad | about 11 degrees | ASSUMPTION | estimate | Not found. Typical nose-up angle of a WWI tail-dragger at rest. |
 | Pilot's eye behind the CG (`cockpit.eyeBehind`) | 0.69 | m | — | ASSUMPTION | estimate | Not found. About 11% of the length behind the CG; used only to place the cockpit camera. |
-| Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.6 | m | — | ASSUMPTION | estimate | Not found. Sitting eye height above the fuselage centre line; camera only. |
+| Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.64 | m | — | ASSUMPTION | estimate | Not found. A little above the top of the guns (their centre line is `guns.muzzleY`), because the pilot aimed by sighting along them through the ring sight. Camera and 3D cockpit only. Was 0.6 before the 3D cockpit (Phase 6). |
 | Wing chord (`visual.chord`) | 1.4 | m | 1.400 m | S17 | medium | Both wings, from the McCook Field test aircraft (S17). |
 | Wing stagger (`visual.stagger`) | 0.4 | m | — | ASSUMPTION | estimate | S17 gives the stagger only as an angle of 1.25 degrees, which is not a length. 0.4 m is assumed from drawings of the type; model shape only. |
 | Tailplane span (`visual.tailSpan`) | 2.6 | m | — | ASSUMPTION | estimate | Not found. About a third of the wingspan, as on the other three types. |
@@ -236,8 +243,8 @@ No original Dr.I survives (S6), so all geometry and weights come from reproducti
 | Armament | 2 x 7.92 mm LMG 08/15, synchronised | — | two 7.92 mm Spandau LMG 08/15 | S6, S10 | high | S7 says "LMG 08". |
 | Rounds carried per gun (`guns.rounds`) | 500 | rounds | — | S26 | medium | Herris and Phillips (S26): each LMG 08/15 "carried 500 rounds" on the prototype V.5; taken to apply to production aircraft. |
 | Gun muzzle ahead of the CG (`guns.muzzleX`) | 1.73 | m | — | ASSUMPTION | estimate | Not found. About 0.30 of the length, just behind the propeller plane; places the guns on top of the nose as the sources describe. Shots are timed so they pass between the propeller blades. |
-| Gun muzzle above the CG (`guns.muzzleY`) | 0.52 | m | — | ASSUMPTION | estimate | Not found. On top of the cowling, above the engine, as drawn on the model. |
-| Gun muzzle each side of the centre line (`guns.muzzleZ`) | 0.14 | m | — | ASSUMPTION | estimate | Not found. Position chosen to look right on the model and to cross the propeller disc, so the synchroniser matters; the guns are parallel to the aircraft's axis. |
+| Gun muzzle above the CG (`guns.muzzleY`) | 0.59 | m | — | ASSUMPTION | estimate | Not found. On top of the cowling, above the engine: the cowling's top is 0.54 m (centre 0.02 m + radius 0.52 m), plus the barrel jacket's radius; the guns stood on posts above the decking, as in a photograph of a replica (S52). Was 0.52, inside the cowling (Phase 6). |
+| Gun muzzle each side of the centre line (`guns.muzzleZ`) | 0.17 | m | — | ASSUMPTION | estimate | Not found. The spacing in a photograph of a replica's cockpit (S52), about a third of a metre apart. Was 0.14 (Phase 6). |
 | Fuel carried (`fuel.capacity`) | 54 | kg | 75 litres | S26 | medium | Herris and Phillips give a 75 litre tank for the V.5 prototype. Converted at 0.72 kg per litre, an assumed petrol density. |
 | Ultimate load factor (`structure.ultimateLoad`) | 7 | g | 7.92 on the V.4 prototype | ASSUMPTION | estimate | Weyl (S46) reports an ultimate load factor of 7.92 for the V.4 prototype's wing test. Production aircraft are assumed 12% lower, because early production Dr.Is lost wings in service. |
 | Never-exceed speed (`structure.neverExceedSpeed`) | 69 | m/s | about 154 mph | ASSUMPTION | estimate | No diving limit found. 1.35 times the documented top speed (51.39 m/s). Von Tutschek's claimed dive of over 240 km/h (67 m/s) is called possible but unlikely by Weyl (S46). |
@@ -257,15 +264,15 @@ No original Dr.I survives (S6), so all geometry and weights come from reproducti
 | Main wheel contact ahead of the CG (`gear.mainAhead`) | 0.08 | fraction of length | — | ASSUMPTION | estimate | Not found. Places the wheel contact about 18 degrees ahead of the CG in the level attitude, the usual tail-dragger layout; less would nose over too easily, more would make lifting the tail hard. |
 | Tailskid behind the CG (`gear.tailAt`) | 0.62 | fraction of length | — | ASSUMPTION | estimate | Not found. The skid sits near the tail post; matches the drawn model. |
 | Three-point ground attitude (`gear.groundAngle`) | 0.192 | rad | about 11 degrees | ASSUMPTION | estimate | Not found. Typical nose-up angle of a WWI tail-dragger at rest. |
-| Pilot's eye behind the CG (`cockpit.eyeBehind`) | 0.63 | m | — | ASSUMPTION | estimate | Not found. About 11% of the length behind the CG; used only to place the cockpit camera. |
-| Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.6 | m | — | ASSUMPTION | estimate | Not found. Sitting eye height above the fuselage centre line; camera only. |
+| Pilot's eye behind the CG (`cockpit.eyeBehind`) | 1 | m | — | ASSUMPTION | estimate | Not found. The pilot sat behind the middle wing; the eye is placed so the whole instrument panel shows below the raised guns (0.63 before Phase 6). Camera, 3D cockpit and the pilot's hit box. |
+| Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.72 | m | — | ASSUMPTION | estimate | Not found. A little above the top of the guns (their centre line is `guns.muzzleY`), level with their ring sights. Camera and 3D cockpit only. Was 0.6 before the 3D cockpit, then 0.66 (Phase 6). |
 | Wing chord (`visual.chord`) | 1.0 | m | 980 mm, then 1000 mm | S39 | medium | All three wings. The chord was changed from 980 mm (prototype) to 1000 mm for production aircraft (S39). |
 | Wing stagger (`visual.stagger`) | 0.15 | m | — | ASSUMPTION | estimate | The production Dr.I stagger was not found; the MAG-Fokker 90.03 (a different machine) had 0.23 to 0.26 m (S28). A smaller value is used for the shorter Dr.I. |
 | Tailplane span (`visual.tailSpan`) | 2.6 | m | — | ASSUMPTION | estimate | Not found. About a third of the 7.19 m wingspan, as on the other types. |
 | Tailplane chord (`visual.tailChord`) | 0.7 | m | — | ASSUMPTION | estimate | Not found. Assumed from the span and a typical tailplane area. |
 | Rudder height (`visual.finHeight`) | 0.9 | m | — | ASSUMPTION | estimate | Not found. The Dr.I has no fixed fin, only a comma-shaped rudder (S39); the height is assumed from the overall height of 2.95 m. |
 | Greatest fuselage depth (`visual.fuselageDepth`) | 0.85 | m | — | ASSUMPTION | estimate | Not found. A short, slab-sided fuselage (S39) sized to a seated pilot. |
-| Greatest fuselage width (`visual.fuselageWidth`) | 0.62 | m | — | ASSUMPTION | estimate | Not found. Chosen to fit a seated pilot's shoulders. |
+| Greatest fuselage width (`visual.fuselageWidth`) | 0.68 | m | — | ASSUMPTION | estimate | Not found. Chosen to fit a seated pilot's shoulders (0.62), then widened 10% in Phase 6 at the product owner's request for a roomier cockpit. Also sets the width of the fuselage's hit box. |
 | Engine cowling diameter (`visual.cowlingDiameter`) | 1.04 | m | engine 960 mm | ASSUMPTION | estimate | The Oberursel UR.II is 960 mm across (S39); 1.04 m adds an assumed cowling thickness. |
 
 ## Albatros D.V (Mercedes D.IIIa)
@@ -316,7 +323,7 @@ Dimensions and weights come from the Smithsonian's original D.Va (D.7161/17), wh
 | Tailskid behind the CG (`gear.tailAt`) | 0.62 | fraction of length | — | ASSUMPTION | estimate | Not found. The skid sits near the tail post; matches the drawn model. |
 | Three-point ground attitude (`gear.groundAngle`) | 0.192 | rad | about 11 degrees | ASSUMPTION | estimate | Not found. Typical nose-up angle of a WWI tail-dragger at rest. |
 | Pilot's eye behind the CG (`cockpit.eyeBehind`) | 0.8 | m | — | ASSUMPTION | estimate | Not found. About 11% of the length behind the CG; used only to place the cockpit camera. |
-| Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.6 | m | — | ASSUMPTION | estimate | Not found. Sitting eye height above the fuselage centre line; camera only. |
+| Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.64 | m | — | ASSUMPTION | estimate | Not found. A little above the top of the guns (their centre line is `guns.muzzleY`), because the pilot aimed by sighting along them through the ring sight. Camera and 3D cockpit only. Was 0.6 before the 3D cockpit (Phase 6). |
 | Upper wing chord (`visual.chord`) | 1.49 | m | 1.49 m (D.Va) | S25 | medium | Herris: 1.5 m for the D.V and 1.49 m for the D.Va; the D.Va figure is used, as the dimensions follow the Smithsonian D.Va (S3). |
 | Lower wing chord (`visual.lowerChord`) | 1.0 | m | 1.0 m | S25 | medium | The narrow lower wing makes the Albatros a sesquiplane (S3, S25). |
 | Wing stagger (`visual.stagger`) | 0.3 | m | — | ASSUMPTION | estimate | Not found for the D.V. Assumed from the small stagger of the V-strutter type. |
@@ -547,6 +554,42 @@ Shared by the four aircraft. The code is `src/aircraft/damageModel.js` and `src/
 | Safety factor (`DAMAGE.safetyFactor`) | 1.8 | — | — | ASSUMPTION | estimate | Limit load is the ultimate load divided by this. Nothing damages the structure below the limit load. A figure of 1.8 to 2.0 was proposed in French writing of 1911, as reported secondhand in a DTIC history of safety factors (the paper itself could not be opened). |
 | Wing damage rate at the ultimate load (`DAMAGE.overloadRate`) | 0.25 | per second | — | ASSUMPTION | estimate | Between the limit and the ultimate load the wings are damaged at a rate rising from zero to this; at the ultimate load a wing fails at once. |
 | Over-speed margin (`DAMAGE.overspeedMargin`) | 0.25 | fraction | — | ASSUMPTION | estimate | Wings begin to be damaged above the never-exceed speed and fail when the speed is this much above it. |
+
+## Cockpit panels (Phase 6)
+
+Which instruments each aircraft's panel has and roughly where. The code is `src/aircraft/panels.js`; `tests/panels.test.js` checks every instrument there has a row here. Positions are fractions of the panel drawing (across from the left, down from the top) and were read off photographs where a source has one; they are approximate either way. Panel sizes in metres are estimates for all four (chosen to fill the space between the cockpit sides).
+
+| Aircraft | Instrument | Where | Units | Source | Confidence | Notes |
+|---|---|---|---|---|---|---|
+| camel | tachometer | upper left | rpm | S47 | high | Marked "R.P.M." in the NASM photograph. |
+| camel | compass | upper centre | degrees | S47 | high | A small compass set into the top of the panel. |
+| camel | airspeed | upper right | mph | S47 | high | Marked "AIR SPEED". |
+| camel | altimeter | lower centre | feet | S47 | high | Marked "HEIGHT". |
+| camel | airPressure | lower right | share of scale | S47 | high | Marked "AIR": the fuel tank's air pressure. |
+| camel | switches | lower left | on/off | S47 | high | Two brass ignition switches. |
+| camel | pulsator | far left | — | ASSUMPTION | estimate | Rotary engines had a glass oil pulsator so the pilot could see the oil flowing; its place on this panel is not clear in the photograph. |
+| spad13 | tachometer | centre left | tours/min | S48 | medium | A Jaeger type AM tachometer is in the US Air Force Museum's SPAD XIII. Position estimated. |
+| spad13 | airspeed | centre right | km/h | ASSUMPTION | estimate | No source for the SPAD's panel layout was found. French fighters carried an airspeed indicator in km/h. |
+| spad13 | altimeter | right | metres | S51 (dial); ASSUMPTION (fitted to the SPAD, position) | estimate | Drawn after the French L. Hatot altimeter in the Smithsonian (S51), chosen by the product owner: 0-5,000 m in one turn, rising anticlockwise; it stops at the top of its range. That this type was fitted to the SPAD XIII was not found in a source. Its centre line reads "Height x 1000 m" (product owner's wording) where the original reads "BAROMÈTRE ALTIMÈTRE". |
+| spad13 | waterTemp | left | °C | ASSUMPTION | estimate | The Hispano-Suiza is water-cooled; a radiator thermometer is expected. |
+| spad13 | fuelPressure | lower left | share of scale | ASSUMPTION | estimate | The SPAD's fuel was pressure-fed; a gauge is expected. |
+| spad13 | compass | lower centre | degrees | ASSUMPTION | estimate | As above. |
+| dr1 | fuelGauge | panel, left (small) | share of tank | ASSUMPTION | estimate | No original Dr.I survives (San Diego Air & Space Museum page), so the whole panel is an estimate. Laid out as a photograph of a flying replica (S52), whose modern instruments are replaced by old-style German ones in the product owner's order, left to right: fuel gauge, altimeter, airspeed, rev counter; the compass centred just above the altimeter and airspeed and the slip indicator centred below them. |
+| dr1 | altimeter | panel, left of centre (large) | metres | ASSUMPTION | estimate | As above; the product owner's choice (earlier the Dr.I had none, by analogy with the Albatros). |
+| dr1 | airspeed | panel, right of centre (large) | km/h | ASSUMPTION | estimate | As above; on the panel by the product owner's choice (German fighters often had it on a strut, S49). |
+| dr1 | slip | panel, centred between and below the altimeter and airspeed | — | ASSUMPTION | estimate | As above: a curved glass tube with a ball, where the replica photograph has a small instrument under its airspeed dial. |
+| dr1 | tachometer | panel, right (small) | U/min | ASSUMPTION | estimate | As above. A rev counter is the one instrument every German fighter had. |
+| dr1 | compass | panel, centred just above the altimeter and airspeed | degrees | ASSUMPTION | estimate | As above; placed there by the product owner. |
+| albatros | fuelGauge | panel, left (small) | share of tank | S50 | medium | Petrol gauge (Maximall). The Albatros panel is laid out the same as the Dr.I's at the product owner's request (Phase 6); the period evidence is in the notes. S49 says the fuel gauge was inaccurate. |
+| albatros | altimeter | panel, left of centre (large) | metres | ASSUMPTION | estimate | Product owner's choice, to match the Dr.I. No altimeter mounting was found on the Australian War Memorial's aircraft (S50). |
+| albatros | compass | panel, centred just above the altimeter and airspeed | degrees | S50 | estimate | "Probably" souvenired from the AWM aircraft at capture (S50). Placed as on the Dr.I. |
+| albatros | airspeed | panel, right of centre (large) | km/h | ASSUMPTION | estimate | Product owner's choice, to match the Dr.I. The period instrument was an anemometer-type indicator on the right-hand wing strut (S49). |
+| albatros | slip | panel, centred between and below the altimeter and airspeed | — | ASSUMPTION | estimate | Product owner's choice, to match the Dr.I. Not found in S49 or S50. |
+| albatros | tachometer | panel, right (small) | U/min | S49, S50 | high | Morell tachometer. Placed as on the Dr.I. (The oil and tank-pressure gauges and the clock of S49 and S50 were left out to match the Dr.I's panel.) |
+
+Not fitted: nothing at present. (The Albatros had no altimeter, as on the AWM aircraft (S50), and the Dr.I none by analogy, until the product owner chose the same panel of period instruments for both in Phase 6.) The modern HUD shows the height for any aircraft.
+
+How the instruments not driven by the physics behave (fuel tank pressure, oil pressure, the pulsator, the water temperature, the clock) is a set of display choices in `src/aircraft/instrumentBehaviour.js`, recorded in DECISIONS.md (D59). They do not affect the flight.
 
 ## Open research gaps (no value recorded; nothing invented)
 

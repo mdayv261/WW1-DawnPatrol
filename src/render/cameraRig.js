@@ -13,6 +13,11 @@ const LOOK_RATE = 0.004; // radians per pixel of mouse movement
 // Near clipping distance per view: as large as the view allows, because the depth
 // buffer is finest when the near plane is far (less shimmer where surfaces nearly touch).
 const NEAR = { cockpit: 0.1, chase: 2, free: 2 };
+// Vertical field of view (degrees) per view. In the cockpit it is a little wider, and the picture
+// is shifted down (a lens shift: the eye still looks straight ahead along the guns) by this share
+// of the screen's height, so the instrument board shows at the bottom of the screen.
+const FOV = { cockpit: 65, chase: 60, free: 60 };
+const COCKPIT_LOOK_DOWN = 0.15;
 
 const HAT_EASE = 8; // how quickly the head follows the hat (per second)
 const HAT_ORBIT_RATE = 1.5; // free-look: radians per second at full hat deflection
@@ -85,8 +90,15 @@ export class CameraRig {
 
   update(aircraft, position, quaternion, dt) {
     const cam = this.camera;
-    if (cam.near !== NEAR[this.mode]) {
+    if (cam.near !== NEAR[this.mode] || cam.fov !== FOV[this.mode]) {
       cam.near = NEAR[this.mode];
+      cam.fov = FOV[this.mode];
+      if (this.mode === 'cockpit') {
+        const aspect = cam.aspect; // setViewOffset also sets the aspect ratio (to 1 here): keep the screen's
+        cam.setViewOffset(1, 1, 0, COCKPIT_LOOK_DOWN, 1, 1);
+        cam.aspect = aspect;
+      }
+      else cam.clearViewOffset();
       cam.updateProjectionMatrix();
     }
     if (this.mode === 'chase') {

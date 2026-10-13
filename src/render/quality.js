@@ -11,11 +11,12 @@ export const QUALITY_LEVELS = {
   // treeSpacing: grid of the trees in metres (bigger = fewer trees);
   // cloudRadius (m) and cloudDensity (share of sky cells with a cloud);
   // objectRadius: tiles whose trees, buildings and trenches are built (in tiles);
+  // shadowMap: pixels across the sun's shadow map in the cockpit view (0 = no cockpit shadows);
   // maxPixels: most pixels drawn per frame (a retina screen would otherwise draw four
   // times a normal one): 1,000,000 is about 1280 x 780, 2,100,000 about 1920 x 1080.
-  low: { nearRadius: 1, farRadius: 4000, nearTexture: 256, innerTexture: 512, farTexture: 128, treeSpacing: 22, objectRadius: 1, cloudRadius: 9000, cloudDensity: 0.34, maxPixels: 1000000 },
-  medium: { nearRadius: 2, farRadius: 7000, nearTexture: 512, innerTexture: 1024, farTexture: 256, treeSpacing: 16, objectRadius: 2, cloudRadius: 14000, cloudDensity: 0.42, maxPixels: 2100000 },
-  high: { nearRadius: 3, farRadius: 10000, nearTexture: 512, innerTexture: 1024, farTexture: 256, treeSpacing: 12, objectRadius: 3, cloudRadius: 20000, cloudDensity: 0.45, maxPixels: Infinity },
+  low: { nearRadius: 1, farRadius: 4000, nearTexture: 256, innerTexture: 512, farTexture: 128, treeSpacing: 22, objectRadius: 1, cloudRadius: 9000, cloudDensity: 0.34, shadowMap: 0, maxPixels: 1000000 },
+  medium: { nearRadius: 2, farRadius: 7000, nearTexture: 512, innerTexture: 1024, farTexture: 256, treeSpacing: 16, objectRadius: 2, cloudRadius: 14000, cloudDensity: 0.42, shadowMap: 1024, maxPixels: 2100000 },
+  high: { nearRadius: 3, farRadius: 10000, nearTexture: 512, innerTexture: 1024, farTexture: 256, treeSpacing: 12, objectRadius: 3, cloudRadius: 20000, cloudDensity: 0.45, shadowMap: 2048, maxPixels: Infinity },
 };
 
 export const DEFAULT_QUALITY = 'medium';

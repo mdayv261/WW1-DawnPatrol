@@ -7,7 +7,7 @@
 import { Group } from 'three';
 import * as P from './parts.js';
 import * as M from './livery.js';
-import { anchors, wingPlan, wingY, strutBay, addSurfaces } from './layout.js';
+import { cockpitSpan, anchors, wingPlan, wingY, strutBay, addSurfaces } from './layout.js';
 
 const BROWN = 0x7a4b2c; // reddish-brown top surfaces and body (estimate, from a 1918 report on B.6290)
 const CREAM = 0xd8ccaa; // wing undersides
@@ -24,26 +24,26 @@ export function createCamel(ac) {
   const dark = P.lambert(DARK);
   const wood = P.lambert(WOOD);
   const wingMat = P.vertexColoured();
-  const wingColours = [BROWN, BROWN, BROWN, BROWN, CREAM, CREAM];
+  const wingColours = [BROWN, BROWN, BROWN, CREAM, CREAM, CREAM]; // upper surface, underside (cream)
 
   // Fuselage.
   const D = v.fuselageDepth;
   const W = v.fuselageWidth;
   const stations = [
-    { x: 0.272 * L, w: W * 1.05, h: D * 1.0, y: 0.05 },
-    { x: 0.157 * L, w: W * 1.08, h: D * 1.05, y: 0.06 },
-    { x: 0.035 * L, w: W * 1.05, h: D, y: 0 },
+    // The nose broadens toward the engine (widened in Phase 6: it looked too narrow from the cockpit).
+    { x: 0.272 * L, w: W * 1.18, h: D * 1.0, y: 0.05 },
+    { x: 0.157 * L, w: W * 1.2, h: D * 1.05, y: 0.06 },
+    { x: 0.035 * L, w: W * 1.12, h: D, y: 0 },
     { x: -0.12 * L, w: W * 0.85, h: D * 0.85, y: -0.02 },
     { x: -0.3 * L, w: W * 0.55, h: D * 0.55, y: -0.02 },
     { x: -0.49 * L, w: W * 0.3, h: D * 0.32, y: 0 },
     { x: a.tailEnd, w: 0.08, h: 0.2, y: 0.06 },
   ];
-  const eyeX = -ac.cockpit.eyeBehind;
-  group.add(P.fuselageSplit(stations, eyeX, body, 10));
-  // Nose parts the cockpit view hides (the cockpit draws its own decking and guns).
-  group.add(P.nose(P.cylinderX(v.cowlingDiameter / 2, v.cowlingDiameter / 2 * 0.98, 0.5, P.lambert(COWL), a.noseX - 0.25, 0.05)));
+  group.add(P.fuselageSplit(stations, cockpitSpan(ac), body, 10));
+  // The cowling, then the parts the cockpit view hides (the cockpit draws its own hump and guns).
+  group.add(P.cylinderX(v.cowlingDiameter / 2, v.cowlingDiameter / 2 * 0.98, 0.5, P.lambert(COWL), a.noseX - 0.25, 0.05));
   group.add(P.nose(P.box(0.9, 0.17, 0.4, body, 0.2 * L, D / 2 + 0.03, 0))); // the hump
-  for (const s of [-1, 1]) group.add(P.nose(P.box(0.7, 0.05, 0.05, dark, 0.27 * L + 0.2, D / 2 + 0.06, s * 0.09))); // gun barrels
+  for (const s of [-1, 1]) group.add(P.nose(P.box(0.7, 0.05, 0.05, dark, 0.27 * L + 0.2, ac.guns.muzzleY, s * ac.guns.muzzleZ))); // gun barrels, where the guns' data puts them
   group.add(P.nose(P.box(0.5, 0.02, 0.36, dark, -0.02 * L, D / 2 - 0.005, 0))); // cockpit opening
 
   // Wings, struts.
@@ -103,5 +103,5 @@ export function createCamel(ac) {
 
   const prop = P.propeller(ac.propeller.diameter, a.propX, P.lambert(0x6b4b2a), { hub: 0.14, chord: 0.17 });
   group.add(prop);
-  return { group, prop, controls };
+  return { group, prop, controls, stations };
 }

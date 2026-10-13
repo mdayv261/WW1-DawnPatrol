@@ -2,9 +2,30 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 6 (game loop, HUD and audio): checkpoint 1 (menus, missions, results) built; waiting for the product owner's test. Phases 0-5 are signed off.
+## Current status: Phase 6 (game loop, HUD and audio): checkpoint 1 committed (18b3036). Checkpoint 2 (3D cockpits, period instruments, modern HUD) is committed; the product owner approved all four cockpits. Checkpoint 3 (sound) next. Phases 0-5 are signed off.
 
 Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft models (48df111), terrain (c3b90ec), airfields and detail (dee316a), and checkpoint 3 (quality levels, pixel budget, frame-rate readout, cirrus). Phase 4 must not start until the product owner confirms Phase 3.
+
+## Phase 6 checkpoint 2: 3D cockpits, period instruments and the modern HUD (D59)
+
+**Done:** every aircraft has a detailed 3D cockpit built in code (no image files): a narrow padded brown leather rim arching over the panel, inside walls and frames, decking, detailed gun breeches, the aircraft's own sights, a windscreen where fitted, a moving stick and throttle, and 3D instruments with live needles. Wood, leather, linen and metal textures are made in code; metal and glass reflect the sky; on Medium and High quality the sun casts shadows in the cockpit. Each cockpit was adjusted with the product owner:
+- **Camel:** the Smithsonian layout; guns on top of the nose (their height corrected), small windscreen, ring-and-bead sight.
+- **SPAD:** RPM / KM/HR / Hatot-style altimeter lettering; small windscreen above the guns; in the cockpit view its upper wing is drawn shorter so it looks like the Camel's.
+- **Dr.I:** the replica-photo layout with old-style German instruments (fuel, altimeter 0-4.5 km, airspeed, rev counter; compass above, new slip indicator below), guns on posts with a ring sight and a padded leather cushion block on each; cockpit 10% wider.
+- **Albatros:** the same panel as the Dr.I's.
+- Wider noses on the Camel, Dr.I and Albatros; a light bounced up from the fields so wing undersides show their colours (cream Camel, red Dr.I).
+- The **modern HUD** (U, or Options; off by default).
+
+Fixed on the way: the slip ball moved the wrong way (a Phase 2 sign error) and its tube was drawn upside down; two-hand altimeter figures did not line up with the hands; the Camel's and Dr.I's guns were drawn inside their cowlings. 1,070 tests pass (plus 15 known deviations); `npm run build` works. The flight model and AI are unchanged; bullets now start from the corrected gun positions.
+
+**Please test (about 10 minutes):**
+1. Run `npm run dev`, open http://localhost:5173 and fly a mission in each aircraft. Press **C** for the cockpit view. Look ahead, down at the panel and round the cockpit (right mouse button, V, or the joystick hat).
+2. Move the stick and throttle: the stick and lever in the cockpit follow; the rev counter follows the throttle.
+3. In the Dr.I or Albatros press **Q** / **E** (rudder): the slip ball rolls the other way from the rudder. Climb and watch the altimeter (the short hand points at 1 at 1,000 m).
+4. Try dawn and dusk, and the Low / Medium / High quality settings (cockpit shadows on Medium and High).
+5. Press **U** for the modern HUD; turn until an enemy is off screen and an arrow points to it. U again hides it; Options shows the same setting.
+
+**Known issues:** the Camel's oil pulsator glass tucks 5 mm under its rim (signed off as it is). The Albatros and Dr.I panels are the product owner's choice rather than the period evidence (kept in AIRCRAFT_DATA). The volume setting does nothing until checkpoint 3 (sound).
 
 ## Phase 6 checkpoint 1: menus, missions and results (D57)
 
@@ -20,7 +41,7 @@ Phases 0, 1 and 2 are signed off. Phase 3 is built in four commits: aircraft mod
 
 **Decided:** cream screens OK; with an airfield start the enemy stays about 4 km away over the front; the results now give **points and a period rank** (D58): points for each enemy shot down (by skill), accuracy and coming home, minus for being shot down or crashing; ranks from Second Lieutenant to Major (Allied) or Leutnant to Rittmeister (German), and Ace at five victories. Practice missions earn nothing. The main menu shows your rank and record for each side.
 
-**Known issues:** sound and the new cockpit panels and HUD come in checkpoints 2 and 3 (the HUD option does nothing yet). With mouse flying on, the first Esc releases the mouse and pauses.
+**Known issues:** sound comes in checkpoint 3. With mouse flying on, the first Esc releases the mouse and pauses.
 
 ## Phase 5 checkpoint 3 and acceptance test (D56)
 
