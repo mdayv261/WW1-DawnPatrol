@@ -94,7 +94,7 @@ describe('options', () => {
     expect(cleanOptions({ volume: 5, hud: 'yes', practice: true })).toEqual({ ...DEFAULT_OPTIONS, volume: 1, practice: true });
     const s = memory();
     saveOptions(s, { volume: 0.25, hud: true, practice: false });
-    expect(loadOptions(s)).toEqual({ volume: 0.25, hud: true, practice: false });
+    expect(loadOptions(s)).toEqual({ ...DEFAULT_OPTIONS, volume: 0.25, hud: true, practice: false });
     expect(loadOptions(null)).toEqual(DEFAULT_OPTIONS);
   });
 });

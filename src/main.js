@@ -22,6 +22,7 @@ import { QUALITY_LEVELS, QUALITY_KEY, chooseQuality, nextQuality } from './rende
 import { FrameStats } from './ui/perfStats.js';
 import { createCombatHud } from './ui/combatHud.js';
 import { createHud } from './ui/hud.js';
+import { createWarningBox } from './ui/warningBox.js';
 import { createAudio } from './audio/audioEngine.js';
 import { SKILLS, SKILL_ORDER, stepSkill } from './aircraft/aiData.js';
 import { applyTestDamage } from './physics/damage.js';
@@ -50,7 +51,7 @@ const rig = new CameraRig(camera);
 const world = createWorld(DEV && params.has('seed') ? seedFrom(params.get('seed')) : undefined);
 const terrain = new Terrain(parts.scene, world, QUALITY_LEVELS[qualityName], renderer.capabilities.getMaxAnisotropy());
 const clouds = new Clouds(parts.scene, world.seed, QUALITY_LEVELS[qualityName], parts.scene.fog);
-const overlays = { debug: createDebugOverlay(), help: createHelp(), banner: createBanner(), readout: createReadout(), combatHud: createCombatHud(), hud: createHud() };
+const overlays = { debug: createDebugOverlay(), help: createHelp(), banner: createBanner(), readout: createReadout(), combatHud: createCombatHud(), hud: createHud(), warnings: createWarningBox() };
 let notice = { text: '', until: 0 };
 const showNotice = (text, ms = 2000) => { notice = { text, until: performance.now() + ms }; };
 
@@ -138,7 +139,7 @@ overlays.joystickPanel = createJoystickPanel(joystick);
 const session = createSession({
   parts, world, terrain, clouds, rig, keyboard, mouse, joystick, overlays, frameStats,
   notice: showNotice, noticeText: () => notice.text, noticeUntil: () => notice.until, quality: () => qualityName,
-  hudOn: () => options.hud, audio, keyHint,
+  hudOn: () => options.hud, audio, keyHint, options: () => options,
 });
 if (DEV) overlays.testPanel = createTestPanel(AIRCRAFT_LIST, (i, id) => devStart(i, false, id), (id) => applyTestDamage(session.sim.damage, id, session.sim.surfaces));
 

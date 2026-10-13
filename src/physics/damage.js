@@ -172,7 +172,9 @@ const equivalentSpeed = (diag) => diag.speed * Math.sqrt(diag.density);
 // Advance the damage state by dt: burn and leak fuel, and damage the wings if the load
 // factor or speed is beyond the structure's limits. diag: the flight model's diagnostics
 // from the same step (speed, loadFactor, power, density as a fraction of sea level).
-export function stepDamage(ac, d, diag, dt) {
+// structure: false when the player has switched structural damage off (Options): fuel still
+// burns and leaks, but g and speed no longer hurt the wings.
+export function stepDamage(ac, d, diag, dt, structure = true) {
   // Fuel burns with the power the engine gives, and runs out through a holed tank.
   if (d.fuel > 0) {
     const burn = (diag.power * D.specificFuelConsumption * dt) / ac.fuel.capacity;
@@ -187,6 +189,7 @@ export function stepDamage(ac, d, diag, dt) {
   const limit = ultimate / D.safetyFactor;
   const load = Math.abs(diag.loadFactor);
   d.overload = Math.max(d.overload, load);
+  if (!structure) return;
   const vne = ac.structure.neverExceedSpeed;
   const v = equivalentSpeed(diag);
   const xLoad = Math.max(0, (load - limit) / (ultimate - limit));

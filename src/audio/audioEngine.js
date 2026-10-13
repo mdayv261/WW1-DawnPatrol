@@ -4,7 +4,7 @@
 // settings from src/aircraft/sounds.js. Browsers allow sound only after a click or key press, so
 // nothing is made until start() is called from one. Without Web Audio (the tests) it does nothing.
 
-import { ENGINE_SOUND, WIND_SOUND, CLIPS, DISTANCE_SOUND as D, MIX } from '../aircraft/sounds.js';
+import { ENGINE_SOUND, WIND_SOUND, CLIPS, DISTANCE_SOUND as D, MIX, WARNING_SOUND } from '../aircraft/sounds.js';
 import {
   firingFrequency, engineLoudness, engineCutoff, windLoudness, windCutoff, wireHum,
   distanceGain, distanceCutoff, soundDelay, dopplerFactor, stereoPan, closingSpeed,
@@ -109,6 +109,22 @@ export function createAudio() {
     propGain.gain.value = 0;
     prop.connect(propFilter).connect(propPulse).connect(propGain).connect(bus);
 
+    // The warning tone: a square wave through an on-off gate (a square wave from 0 to 1).
+    const warn = ctx.createOscillator();
+    warn.type = 'square';
+    const warnGate = ctx.createGain();
+    warnGate.gain.value = 0.5;
+    const warnPulse = ctx.createOscillator();
+    warnPulse.type = 'square';
+    const warnDepth = ctx.createGain();
+    warnDepth.gain.value = 0.5;
+    warnPulse.connect(warnDepth).connect(warnGate.gain);
+    const warnGain = ctx.createGain();
+    warnGain.gain.value = 0;
+    warn.connect(warnGate).connect(warnGain).connect(bus);
+    warn.start();
+    warnPulse.start();
+
     const clips = {};
     for (const name of Object.keys(CLIPS)) {
       const data = clip(name, ctx.sampleRate);
@@ -116,7 +132,7 @@ export function createAudio() {
       buffer.copyToChannel(data, 0);
       clips[name] = buffer;
     }
-    parts = { master, bus, windFilter, windGain, wire, wireGain, propLfo, propGain, clips, player: null, enemies: [] };
+    parts = { master, bus, windFilter, windGain, wire, wireGain, propLfo, propGain, warn, warnPulse, warnGain, clips, player: null, enemies: [] };
   }
 
   // A clip once: from a distance (quieter, duller, later) and placed left or right.
@@ -182,7 +198,8 @@ export function createAudio() {
 
     // Each frame. s: { player: { kind, cylinders, rpm (crankshaft), propRpm, ratedRpm, throttle, running,
     // speed, density (ratio to sea level), velocity }, listener: { position, right }, enemies: [{ id, kind, cylinders, rpm, position,
-    // velocity }], sounds: combat sound events (emptied here), crashed: true on the frame the player crashes }.
+    // velocity }], sounds: combat sound events (emptied here), crashed: true on the frame the player crashes,
+    // warning: 'stall' | 'damage' | null (the stall horn or the damage buzzer) }.
     update(s) {
       if (!ctx || !parts) {
         if (s.sounds) s.sounds.length = 0;
@@ -208,6 +225,14 @@ export function createAudio() {
       set(parts.wireGain.gain, WIND_SOUND.wireLevel * hum.loudness);
       set(parts.propLfo.frequency, Math.max(0.5, (p.propRpm / 60) * 2)); // two blades
       set(parts.propGain.gain, !p.running && p.propRpm > 30 ? ENGINE_SOUND.windmillLevel * windLoudness(p.speed, p.density) : 0);
+
+      // The warning tone.
+      const w = s.warning ? WARNING_SOUND[s.warning] : null;
+      if (w) {
+        parts.warn.frequency.value = w.pitch;
+        parts.warnPulse.frequency.value = w.pulse;
+      }
+      parts.warnGain.gain.setTargetAtTime(w ? WARNING_SOUND.level : 0, ctx.currentTime, 0.01);
 
       // The nearest enemy engines, each from its direction, quieter and duller with distance, its
       // pitch shifted as it comes and goes.

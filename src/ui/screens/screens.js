@@ -49,7 +49,7 @@ export function createSetup({ config, onFly, onBack }) {
   return { ...s, getConfig: () => cleanConfig(c) };
 }
 
-// Options: volume, graphics quality, HUD, practice mode, and the Controls screen. Each change is
+// Options: volume, graphics quality, HUD, practice mode, the assists, and the Controls screen. Each change is
 // applied at once. getOptions() is read each time the screen opens, so keys pressed in flight show here.
 export function createOptions({ getOptions, quality, onChange, onQuality, onControls, onBack }) {
   const s = makeScreen();
@@ -77,6 +77,17 @@ export function createOptions({ getOptions, quality, onChange, onQuality, onCont
     o.practice = v === 'on';
     onChange({ ...o });
   });
+  // The assists (game aids; the aircraft had none of these).
+  const onOff = (label, key, onText, offText = 'Off') => choice(s.card, label, [['off', offText], ['on', onText]], o[key] ? 'on' : 'off', (v) => {
+    o[key] = v === 'on';
+    onChange({ ...o });
+  });
+  const assists = {
+    autoRudder: onOff('Auto-rudder', 'autoRudder', 'On (keeps the slip ball centred)'),
+    stallWarning: onOff('Stall warning', 'stallWarning', 'On (warning and horn)'),
+    gWarning: onOff('G and overspeed warning', 'gWarning', 'On (warning and buzzer)'),
+    structuralDamage: onOff('Structural damage', 'structuralDamage', 'On (too much g or speed breaks the wings)', 'Off (only bullets damage the airframe)'),
+  };
   buttons(s.card, [['Controls (keyboard and joystick)', onControls], ['Back', onBack]]);
   const show = s.show;
   return { ...s, show() {
@@ -84,6 +95,7 @@ export function createOptions({ getOptions, quality, onChange, onQuality, onCont
     vol.value = String(Math.round(o.volume * 100));
     hud.value = o.hud ? 'on' : 'off';
     practice.value = o.practice ? 'on' : 'off';
+    for (const [key, select] of Object.entries(assists)) select.value = o[key] ? 'on' : 'off';
     show();
   } };
 }

@@ -2,7 +2,33 @@
 
 Read this at the start of every session.
 
-## Current status: Phase 7 (controls screen and assists): checkpoint 1 (the Controls screen) approved by the product owner and committed; checkpoint 2 (auto-rudder, stall and G warnings, structural damage switch) is next. Phases 0-6 are signed off (Phase 6 in 18b3036, 6e87681, cae1ae3).
+## Current status: Phase 7 (controls screen and assists): checkpoint 1 (the Controls screen) committed (3c44123); checkpoint 2 (auto-rudder, stall and G warnings, structural damage switch) approved by the product owner (yaw oscillations gone) and committed; next, the Phase 7 acceptance test. Phases 0-6 are signed off (Phase 6 in 18b3036, 6e87681, cae1ae3).
+
+## Phase 7 checkpoint 2: assists and warnings (D62)
+
+**Done:** four new rows on the **Options** screen (from the main menu or the pause menu). The assists start off; structural damage starts on.
+- **Auto-rudder:** works the rudder for you to keep the slip ball centred: in turns, against the rotaries' torque, and on the take-off run (it checks the swing from the moment you roll). Your own rudder (keys or the twist) takes over at once while you use it; let go and it carries on. It only moves the rudder; the aircraft still flies by the same flight model, and in the cockpit you can see the rudder bar move.
+- **Stall warning:** a red **STALL** box and a pulsing horn about 2 degrees before the wing stalls (also when pushed into a negative stall). Not on the ground or when slower than 15 m/s.
+- **G and overspeed warning:** amber **HIGH G** from 85% of the load where the wings start to be damaged, and red **OVER G: AIRFRAME DAMAGE** with a fast buzzer beyond it; the same for speed (**HIGH SPEED** from 95% of the never-exceed speed, red **OVERSPEED** past it). Each aircraft's own documented limits (the Camel's wings are damaged above 3.3 g, for example).
+- **Structural damage:** On (as before) or Off: with it off, too much g or speed no longer damages or breaks the wings, and the warning then just says **OVER G** / **OVERSPEED**. Bullets still damage everything.
+- The warnings show at the top centre in every view (cockpit, chase, free), whether or not the modern HUD is on.
+
+Measured (tests): in a 30-degree turn auto-rudder cuts the sideslip from about 0.2-3 degrees to 0.02-0.25 degrees in all four aircraft, both ways, and it stays steady from 30 m/s to the never-exceed speed. On a hands-off take-off at full throttle every aircraft ground-loops without it; with it all four take off with the nose within 6-15 degrees of the runway heading. A 9 g pull breaks a wing with structural damage on and leaves the wings untouched with it off. Checked in Chrome: the options are saved; a stall showed STALL and set the 700 Hz horn; a hard pull at speed showed HIGH G then OVER G: AIRFRAME DAMAGE with wing damage, and with damage off just OVER G and no damage; the box sits below the HUD's heading tape; no console errors. 1,124 tests pass (plus 15 known deviations); `npm run build` works.
+
+**Please test (about 15 minutes, with sound on):**
+1. **Options:** switch on Auto-rudder, Stall warning and G and overspeed warning.
+2. **Stall:** throttle closed, keep pulling back as the speed falls: STALL and the horn come on before the stall.
+3. **G:** dive to build speed and pull hard: amber HIGH G, then red OVER G: AIRFRAME DAMAGE and the buzzer (and the wings start to suffer, F3 shows it). Dive steeply at full throttle for OVERSPEED.
+4. **Auto-rudder:** fly turns without touching the rudder and watch the slip ball (it stays in the middle; with auto-rudder off it slides). Take off in the Camel or Dr.I at full throttle without the rudder: it runs straight. Press a rudder key: you have the rudder.
+5. **Structural damage off:** pull as hard as you like at speed: the warning says OVER G but nothing breaks.
+
+**After the product owner's first test:** the warnings and the stall horn are approved. **Auto-rudder set up yaw oscillations in hard manoeuvring:** it chased the sideslip after it had built up, a little late each time. It now works mainly as a yaw damper (calming the nose's swing), leads the roll with a little rudder as a pilot does, uses at most 70% of the rudder, and lets go in a stall. In hard reversing turns it now gives slightly fewer slip swings than flying without it (70 against 78 across all four aircraft; the first version gave 133), and steady turns stay balanced (within 0.14 degrees). Covered by a new test. 1,126 tests pass.
+
+**Engine overspeed warning (asked for):** not built yet. In the flight model the engine's rpm is set by the throttle alone, so it cannot over-rev in a dive. A warning would need the propeller to drive the engine faster in a dive (a flight model change) and documented maximum rpm for each engine. **Product owner's decision: left out for now, to be added later** (it needs a plan first: propeller-driven engine speed in dives, plus documented rpm limits).
+
+**Decisions for you:** the horn and buzzer are synthesised tones and a matter of taste (louder, quieter, higher, lower). Flying with structural damage off still earns normal career points (only practice mode changes points); say if you want that otherwise.
+
+**Known issues:** none yet.
 
 ## Phase 7 checkpoint 1: the Controls screen (D61)
 
@@ -477,4 +503,4 @@ Still open:
 - **Phase 5: AI opponents.** Done and signed off. AI pilots on the player's flight model and controls, with patrol, engage, attack, evade and disengage; the six manoeuvres of the spec; Novice, Regular and Ace skill levels plus the Drone. Acceptance: see "Phase 5 checkpoint 3 and acceptance test" above.
 - **Phase 6: Game loop, HUD and audio.** Done and signed off. Start menu, mission setup, pause and results; period cockpit instruments and an optional modern HUD; engine, gun, wind and hit sounds. Acceptance: a full mission runs from menu to result screen and back without reloading the page.
 - **Phase 7: Controls screen and assists.** In progress. Rebinding of keyboard and joystick controls; options for auto-rudder, stall warning, G warning and structural damage. Proposed acceptance: a key and a joystick button rebound on the Controls screen work in flight and survive a reload, and each of the four options visibly changes the flight when switched on.
-- Later phases: not yet defined (other gamepads, per the spec).
+- Later phases: not yet defined. Candidates: other gamepads (per the spec); an engine overspeed warning, with engine speed rising in dives and documented rpm limits (product owner, Phase 7: "I will add later").

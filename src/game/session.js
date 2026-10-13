@@ -29,12 +29,15 @@ import { applyTimeOfDay, skyFor } from '../render/sky.js';
 import { skyEnvironment } from '../render/cockpit/environment.js';
 import { setEnvironment } from '../render/cockpit/materials.js';
 import { QUALITY_LEVELS } from '../render/quality.js';
+import { createAutoRudder } from '../physics/assists.js';
+import { warnings, warningLines, warningSound } from './warnings.js';
 
 const JOYSTICK_HINT = 'Joystick not detected: click the game window and press the trigger (Chrome shows it only after a button press)';
 
 // ctx: { parts (createScene's result), world, terrain, clouds, rig, keyboard, mouse, joystick,
 //        overlays: { debug, banner, readout, combatHud, testPanel, joystickPanel }, notice(text, ms),
-//        frameStats, quality(), hudOn(), audio (createAudio()), keyHint(action): its key and button in words }
+//        frameStats, quality(), hudOn(), audio (createAudio()), keyHint(action): its key and button in words,
+//        options(): the player's options (the assists) }
 export function createSession(ctx) {
   const { parts, world, terrain, clouds, rig, keyboard, mouse, joystick, overlays, notice } = ctx;
   const { scene, camera, renderer, ground, groundTile } = parts;
@@ -47,6 +50,8 @@ export function createSession(ctx) {
   const effects = new EffectsView(scene);
   const targetViews = new TargetViews(scene);
   const sightPoint = new Vector3();
+  const autoRudder = createAutoRudder();
+  const noWarnings = { stall: false, load: null, speed: null, structure: true };
   const drawPosition = { x: 0, z: 0 };
 
   const s = {
@@ -102,6 +107,7 @@ export function createSession(ctx) {
     s.wasJammed = false;
     s.wasCrashed = false;
     combat.sounds.length = 0;
+    autoRudder.reset();
   }
 
   // Start a mission from its settings (or, with watch = false, the idle aircraft behind the menus).
@@ -149,6 +155,12 @@ export function createSession(ctx) {
     return s.result;
   };
 
+  // What the auto-rudder needs to know of the aircraft's motion (body rates and attitude).
+  const motion = (state) => {
+    const a = attitude(state);
+    return { yawRate: -state.angularVelocity.y, rollRate: state.angularVelocity.x, bank: a.bank, pitch: a.pitch };
+  };
+
   // Read the controls and run as many fixed physics steps as realDt calls for (only while
   // flying). Returns alpha, how far we are between the last two physics states.
   s.update = (realDt, flying) => {
@@ -164,9 +176,14 @@ export function createSession(ctx) {
     const held = { pitch: keyboard.pitchKeyHeld(), roll: keyboard.rollKeyHeld(), yaw: keyboard.rudderKeyHeld() };
     const input = { ...keys, ...mixJoystick(keys, mouse.stick, joy, held), fire: Boolean(joy?.fire) || keyboard.isDown('fire') };
     if (import.meta.env.DEV && s.runner && (keyboard.pilotActive() || joy?.pull || joy?.roll || joy?.yaw)) s.runner.cancel();
+    const o = ctx.options?.() ?? {};
+    sim.structuralDamage = o.structuralDamage !== false; // Options: g and overspeed break the wings
+    if (!o.autoRudder) autoRudder.reset();
     return loop.advance(realDt, (dt) => {
       if (import.meta.env.DEV && s.runner) s.runner.apply(input, dt);
-      sim.step(dt, input);
+      // Auto-rudder (Options) works the rudder only, through the same flight model.
+      const hands = o.autoRudder ? autoRudder.apply(input, sim.diag, dt, motion(sim.state)) : input;
+      sim.step(dt, hands);
       combat.step(dt, sim, input.fire);
       if (s.watcher && !s.result) s.result = s.watcher.update(dt, sim, combat);
     }).alpha;
@@ -176,7 +193,7 @@ export function createSession(ctx) {
   // fight's one-shot sounds (gunfire, near misses, hits), heard from the camera.
   const _right = new Vector3();
   const crankRpm = (ac, propRpm) => propRpm / (ac.propeller.gearRatio || 1);
-  function feedAudio(paused) {
+  function feedAudio(paused, warning) {
     const ac = sim.aircraft;
     const d = sim.diag;
     const crashed = sim.crashed && !s.wasCrashed;
@@ -201,6 +218,7 @@ export function createSession(ctx) {
       })),
       sounds: combat.sounds,
       crashed,
+      warning,
     });
   }
 
@@ -261,7 +279,12 @@ export function createSession(ctx) {
     if (jammed && !s.wasJammed) notice(`Gun jammed: press ${ctx.keyHint('clearJam')} to clear it`, 3500);
     s.wasJammed = jammed;
     camera.updateMatrixWorld();
-    if (ctx.audio) feedAudio(paused);
+    // The stall, G and overspeed warnings (Options), on screen and as a sound.
+    const o = ctx.options?.() ?? {};
+    const live = !paused && !sim.crashed && !pilotDead(sim.damage);
+    const w = live ? warnings(sim.aircraft, common, sim.diag, { stall: o.stallWarning, g: o.gWarning }, o.structuralDamage !== false) : noWarnings;
+    overlays.warnings?.set(warningLines(w));
+    if (ctx.audio) feedAudio(paused, warningSound(w));
     const hudOn = ctx.hudOn() && !paused;
     overlays.hud.show(hudOn);
     // With the modern HUD on, it carries the guns, fuel and damage, so the status line is hidden.

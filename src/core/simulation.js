@@ -27,6 +27,7 @@ export class Simulation {
     this.surfaces = null;
     this.diag = null;
     this.damage = createDamage(); // wings, engine, fuel, pilot, tail and cables (physics/damage.js)
+    this.structuralDamage = true; // g and overspeed damage the wings (the player can switch it off in Options)
     this.deadPilotFreezes = true; // a killed pilot leaves the controls where they were (a scripted target sets this false and tumbles)
     this.crashed = false;
     this.crashReason = null;
@@ -89,7 +90,7 @@ export class Simulation {
     if (this.state.chocked && input.throttle > common.chockReleaseThrottle) this.state.chocked = false;
     const hands = !this.deadPilotFreezes && this.damage.pilot >= 1 ? input : filterInput(this.damage, input, this.surfaces); // what a hurt pilot can still do
     this.diag = advance(this.aircraft, common, this.state, this.surfaces, hands, dt, this.damage);
-    stepDamage(this.aircraft, this.damage, this.diag, dt);
+    stepDamage(this.aircraft, this.damage, this.diag, dt, this.structuralDamage);
     this.time += dt;
     if (this.diag.crash) this.crash(this.diag.crash);
     else if (this.state.position.y < FUSELAGE_FLOOR) this.crash('Hit the ground');

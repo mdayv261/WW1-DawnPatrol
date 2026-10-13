@@ -60,6 +60,15 @@ export const DISTANCE_SOUND = {
   nearMiss: 10, // m: an enemy bullet passing closer than this cracks
 };
 
+// The warnings (Options: stall warning, G and overspeed warning): a square-wave tone switched
+// on and off `pulse` times a second. The stall horn is higher and slower; the damage buzzer
+// (too much g or speed) lower and faster. Game aids, not period sounds.
+export const WARNING_SOUND = {
+  stall: { pitch: 700, pulse: 4 },
+  damage: { pitch: 260, pulse: 10 },
+  level: 0.05, // a square wave sounds far louder than its level suggests
+};
+
 export const MIX = {
   master: 0.85, // before the player's volume setting
   limiter: -1, // dB: a safety limiter just below full scale (lower would flatten the gunfire)

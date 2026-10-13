@@ -1,7 +1,7 @@
 // The numbers behind the sound: pitch, loudness, brightness, delay, Doppler shift and left/right
 // placement. Pure maths (tested); the Web Audio graph in audioEngine.js uses them each frame.
 
-import { ENGINE_SOUND, WIND_SOUND, DISTANCE_SOUND as D, MIX } from '../aircraft/sounds.js';
+import { ENGINE_SOUND, WIND_SOUND, DISTANCE_SOUND as D, MIX, WARNING_SOUND } from '../aircraft/sounds.js';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
@@ -101,8 +101,8 @@ export function closestApproach(a, b, p) {
   return { distance: Math.hypot(a.x + vx * t - p.x, a.y + vy * t - p.y, a.z + vz * t - p.z), t };
 }
 
-// The loudest the steady sounds can add up to (the engine, the wind and its wires, and the enemy
-// engines all at full), before the player's volume. Kept below 1 so they cannot clip.
+// The loudest the steady sounds can add up to (the engine, the wind and its wires, the enemy
+// engines and the warning tone all at full), before the player's volume. Kept below 1 so they cannot clip.
 export function steadyPeak() {
-  return MIX.master * (ENGINE_SOUND.level + WIND_SOUND.level + WIND_SOUND.wireLevel + D.enemyEngineLevel * D.maxEngines);
+  return MIX.master * (ENGINE_SOUND.level + WIND_SOUND.level + WIND_SOUND.wireLevel + D.enemyEngineLevel * D.maxEngines + WARNING_SOUND.level);
 }
