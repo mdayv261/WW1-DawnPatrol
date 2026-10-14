@@ -8,7 +8,10 @@
     "build": "vite build",
     "test": "vitest run",
     "calibrate": "node scripts/calibrateDrag.mjs",
-    "validate": "node scripts/flightValidation.mjs"
+    "validate": "node scripts/flightValidation.mjs",
+    "mp:setup": "npm --prefix server install --no-audit --no-fund",
+    "mp:server": "npm --prefix server run dev",
+    "mp:smoke": "node scripts/mpSmoke.mjs"
   },
   "dependencies": {
     "three": "0.186.1"

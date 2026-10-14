@@ -45,6 +45,15 @@ describe('the flow between screens', () => {
     expect(new Flow('results').can('paused')).toBe(false);
   });
 
+  it('multiplayer: menu > Multiplayer > lobby > match and back; leaving goes back to Multiplayer', () => {
+    const f = new Flow('menu');
+    for (const to of ['multiplayer', 'lobby', 'mpMatch', 'lobby', 'multiplayer', 'mpMatch', 'multiplayer', 'menu']) f.go(to);
+    expect(f.state).toBe('menu');
+    expect(new Flow('lobby').can('flying')).toBe(false); // a room never leads into a single-player flight
+    expect(new Flow('mpMatch').can('menu')).toBe(false);
+    for (const s of ['multiplayer', 'lobby', 'mpMatch']) expect(STATES).toContain(s);
+  });
+
   it('tells its listeners each change, with where it came from', () => {
     const f = new Flow();
     const seen = [];

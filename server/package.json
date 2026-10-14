@@ -1,0 +1,13 @@
+{
+  "name": "dawn-patrol-mp-server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "The multiplayer room server (Cloudflare Worker + Durable Objects). Kept apart from the game's own package so its tools do not slow the game's build.",
+  "scripts": {
+    "dev": "wrangler dev --config wrangler.toml"
+  },
+  "devDependencies": {
+    "wrangler": "4.143.1"
+  }
+}

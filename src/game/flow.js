@@ -1,15 +1,16 @@
 // The game's screens and how one leads to another, with no drawing: the main menu, mission
-// setup, options (and its controls screen), the Pilot Roll Call, flying, paused and results. Also the mission settings the player chooses,
+// setup, options (and its controls screen), the Pilot Roll Call, flying, paused and results,
+// and the multiplayer screens (Multiplayer, the room's lobby and its match). Also the mission settings the player chooses,
 // cleaned up and remembered in the browser. The screens themselves are in src/ui/screens/.
 
 import { AIRCRAFT_LIST } from '../aircraft/index.js';
 import { SKILL_ORDER } from '../aircraft/aiData.js';
 
-export const STATES = ['menu', 'setup', 'options', 'controls', 'roster', 'flying', 'paused', 'results'];
+export const STATES = ['menu', 'setup', 'options', 'controls', 'roster', 'flying', 'paused', 'results', 'multiplayer', 'lobby', 'mpMatch'];
 
 // Where each screen may go next.
 const NEXT = {
-  menu: ['setup', 'options', 'roster'],
+  menu: ['setup', 'options', 'roster', 'multiplayer'],
   roster: ['menu'],
   setup: ['menu', 'flying'],
   options: ['menu', 'paused', 'controls'], // options goes back to where it was opened from
@@ -17,6 +18,9 @@ const NEXT = {
   flying: ['paused', 'results'],
   paused: ['flying', 'options', 'results', 'menu'],
   results: ['flying', 'setup', 'menu'],
+  multiplayer: ['menu', 'lobby', 'mpMatch'], // into a room (or back into a match after a reload)
+  lobby: ['multiplayer', 'mpMatch'], // leaving, or refused / lost, goes back to Multiplayer
+  mpMatch: ['lobby', 'multiplayer'],
 };
 
 export class Flow {

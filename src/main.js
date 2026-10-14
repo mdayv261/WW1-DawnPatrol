@@ -33,6 +33,7 @@ import { loadCareers, recordMission } from './game/career.js';
 import { loadRoster, saveRoster, importOldCareer, activePilot, pilotTitle, enlist, rename, retire, select } from './game/pilots.js';
 import { createMainMenu, createSetup, createOptions, createControls, createPause, createResults } from './ui/screens/screens.js';
 import { createRollCall } from './ui/screens/rollCall.js';
+import { attachMultiplayer } from './net/attachMultiplayer.js';
 
 const DEV = import.meta.env.DEV;
 const canvas = document.getElementById('game');
@@ -228,7 +229,7 @@ function fly(cfg) {
 }
 
 const screens = {
-  menu: createMainMenu({ onFly: () => flyOrEnlist(), onRoster: () => flow.go('roster'), onOptions: () => flow.go('options') }),
+  menu: createMainMenu({ onFly: () => flyOrEnlist(), onRoster: () => flow.go('roster'), onOptions: () => flow.go('options'), onMultiplayer: () => flow.go('multiplayer') }),
   setup: createSetup({ config, getSide: pilotSide, onFly: (cfg) => fly(cfg), onBack: () => flow.go('menu') }),
   roster: createRollCall({
     getRoster: () => roster,
@@ -277,6 +278,7 @@ const screens = {
     onMenu: () => flow.go('menu'),
   }),
 };
+attachMultiplayer({ flow, screens, pilot: () => activePilot(roster) }); // adds the Multiplayer, lobby and match screens
 
 function togglePause() {
   if (flow.state === 'flying') flow.go('paused');

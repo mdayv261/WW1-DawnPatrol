@@ -49,6 +49,14 @@ const CSS = `
 .dp-roster td:first-child { white-space: normal; }
 .dp-roster tr.dp-active td { background: #dccb9f; font-weight: bold; }
 .dp-roster td:last-child { white-space: nowrap; text-align: right; }
+.dp-code { font-family: 'Courier New', monospace; font-size: 2.4rem; font-weight: bold; letter-spacing: 0.3em; text-align: center; margin: 0.2rem 0; }
+.dp-card input.dp-codebox { text-transform: uppercase; letter-spacing: 0.15em; width: 8rem; }
+.dp-card input[type=number] { font: inherit; font-size: 1rem; width: 5rem; padding: 0.2rem; background: #f7f0dc; color: #2a2015; border: 1px solid #6b5530; }
+.dp-card select:disabled { opacity: 0.75; }
+.dp-card button:disabled { opacity: 0.5; cursor: default; outline: none; }
+.dp-section { margin-top: 1rem; padding-top: 0.6rem; border-top: 1px solid #9c8758; }
+.dp-section h3 { margin: 0 0 0.4rem; font-size: 1.05rem; font-variant: small-caps; letter-spacing: 0.05em; }
+.dp-inline { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: center; margin: 0.5rem 0; }
 `;
 
 let injected = false;

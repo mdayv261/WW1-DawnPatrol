@@ -1,4 +1,5 @@
 node_modules
+server/.wrangler
 dist
 .DS_Store
 *.log

@@ -13,11 +13,11 @@ import { createJoystickTab } from './controlsJoystick.js';
 
 const aircraftName = (id) => AIRCRAFT_LIST.find((a) => a.id === id)?.name ?? id;
 
-export function createMainMenu({ onFly, onRoster, onOptions }) {
+export function createMainMenu({ onFly, onRoster, onOptions, onMultiplayer }) {
   const s = makeScreen();
   heading(s.card, 'Dawn Patrol', 'Western Front, 1917-1918');
   const pilotLine = paragraph(s.card, '', 'dp-pilot');
-  buttons(s.card, [['Fly a mission', onFly], ['Pilot Roll Call', onRoster], ['Options', onOptions]]);
+  buttons(s.card, [['Fly a mission', onFly], ['Multiplayer', onMultiplayer], ['Pilot Roll Call', onRoster], ['Options', onOptions]]);
   paragraph(s.card, 'Keyboard, mouse or joystick: Options > Controls changes the keys and buttons, and the help in flight lists them. Esc pauses.', 'dp-small');
   const show = s.show;
   // line: who is flying ("Flying as Lieutenant ..."), or what to do first.

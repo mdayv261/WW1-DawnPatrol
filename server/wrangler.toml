@@ -1,0 +1,28 @@
+# The multiplayer room server: one Worker, and one Durable Object per room (see
+# docs/MULTIPLAYER_SPEC.md). `npm run mp:server` (from the project folder) runs it on this Mac
+# at http://localhost:8787 with no Cloudflare account. Deploying needs the product owner's
+# account and permission.
+
+name = "dawn-patrol-mp"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+
+# The free plan needs the SQLite kind of Durable Object (rooms keep nothing in storage anyway).
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]
+
+[vars]
+# Web pages allowed to open a room connection. An entry without a port allows any port.
+ALLOWED_ORIGINS = "https://mdayv261.github.io,http://localhost,http://127.0.0.1"
+
+# No request logs are kept.
+[observability]
+enabled = false
+
+[dev]
+port = 8787

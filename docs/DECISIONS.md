@@ -701,3 +701,51 @@ The propeller's turning angle is followed from the engine speed the flight model
 - **Privacy, checked before publishing:** no keys, passwords, tokens, personal file paths or email addresses in any file or any past version. The commit history was rewritten before the first upload so every commit shows the GitHub username and its private noreply address instead of the product owner's name, Mac username and computer name (product owner's choice). The product owner's reference photos are ignored by git and never uploaded.
 - **No licence** (product owner's choice): the code is public to read and the game to play, with all rights reserved.
 - Players' pilots and settings stay in their own browser (local storage of the github.io site), separate from the local development copy.
+
+## D65. Multiplayer: an authoritative server on Cloudflare (Stage 1, 14 Oct 2026)
+- **Approved by the product owner.** Full design in `docs/MULTIPLAYER_SPEC.md`.
+- **Hosted authoritative server, not peer-to-peer.** In peer-to-peer play the host's browser decides everything. The host could then edit their own copy undetected, which breaks the brief's rule that no client may gain an advantage. The host would also play with zero delay, and the match would end if the host left. A neutral server that runs the physics for every aircraft avoids all three problems. Peer-to-peer would also need a relay (TURN) for players on strict networks, so it would not have saved an account.
+- **Cloudflare Workers + Durable Objects:**
+  - free plan, no card;
+  - no sleeping and no cold start;
+  - one room per Durable Object, placed near the first player;
+  - nothing to maintain.
+- **Rejected alternatives:**
+  - Render free: a 1-minute wake-up and one region.
+  - Fly.io: about $2 a month, and a card is needed.
+  - A virtual server of our own: it needs looking after.
+- **Main risk:** how CPU time is counted for a room ticking continuously on the free plan. To be measured in M2. Fallbacks: Workers Paid ($5 a month) or Render.
+- **The server runs the existing physics files unchanged.** They are plain JavaScript that already runs in Node. The physics has no random numbers (only bullet damage does, on the server), so a browser can predict its own aircraft exactly. Corrections are replayed and faded in. Other aircraft are drawn 100 ms in the past, between snapshots.
+- **Hits are decided on the server, with capped lag compensation** ("favour the shooter", at most 250 ms): a fair trade in a fight with no cover.
+- **WebSockets (TCP) for now:** packet loss shows up as short delays, which the smoothing hides. WebTransport stays possible later.
+- **Single-player is not touched:** no changes in `src/physics/`, the physics data in `src/aircraft/`, or `src/ai/`.
+
+## D66. Multiplayer M1: rooms, lobby and the test network
+- **The server is its own small package (`server/`).**
+  - It has its own wrangler, pinned at 4.143.1, so the game's install and the GitHub Pages build are unchanged.
+  - It imports the shared, pure `src/mp/` files. The lobby rules (`src/mp/roomCore.js`) have no sockets or clock, so every rule is tested in Node, and the same file runs in the Durable Object (`server/room.js`).
+- **Creating a room takes two steps.**
+  1. `POST /rooms` picks a random code (cryptographic randomness) and asks that code's room to claim it. It tries again if the code is in use.
+  2. The browser then connects to `/rooms/CODE`.
+- **Codes** are 6 characters from 32 (A-Z and 2-9 without I, O, 0 and 1), about 10^9 codes. Typed codes ignore capitals, spaces and dashes.
+- **Start rules:** 2-4 connected players, everyone ready, and at least one pilot on each team (friendly fire is off by default, so a one-team match has no enemy). Uneven teams are allowed. Confirmed by the product owner, who also agreed that a player arriving during a match is let in (and flies, from M2).
+- **Names:**
+  - The Roll Call rules (`checkName`).
+  - A duplicate in the room gets a number instead of being refused.
+  - New players join their Roll Call pilot's side, else the smaller team.
+  - Changing team or aircraft clears "ready".
+- **Dropping out and coming back:**
+  - Each tab keeps a private random token, so a reload or reconnect takes back the same place. A place is held for 60 s.
+  - Leaving on purpose gives the place up at once.
+  - The host role passes to the earliest joined player still connected, and stays there when the old host returns.
+- **Dead connections:**
+  - The page closes its connection on `pagehide`. Chrome was found to keep a left page's WebSocket open, so the room thought the player was still there.
+  - The server also treats 20 s without a message (browsers ping every 2 s) as a drop, which covers sleep and lost Wi-Fi where no close ever arrives.
+- **Test network:** in the browser, both directions.
+  - Extra ping is split half each way, plus up to the jitter.
+  - "Loss" is modelled as TCP behaves: a lost message arrives one more round trip plus 200 ms late, and holds up those behind it.
+  - Set per tab (`?netsim=` or the Multiplayer screen).
+- **Security basics:**
+  - Only the game's own pages may connect (GitHub Pages, localhost). Tools sending no Origin are let through, since an Origin check only stops other web sites.
+  - Messages are checked field by field; anything over 4 KB is refused, and more than 50 bad messages closes the connection.
+  - Nothing is stored.

@@ -2,7 +2,115 @@
 
 Read this at the start of every session.
 
-## Current status: Phases 0-7 and the Pilot Roll Call are done. Published on GitHub Pages (D64) on 14 Oct 2026: https://mdayv261.github.io/WW1-DawnPatrol/ (public repository github.com/mdayv261/WW1-DawnPatrol), deployed automatically on each push to main after the tests pass. Pushing to GitHub needs the product owner's permission each time. The next phase needs the product owner's brief and a plan in plan mode first.
+## Current status: Phases 0-7 and the Pilot Roll Call are done. Published on GitHub Pages (D64) on 14 Oct 2026: https://mdayv261.github.io/WW1-DawnPatrol/ (public repository github.com/mdayv261/WW1-DawnPatrol), deployed automatically on each push to main after the tests pass. Pushing to GitHub needs the product owner's permission each time. **Multiplayer add-on (local branch `multiplayer`): Stage 1 approved; M1 (connection and lobby) is done and committed on the local branch (not pushed). M2 (synchronised flight) needs a plan in plan mode first.**
+
+## Multiplayer M1: connection and lobby (D66)
+
+**Done:**
+- **Multiplayer on the main menu** opens a new screen with three parts:
+  - your name (the Roll Call pilot's, which you can change);
+  - **Create a room**, or a code box and **Join**;
+  - **Test network** fields: extra ping, jitter and loss, for this window only.
+- **The room server** runs on this Mac (`npm run mp:server`) and needs no account. It is the Cloudflare program that will later go online unchanged.
+- **The lobby:**
+  - The room code is shown large, with **Copy code**.
+  - The players table shows name, host, you, team, aircraft, and ready / not ready / reconnecting.
+  - Your team and your aircraft: only that side's two types are offered.
+  - **I am ready**.
+  - The host's **match settings**: starting point, daylight, score to win (3/5/10/20), time limit (5/10/15/20 min), friendly fire (off), structural damage (on). Everyone else sees them greyed out.
+  - **Start the match** (host only) says why it cannot start yet: fewer than 2 players, a team with nobody on it, or who is not ready.
+  - **Leave the room**, and the ping.
+- **Start** shows a placeholder "Match started" screen with the teams and settings for everyone. Flying together comes in M2. The host has **Back to the lobby**.
+- **Dropping out:**
+  - If the host leaves or drops, the player who joined earliest becomes host.
+  - A dropped player shows as "reconnecting..." and keeps their place, team and aircraft for 60 s.
+  - The browser reconnects by itself (3 tries).
+  - **Reloading the page goes straight back into the room.**
+- **Other checks:**
+  - A connection silent for 20 s counts as dropped (a laptop asleep, Wi-Fi lost).
+  - An out-of-date page is told to reload.
+  - A fifth player is refused.
+  - A name already in the room gets a number ("Max 2").
+
+**Checked:**
+- 50 new tests: messages, room rules, the network simulator, the server with stand-in connections, the browser's client, and the new screen routes. All 1,186 tests pass (plus 15 known deviations).
+- `npm run build` works.
+- `git diff main -- src/physics src/aircraft src/ai` is empty: the flight model is untouched.
+- The real local server passed `npm run mp:smoke`: 3 scripted players create, join, get ready, start, and the host hands over.
+- In Chrome, with two tabs:
+  - create and join by code (typed in lower case with a dash);
+  - team and aircraft changes seen in both tabs;
+  - ready, a host setting, Start, the placeholder in both tabs, back to the lobby;
+  - the host leaving the page: the other tab became host and showed "reconnecting...", then "Host Tab is back";
+  - reload rejoin, and Leave the room;
+  - a single-player mission still starts;
+  - no console errors.
+- **Found and fixed during the Chrome check:** Chrome can keep a page that was left alive in the background, with its connection still open, so the room thought the player was still there. The game now closes its connection when the page is left, and the server treats 20 s of silence as a drop.
+
+**Please test (about 10 minutes):**
+1. One-time setup, in Terminal in the project folder: `npm run mp:setup`.
+2. Terminal window 1: `npm run mp:server`. Terminal window 2: `npm run dev`.
+3. Open http://localhost:5173 in **two or three separate browser windows**, side by side (Chrome and Firefox both work). In each: **Multiplayer**.
+4. Window 1: change the name if you like, then **Create a room**. Type the code into the other windows and press **Join**.
+5. Change teams and aircraft and watch the other windows follow. Only the side's aircraft are offered. As host, change a match setting.
+6. Press **I am ready** in every window, then **Start the match** in the host's window. Every window shows "Match started". Press **Back to the lobby**.
+7. Close the host's window: another window becomes host. Reload a window: it goes back into the room in its place.
+8. **Test network:** in one window, go back to the Multiplayer screen, set 300 ms extra ping, then join again. The ping line shows about 300 ms. Or open http://localhost:5173/?netsim=300,50,5.
+
+**Decided by the product owner (14 Oct 2026):**
+- A match needs at least one pilot on each team; uneven teams (1 v 2, 1 v 3) are fine.
+- Someone joining while a match is on is let in, and (from M2) flies.
+
+**After the product owner's first test:** Start, "Match started", Back to the lobby felt like an endless loop.
+- The screens were working as designed, but did not say so. "Match started" is only a placeholder until M2, and the return to the lobby clears everyone's "ready" so the next match is confirmed afresh.
+- The match screen now says it is a test match with nothing to fly yet, and how it ends.
+- Back in the lobby, everyone sees "The host ended the match. Press "I am ready" for the next one."
+- Checked in Chrome with two windows. The test for this notice is added; 1,186 tests pass.
+
+**Known issues:**
+- **Background windows:** Chrome slows timers in windows that are minimised or fully covered. The test network then shows a much higher ping (about 2 s in a hidden tab). Use separate visible windows for testing, as the spec says.
+- **Server restarts:** the local server restarts when its code changes, and rooms are then forgotten. A room can also be forgotten if everyone has been gone for a while. That is by design: nothing is stored.
+- **The chunk-size warning** in `npm run build` comes from the existing game code (the 3D library), not multiplayer.
+
+## Multiplayer add-on (D65, docs/MULTIPLAYER_SPEC.md)
+
+**Brief (product owner):**
+- 2-4 human players in private rooms joined by a code, Allied against Central. No AI aircraft.
+- The validated physics unchanged, and no advantage from editing your own copy.
+- Fair hits whatever each player's delay. Playable at 150 ms delay with light packet loss.
+- Free or very cheap hosting, with no personal data.
+- Single-player unchanged.
+
+**Stage 1 done (14 Oct 2026):** peer-to-peer WebRTC compared with a hosted server.
+- **Chosen and approved:** an authoritative server on Cloudflare Workers + Durable Objects. It is free and needs no card. The server runs the existing physics for every aircraft.
+- **How play works:** each browser predicts its own aircraft and smooths the others. Hits are decided by the server, with capped lag compensation.
+- **Accounts:** none until the end of M2. Then the product owner creates a free Cloudflare account.
+- Details, costs and sources are in `docs/MULTIPLAYER_SPEC.md`.
+
+**Phase plan.** Work happens on the local branch `multiplayer`, one phase at a time. For each phase: a plan in plan mode, the build, `npm test`, browser test steps, then a stop until approved and asked to commit.
+
+| Phase | What it covers |
+|---|---|
+| **M1: Connection and lobby** | The server skeleton (Worker, a Room Durable Object, and the pure `src/mp/roomCore.js`). Create and join by code. Names, teams, aircraft by side, ready status, host settings. The host's Start (to a placeholder), host hand-over, version check. The network simulator. A Multiplayer button on the main menu. |
+| **M2: Synchronised flight** | 120 Hz server flight. Controls up, snapshots down. Prediction and replay, smoothing and the tick clock. Other aircraft drawn and heard. Start areas. Ping and correction numbers on F3. The server CPU measured, then (with the product owner's account and permission) one test deployment to check the free-plan limits. |
+| **M3: Combat and damage** | Server guns, bullets, lag-compensated hits, damage and kills. Respawn and friendly fire. Tracers, sparks, smoke and hit sounds. "Shot down by" notices. |
+| **M4: Match flow** | Score and time limits, the score line, the results, back to the lobby. Leaving and rejoining within 60 s, the host leaving, an empty team, a lost server. |
+| **M5: Testing and polish** | Automated delay and loss runs. A 4-player headless match and a 4-window test. A performance check. Menu and help text. A family test on the test address. |
+| **M6: Deploy** | Merge to main after the product owner confirms, then check single-player and multiplayer on the live site. |
+
+**Rule for every phase:** `git diff main -- src/physics src/aircraft src/ai` stays empty, and all single-player tests still pass.
+
+**Decided by the product owner (14 Oct 2026, "go": the proposed defaults accepted):**
+1. Friendly fire: off by default; the host can switch it on.
+2. Respawn: after 10 s, in the air, about 3 km behind your own side of the front.
+3. Multiplayer kills do not count towards Roll Call ranks.
+4. Auto-rudder and the warnings are allowed in multiplayer.
+
+Still open: where family and friends live (the same country or abroad), to set expectations for delay.
+
+The local branch `multiplayer` has been created. M1 is built (see above).
+
+**Known issues:** none yet; nothing has been built.
 
 ## Pilot Roll Call (D63)
 
