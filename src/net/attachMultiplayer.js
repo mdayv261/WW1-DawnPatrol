@@ -10,12 +10,15 @@ import { parseNetsim, cleanNetsim, netsimActive, netsimText } from './netSim.js'
 import { NetFlight } from './netFlight.js';
 import { createMultiplayerScreen } from '../ui/screens/multiplayer.js';
 import { createLobby, createMpEsc } from '../ui/screens/lobby.js';
+import { createMpResults } from '../ui/screens/mpResults.js';
+import { createScoreLine, scoreLineText } from '../ui/scoreLine.js';
 import { AIRCRAFT_LIST } from '../aircraft/index.js';
 import { WorldSolids } from '../mp/worldSolids.js';
 import { createWorld } from '../world/layout.js';
+import { RESULTS_S, TICK_HZ } from '../mp/netConfig.js';
 
 const NETSIM_KEY = 'dawnPatrol.netsim';
-const ROOM_SCREENS = ['lobby', 'mpFlying', 'mpEsc'];
+const ROOM_SCREENS = ['lobby', 'mpFlying', 'mpEsc', 'mpResults'];
 const aircraftById = (id) => AIRCRAFT_LIST.find((a) => a.id === id) ?? null;
 
 const tabStorage = () => {
@@ -139,15 +142,21 @@ export function attachMultiplayer({ flow, screens, session, idle, notice, pilot 
     onLeave: leave,
   });
 
+  const results = createMpResults({ client, onLobby: () => client.toLobby(), onLeave: leave });
+  const secondsLeft = () => RESULTS_S - (Date.now() - client.state.resultAt) / 1000;
+  const scoreLine = createScoreLine();
+
   // The flow calls show() with nothing; each screen draws from the client's state.
   screens.multiplayer = { ...menu, show: () => { menu.show(pending || (client.available ? '' : 'Multiplayer is not available on this copy of the game yet.')); pending = ''; } };
   screens.lobby = { ...lobby, show: () => { lobby.show(); lobby.render(note); } };
   screens.mpEsc = { ...esc, show: () => { esc.show(); esc.render(note); } };
   screens.mpFlying = { show: () => {}, hide: () => {} }; // flying: no screen, just the game
+  screens.mpResults = { ...results, show: () => { results.show(); results.render(secondsLeft()); } };
 
   function render() {
     if (flow.state === 'lobby') lobby.render(flight && !flight.net.ready ? note || 'Joining the match...' : note);
     if (flow.state === 'mpEsc') esc.render(note);
+    if (flow.state === 'mpResults') results.render(secondsLeft());
   }
 
   // Follow the room's state with the screens.
@@ -156,10 +165,13 @@ export function attachMultiplayer({ flow, screens, session, idle, notice, pilot 
     const st = client.state;
     const here = flow.state;
     if ((st.status === 'inRoom' || st.status === 'reconnecting') && st.lobby) {
-      const on = st.lobby.phase === 'match';
+      const phase = st.lobby.phase;
+      const on = phase === 'match';
       if (on && st.match && st.match !== flight?.match) startFlight(st.match);
       if (!on && flight) stopFlight();
-      const want = on && flight?.net.ready ? (here === 'mpEsc' ? 'mpEsc' : 'mpFlying') : 'lobby';
+      let want = 'lobby';
+      if (phase === 'results' && st.result) want = 'mpResults';
+      else if (on && flight?.net.ready) want = here === 'mpEsc' ? 'mpEsc' : 'mpFlying';
       if (here !== want && (here === 'multiplayer' || ROOM_SCREENS.includes(here))) return flow.go(want);
     } else if (['error', 'lost', 'idle'].includes(st.status)) {
       stopFlight();
@@ -173,8 +185,17 @@ export function attachMultiplayer({ flow, screens, session, idle, notice, pilot 
   }
   flow.onChange(() => { if (flow.multiplayer) sync(); }); // e.g. back from Options while the match ended
 
-  // The ping line, once a second.
-  setInterval(() => { if (flow.state === 'lobby') lobby.update(); }, 1000);
+  // The ping line and the results countdown, once a second.
+  setInterval(() => {
+    if (flow.state === 'lobby') lobby.update();
+    if (flow.state === 'mpResults') results.render(secondsLeft());
+  }, 1000);
+
+  // The score line while flying in a match (4 times a second).
+  setInterval(() => {
+    const on = flow.state === 'mpFlying' && flight?.net.ready;
+    scoreLine.set(on ? scoreLineText(client.state.score, flight.net.serverTick / TICK_HZ, flight.match.settings) : '');
+  }, 250);
 
   // Leaving the page closes the connection at once (Chrome may otherwise keep a left page, and
   // its connection, alive), and the place in the room is kept. If the browser brings the page

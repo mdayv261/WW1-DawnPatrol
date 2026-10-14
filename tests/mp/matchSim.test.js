@@ -182,3 +182,55 @@ describe('trees and buildings everyone shares', () => {
 });
 
 const awaitImport = await import('../../src/mp/binary.js');
+
+describe('match: how it ends', () => {
+  const runSeconds = (m, s) => { for (let i = 0; i < s * TICK_HZ; i++) m.step(); };
+
+  it('a team reaching the score to win wins at once (within a second)', () => {
+    const m = match({ ...settings, scoreLimit: 3 }, [players[0], players[1]]);
+    m.combat.teams.allied = 3;
+    runSeconds(m, 1);
+    expect(m.result).toMatchObject({ winner: 'allied', reason: 'score', scoreLimit: 3, teams: { allied: 3, central: 0 } });
+    expect(m.advanceTo(m.tick * TICK_MS + 1).result).toBe(m.result); // reported once...
+    expect(m.advanceTo(m.tick * TICK_MS + 20).result).toBe(null); // ...and only once
+  });
+
+  it('at the time limit the higher score wins; an equal score is a draw', () => {
+    for (const [allied, central, winner] of [[2, 1, 'allied'], [1, 1, 'draw'], [0, 2, 'central']]) {
+      const m = match({ ...settings, timeLimit: 5 }, [players[0], players[1]]);
+      m.combat.teams.allied = allied;
+      m.combat.teams.central = central;
+      m.tick = 5 * 60 * TICK_HZ - TICK_HZ; // a second before time
+      runSeconds(m, 1);
+      expect(m.result).toMatchObject({ winner, reason: 'time' });
+    }
+  });
+
+  it('a team with nobody in the sky for 30 s loses; back within 30 s, the match goes on', () => {
+    const m = match(settings, [players[0], players[1]]);
+    m.removePlayer('p2'); // Albert (Allied) drops out
+    runSeconds(m, 20);
+    m.addPlayer(players[1]); // back within the minute
+    runSeconds(m, 20);
+    expect(m.result).toBe(null);
+    m.removePlayer('p2');
+    runSeconds(m, 31);
+    expect(m.result).toMatchObject({ winner: 'central', reason: 'left', leftTeam: 'allied' });
+  });
+
+  it('the result lists everyone who flew, with their record, even those who left; a player who comes back keeps theirs', () => {
+    const m = match(settings, [players[0], players[1], players[2]]);
+    m.players.get('p2').tally.kills = 2;
+    m.removePlayer('p2');
+    m.addPlayer(players[1]);
+    expect(m.players.get('p2').tally.kills).toBe(2); // kept
+    m.players.get('p3').tally.deaths = 1;
+    m.removePlayer('p3'); // Werner leaves for good
+    const r = m.finish('host');
+    expect(r.reason).toBe('host');
+    expect(r.players.map((p) => p.name).sort()).toEqual(['Albert', 'Max', 'Werner']);
+    expect(r.players.find((p) => p.id === 'p2')).toMatchObject({ team: 'allied', aircraft: 'camel', kills: 2 });
+    expect(r.players.find((p) => p.id === 'p3')).toMatchObject({ deaths: 1 });
+    expect(m.finish('time')).toBe(r); // the first ending stands
+  });
+});

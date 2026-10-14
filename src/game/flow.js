@@ -7,8 +7,8 @@
 import { AIRCRAFT_LIST } from '../aircraft/index.js';
 import { SKILL_ORDER } from '../aircraft/aiData.js';
 
-export const STATES = ['menu', 'setup', 'options', 'controls', 'roster', 'flying', 'paused', 'results', 'multiplayer', 'lobby', 'mpFlying', 'mpEsc'];
-const MULTIPLAYER = ['multiplayer', 'lobby', 'mpFlying', 'mpEsc'];
+export const STATES = ['menu', 'setup', 'options', 'controls', 'roster', 'flying', 'paused', 'results', 'multiplayer', 'lobby', 'mpFlying', 'mpEsc', 'mpResults'];
+const MULTIPLAYER = ['multiplayer', 'lobby', 'mpFlying', 'mpEsc', 'mpResults'];
 const PAUSE = { flying: 'paused', paused: 'flying', mpFlying: 'mpEsc', mpEsc: 'mpFlying' }; // what Esc does
 
 // Where each screen may go next.
@@ -21,10 +21,11 @@ const NEXT = {
   flying: ['paused', 'results'],
   paused: ['flying', 'options', 'results', 'menu'],
   results: ['flying', 'setup', 'menu'],
-  multiplayer: ['menu', 'lobby', 'mpFlying'], // into a room (or back into a match after a reload)
-  lobby: ['multiplayer', 'mpFlying'], // leaving, or refused / lost, goes back to Multiplayer
-  mpFlying: ['mpEsc', 'lobby', 'multiplayer'], // the match ends (lobby) or the room is lost
-  mpEsc: ['mpFlying', 'options', 'lobby', 'multiplayer'],
+  multiplayer: ['menu', 'lobby', 'mpFlying', 'mpResults'], // into a room (or back into a match or its results after a reload)
+  lobby: ['multiplayer', 'mpFlying', 'mpResults'], // leaving, or refused / lost, goes back to Multiplayer
+  mpFlying: ['mpEsc', 'mpResults', 'lobby', 'multiplayer'], // the match ends (results) or the room is lost
+  mpEsc: ['mpFlying', 'options', 'mpResults', 'lobby', 'multiplayer'],
+  mpResults: ['lobby', 'multiplayer'],
 };
 
 export class Flow {

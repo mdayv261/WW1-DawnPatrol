@@ -17,7 +17,7 @@ import { quantiseInput, captureState, compactOf, encodeSnapshot, gunsOf } from '
 import { spawnPoint, spawnAircraft } from './spawn.js';
 import { MatchCombat } from './matchCombat.js';
 import { controlsFor } from './pilotRules.js';
-import { TICK_HZ, TICK_MS, SNAPSHOT_EVERY, MAX_TICKS_PER_CALLBACK, INPUT_AHEAD_MAX, HANDS_OFF_TICKS } from './netConfig.js';
+import { TICK_HZ, TICK_MS, SNAPSHOT_EVERY, MAX_TICKS_PER_CALLBACK, INPUT_AHEAD_MAX, HANDS_OFF_TICKS, EMPTY_TEAM_S, END_CHECK_TICKS, TEAM_IDS } from './netConfig.js';
 
 const DT = 1 / TICK_HZ;
 const aircraftById = (id) => AIRCRAFT_LIST.find((a) => a.id === id) ?? AIRCRAFT_LIST[0];
@@ -34,7 +34,11 @@ export class MatchSim {
     this.tick = 0; // ticks flown so far: the state everyone is at
     this.players = new Map(); // player id -> pilot
     this.tallies = new Map(); // player id -> kills, deaths, shots, hits (kept if they leave and come back)
+    this.roster = new Map(); // player id -> { id, name, team, aircraft }: everyone who took part
     this.combat = new MatchCombat({ settings, solidAt, ...combat });
+    this.result = null; // set when the match is over
+    this.resultSent = false;
+    this.emptySince = { allied: null, central: null }; // tick since when a team has had nobody in the sky
   }
 
   // A player takes part (at the start, or joining or rejoining mid-match): spawns at once.
@@ -45,6 +49,7 @@ export class MatchSim {
     sim.solidAt = this.solidAt;
     const pilot = { ...p, ac: aircraftById(p.aircraft), sim, inputs: new Map(), last: null, view: 0, heard: 0, spawn: 0, respawnAt: null, lead: 0 };
     this.players.set(p.id, pilot);
+    this.roster.set(p.id, { id: p.id, name: p.name, team: p.team, aircraft: p.aircraft });
     this.combat.addPilot(pilot, this.tallies.get(p.id));
     this.tallies.set(p.id, pilot.tally);
     this.spawn(pilot);
@@ -78,7 +83,8 @@ export class MatchSim {
   }
 
   // Fly the ticks due by `now` (ms). Returns { snapshots: [{ id, buffer }], notices: [{ to, except?,
-  // text }], fx: [[kind, x, y, z, victimSlot]] (impacts), score (when it changed, else null) }.
+  // text }], fx: [[kind, x, y, z, victimSlot]] (impacts), score (when it changed, else null),
+  // result (once, when the match is over, else null) }.
   advanceTo(now) {
     const due = Math.floor((now - this.startMs) / TICK_MS);
     let n = due - this.tick;
@@ -101,7 +107,43 @@ export class MatchSim {
       c.talliesChanged = false;
       this.scoreTick = this.tick;
     }
-    return { snapshots, notices: c.notices.splice(0), fx: c.fx.splice(0), score };
+    const result = this.result && !this.resultSent ? this.result : null;
+    if (result) this.resultSent = true;
+    return { snapshots, notices: c.notices.splice(0), fx: c.fx.splice(0), score, result };
+  }
+
+  // Is the match over? (Once a second.) A team at the score limit wins; at the time limit the
+  // higher score wins (equal: a draw); a team with nobody in the sky for EMPTY_TEAM_S loses.
+  checkEnd(t) {
+    if (this.result) return;
+    const teams = this.combat.teams;
+    const limit = this.settings.scoreLimit;
+    if (teams.allied >= limit || teams.central >= limit) return this.finish('score');
+    if (t >= this.settings.timeLimit * 60 * TICK_HZ) return this.finish('time');
+    for (const team of TEAM_IDS) {
+      const here = [...this.players.values()].some((p) => p.team === team);
+      if (here) this.emptySince[team] = null;
+      else {
+        this.emptySince[team] ??= t;
+        if (t - this.emptySince[team] >= EMPTY_TEAM_S * TICK_HZ) return this.finish('left', team);
+      }
+    }
+  }
+
+  // End the match. reason: 'score', 'time', 'left' (team: the team that left) or 'host'.
+  // Returns the result: { winner ('allied' | 'central' | 'draw'), reason, leftTeam, scoreLimit,
+  // teams, seconds, players: [{ id, name, team, aircraft, kills, deaths, shots, hits }] }.
+  finish(reason, leftTeam = null) {
+    if (this.result) return this.result;
+    const teams = { ...this.combat.teams };
+    let winner = teams.allied > teams.central ? 'allied' : teams.central > teams.allied ? 'central' : 'draw';
+    if (reason === 'left') winner = TEAM_IDS.find((t) => t !== leftTeam);
+    this.result = {
+      winner, reason, leftTeam, scoreLimit: this.settings.scoreLimit, teams,
+      seconds: Math.round(this.tick / TICK_HZ),
+      players: [...this.roster.values()].map((r) => ({ ...r, ...(this.tallies.get(r.id) ?? { kills: 0, deaths: 0, shots: 0, hits: 0 }) })),
+    };
+    return this.result;
   }
 
   // One tick for everyone.
@@ -134,6 +176,7 @@ export class MatchSim {
       if (!sim.crashed) combat.afterStep(p, t, hands, p.view);
     }
     combat.moveBullets(t, pilots);
+    if (t % END_CHECK_TICKS === 0) this.checkEnd(t);
     for (const p of pilots) for (const text of p.sim.damage.events.splice(0)) combat.notices.push({ to: p.id, text }); // from hits
   }
 

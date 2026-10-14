@@ -93,6 +93,16 @@ const m0 = max.snapshots[0].you.state;
 const m1 = max.snapshots.at(-1).you.state;
 check(Math.hypot(m1[0] - m0[0], m1[2] - m0[2]) > 60, `Max's aircraft flies on by itself (${Math.hypot(m1[0] - m0[0], m1[2] - m0[2]).toFixed(0)} m in 2 s)`);
 
+// The host ends the match: everyone gets the results; then back to the lobby.
+max.send({ type: 'toLobby' });
+await wait(400);
+const ends = [max, albert, werner].map((p) => p.got.find((m) => m.type === 'matchEnd'));
+check(ends.every(Boolean), `everyone got the results (${ends[0]?.result.reason}, ${ends[0]?.result.winner}, ${ends[0]?.result.players.length} pilots)`);
+check(albert.lobby?.phase === 'results', 'the room shows the results');
+max.send({ type: 'toLobby' });
+await wait(400);
+check(albert.lobby?.phase === 'lobby' && albert.lobby.players.every((p) => !p.ready), 'the host takes everyone back to the lobby, not ready');
+
 max.send({ type: 'leave' });
 await wait(300);
 const next = max.lobby.players[1]; // whoever joined second (Albert and Werner join at almost the same moment)

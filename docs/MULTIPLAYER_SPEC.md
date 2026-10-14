@@ -1,7 +1,7 @@
 # Multiplayer Specification: Allied vs Central team dogfights
 
 Status: Stage 1 (research and recommendation) approved by the product owner on 14 Oct 2026.
-M1 (connection and lobby, D66) and M2 (flying together, D67) are committed on the `multiplayer` branch; M3 (combat, D68) is built. Test server: https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev (Cloudflare free plan). The phase plan (M1-M6) is in `PROGRESS.md`. The decision record is D65 in `DECISIONS.md`.
+M1 (connection and lobby, D66), M2 (flying together, D67) and M3 (combat, D68) are committed on the `multiplayer` branch; M4 (match flow, D69) is built. Test server: https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev (Cloudflare free plan). The phase plan (M1-M6) is in `PROGRESS.md`. The decision record is D65 in `DECISIONS.md`.
 
 ## 1. Goal and rules
 
@@ -176,7 +176,7 @@ The browser's tick clock runs just ahead of the server's, so your controls reach
   1. A countdown, then the match. A score line at the top shows "ALLIED 2 - 1 CENTRAL, 7:42".
   2. The first team to the score limit wins, or the team with the higher score when time runs out. An equal score is a draw.
   3. The results show the team scores and each player's kills, deaths and accuracy.
-  4. Back to the lobby after 20 s, or sooner with a click.
+  4. Back to the lobby after 20 s, or sooner with the host's Back to the lobby now.
 - **No pause in multiplayer:** Esc opens Options / Leave match while your aircraft flies on.
 
 ### Disconnects

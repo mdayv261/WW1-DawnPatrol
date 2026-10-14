@@ -6,7 +6,7 @@ import { STARTS, TIMES } from '../game/flow.js';
 
 // Raised whenever a message changes shape, so an old cached page and a new server (or the
 // other way round) refuse each other with "please reload" instead of misunderstanding.
-export const PROTOCOL_VERSION = 2; // 2: M3 (guns in the snapshots)
+export const PROTOCOL_VERSION = 3; // 2: M3 (guns in the snapshots); 3: M4 (the results phase)
 
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 4;
@@ -50,6 +50,10 @@ export const KILL_CREDIT_S = 15; // going down (or crashing) this soon after an 
 export const FX_MAX = 60; // impacts sent in one message at most
 export const HIT_NOTICE_S = 2; // "You are hit!" at most this often
 export const ROUNDS_DRIFT = 20; // the browser's own round count is corrected from the server beyond this
+// ---- match flow (M4) ------------------------------------------------------------------------------
+export const RESULTS_S = 20; // the results stay up this long, then everyone is back in the lobby
+export const EMPTY_TEAM_S = 30; // a team with nobody in the sky this long ends the match
+export const END_CHECK_TICKS = TICK_HZ; // how often the match checks whether it is over (once a second)
 export const SOLIDS = { tile: 1000, treeSpacing: 16, maxHeight: 60, border: 50 }; // trees and buildings everyone crashes into (Medium's spacing)
 export const SPAWN = { airBehindFront: 3000, airSpacing: 300, groundSpacing: 30, groundFromEnd: 0.3 }; // where teams appear
 

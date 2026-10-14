@@ -8,6 +8,7 @@
 //   ping { t }  leave {}
 // Server -> browser:
 //   welcome { you, code, token }  lobby { ...room view }  matchStart { settings, players }
+//   matchEnd { result }  fx { e }  score { teams, players }  (binary snapshots: src/mp/binary.js)
 //   notice { text }  error { code, text }  pong { t }
 //
 // Everything a browser sends is checked here before the room looks at it: a message of the
@@ -57,6 +58,7 @@ export function parseClientMessage(text) {
 export const welcome = (you, code, token) => ({ type: 'welcome', you, code, token });
 export const lobbyMessage = (view) => ({ type: 'lobby', ...view });
 export const matchStart = (settings, players) => ({ type: 'matchStart', settings, players });
+export const matchEnd = (result) => ({ type: 'matchEnd', result });
 export const notice = (text) => ({ type: 'notice', text });
 export const pong = (t) => ({ type: 'pong', t });
 

@@ -126,7 +126,7 @@ describe('room lobby: starting', () => {
     expect(room.canStart().ok).toBe(true);
   });
 
-  it('in a match the lobby choices are locked; the host takes everyone back to the lobby, not ready', () => {
+  it('in a match the lobby choices are locked; the host ending it asks for the results; results go back to the lobby, not ready', () => {
     const { room, ids: [a, b] } = roomWith('Max', 'Albert');
     ready(room, [a, b]);
     room.handle(a, { type: 'start' }, T0);
@@ -134,9 +134,22 @@ describe('room lobby: starting', () => {
     expect(room.players.get(b).team).toBe('central');
     expect(sent(room, 'error').at(-1).msg.code).toBe('notInLobby');
     room.handle(a, { type: 'toLobby' }, T0);
+    expect(room.endRequested).toBe(true); // the room server ends the match and makes the results
+    expect(room.phase).toBe('match');
+    const result = { winner: 'draw', reason: 'host', teams: { allied: 0, central: 0 }, players: [] };
+    room.outbox.length = 0;
+    room.endMatch(result);
+    expect(room.phase).toBe('results');
+    expect(room.endRequested).toBe(false);
+    expect(sent(room, 'matchEnd')[0]).toEqual({ to: 'all', msg: { type: 'matchEnd', result } });
+    expect(room.canStart().ok).toBe(false);
+    const c = room.join(hello('Late'), T0).id; // arriving now: shown the results
+    expect(room.outbox.some((o) => o.to === c && o.msg.type === 'matchEnd')).toBe(true);
+    room.handle(a, { type: 'toLobby' }, T0); // the host: back now
     expect(room.phase).toBe('lobby');
+    expect(room.result).toBe(null);
     expect([...room.players.values()].every((p) => !p.ready)).toBe(true);
-    expect(sent(room, 'notice').at(-1)).toEqual({ to: 'all', msg: { type: 'notice', text: 'The host ended the match. Press "I am ready" for the next one.' } });
+    expect(sent(room, 'notice').at(-1).msg.text).toMatch(/Back in the lobby/);
   });
 
   it('a player arriving during a match is told about it', () => {

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Room } from '../../server/room.js';
 import { handle, originAllowed } from '../../server/worker.js';
 import { PROTOCOL_VERSION, MAX_BAD_MESSAGES, SILENT_DROP_S } from '../../src/mp/netConfig.js';
-import { FakeSocket } from './fakes.js';
+import { FakeSocket, fakeTimers } from './fakes.js';
 import { decodeSnapshot, encodeInputs, quantiseInput } from '../../src/mp/binary.js';
 
 const hello = (name) => ({ type: 'hello', v: PROTOCOL_VERSION, name, token: `token-${name}-xyz` });
@@ -221,5 +221,57 @@ describe('room server: the front door', () => {
     expect((await handle(req('/rooms/ABC', { headers: { Upgrade: 'websocket' } }), env())).status).toBe(404);
     const health = await handle(req('/health', {}, 'https://evil.example'), env());
     expect(await health.json()).toEqual({ ok: true, version: PROTOCOL_VERSION });
+  });
+});
+
+describe('room server: the end of a match', () => {
+  function started() {
+    const clock = { t: 1_000_000 };
+    const timers = fakeTimers();
+    const room = new Room(null, {}, () => clock.t, timers);
+    room.claim('K7QPM2');
+    const a = new FakeSocket();
+    const b = new FakeSocket();
+    room.attach(a);
+    room.attach(b);
+    a.receive(hello('Max'));
+    b.receive(hello('Albert'));
+    for (const s of [a, b]) s.receive({ type: 'setReady', ready: true });
+    a.receive({ type: 'start' });
+    clearInterval(room.ticker);
+    clearInterval(room.watch);
+    return { room, clock, timers, a, b };
+  }
+  const messages = (s, type) => s.sent.splice(0).filter((t) => typeof t === 'string').map((t) => JSON.parse(t)).filter((m) => m.type === type);
+
+  it('the host ends it: everyone gets the results, and the lobby 20 s later (not ready)', () => {
+    const { room, timers, a, b } = started();
+    a.take();
+    b.take();
+    a.receive({ type: 'toLobby' });
+    expect(room.match).toBe(null);
+    expect(room.core.phase).toBe('results');
+    const end = messages(b, 'matchEnd')[0];
+    expect(end.result).toMatchObject({ reason: 'host', winner: 'draw', teams: { allied: 0, central: 0 } });
+    expect(end.result.players.map((p) => p.name).sort()).toEqual(['Albert', 'Max']);
+    timers.runAll(); // the 20 s
+    expect(room.core.phase).toBe('lobby');
+    expect([...room.core.players.values()].every((p) => !p.ready)).toBe(true);
+    clearTimeout(room.timer);
+  });
+
+  it('a team with nobody left for 30 s loses; the host leaving does not stop the match', () => {
+    const { room, clock, a, b } = started();
+    a.receive({ type: 'leave' }); // the host (Max, Allied) leaves
+    expect(room.core.hostId).toBe('p2');
+    expect(room.match).toBeTruthy(); // the match goes on
+    b.take();
+    for (let i = 0; i < 32_000 / 16 && room.match; i++) { // up to 32 s of the room's 16 ms timer
+      clock.t += 16;
+      room.tickMatch();
+    }
+    expect(room.core.phase).toBe('results');
+    expect(messages(b, 'matchEnd')[0].result).toMatchObject({ reason: 'left', leftTeam: 'allied', winner: 'central' });
+    clearTimeout(room.timer);
   });
 });

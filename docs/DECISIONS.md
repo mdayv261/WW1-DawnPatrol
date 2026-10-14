@@ -807,3 +807,17 @@ The propeller's turning angle is followed from the engine speed the flight model
 - **Score:** sent at once after a kill or a join, and while rounds and hits change at most once a second. Shown in the Esc menu.
 - **Message version raised to 2** (the snapshot gained the guns and the round count).
 
+## D69. Multiplayer M4: match flow
+- **Room phases:** `lobby` → `match` → `results` → `lobby`.
+- **How a match ends** (`MatchSim`, checked once a second):
+  - the score limit (that team wins);
+  - the time limit, measured from the match start (the higher score wins, equal is a draw);
+  - a team with nobody in the sky for 30 s (the other team wins);
+  - the host's end request ("Ended by the host"; the higher score wins, or a draw).
+- **The result** lists everyone who took part, from a roster kept by id, with their kills, deaths, rounds and hits. The first ending stands.
+- **The host's `toLobby`:** in a match it now asks the room server to end the match with results, instead of going straight to the lobby as in M1/M2. In the results phase it means "back to the lobby now".
+- **Results show for 20 s,** then the room returns to the lobby with everyone not ready. The room server holds this timer; it is cleared whenever the phase changes. A player joining during results is sent the result (`catchUp`).
+- **Score line** at the top left, so it is clear of the heading tape and warnings at the top centre. It updates 4 times a second from the score message and the server tick; the time left counts from the match start and never goes below 0:00.
+- **A lost server** goes back to the Multiplayer screen with the reason, not the main menu: one step from it, and the player can rejoin from there.
+- **Message version 3:** an M3 page would not understand the results phase.
+

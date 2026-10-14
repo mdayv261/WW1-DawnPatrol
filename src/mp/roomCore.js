@@ -12,7 +12,7 @@
 import { AIRCRAFT_LIST } from '../aircraft/index.js';
 import { checkName, tidyName, NAME_MAX } from '../game/pilots.js';
 import { PROTOCOL_VERSION, MIN_PLAYERS, MAX_PLAYERS, REJOIN_GRACE_S, TEAMS, TEAM_IDS, DEFAULT_SETTINGS, cleanSettings } from './netConfig.js';
-import { welcome, lobbyMessage, matchStart, notice, pong, errorMessage } from './protocol.js';
+import { welcome, lobbyMessage, matchStart, matchEnd, notice, pong, errorMessage } from './protocol.js';
 
 // The aircraft a team may fly (by the `side` in each aircraft's data).
 export const aircraftOfTeam = (team) => AIRCRAFT_LIST.filter((a) => a.side === TEAMS[team]);
@@ -22,7 +22,9 @@ export class RoomCore {
     this.code = code;
     this.players = new Map(); // id -> { id, token, name, team, aircraft, ready, connected, order, leftAt }
     this.hostId = null;
-    this.phase = 'lobby'; // 'lobby' | 'match'
+    this.phase = 'lobby'; // 'lobby' | 'match' | 'results'
+    this.result = null; // the last match's result while it is shown
+    this.endRequested = false; // the host asked to end the match (the room server then ends it)
     this.settings = { ...DEFAULT_SETTINGS };
     this.outbox = [];
     this.nextOrder = 1;
@@ -99,9 +101,9 @@ export class RoomCore {
         break;
       }
       case 'toLobby':
-        this.phase = 'lobby';
-        for (const q of this.players.values()) q.ready = false;
-        this.send('all', notice('The host ended the match. Press "I am ready" for the next one.'));
+        // In a match: end it (the room server makes the results). Showing results: back now.
+        if (this.phase === 'match') this.endRequested = true;
+        else if (this.phase === 'results') return this.backToLobby();
         break;
       case 'ping':
         return this.send(id, pong(msg.t));
@@ -113,9 +115,29 @@ export class RoomCore {
     this.sendLobby();
   }
 
-  // A player arriving while a match is on is told about it.
+  // A player arriving while a match is on (or its results are shown) is told about it.
   catchUp(id) {
     if (this.phase === 'match') this.send(id, matchStart(this.settings, this.playerList()));
+    if (this.phase === 'results' && this.result) this.send(id, matchEnd(this.result));
+  }
+
+  // The match is over: everyone sees the result (the room server goes back to the lobby later).
+  endMatch(result) {
+    this.phase = 'results';
+    this.result = result;
+    this.endRequested = false;
+    this.send('all', matchEnd(result));
+    this.sendLobby();
+  }
+
+  // From the results back to the lobby: everyone not ready, for the next match.
+  backToLobby() {
+    if (this.phase !== 'results') return;
+    this.phase = 'lobby';
+    this.result = null;
+    for (const q of this.players.values()) q.ready = false;
+    this.send('all', notice('Back in the lobby: press "I am ready" for the next match'));
+    this.sendLobby();
   }
 
   // The player's connection dropped: their place is kept for REJOIN_GRACE_S.
@@ -158,6 +180,7 @@ export class RoomCore {
 
   // Can the host start? { ok, reason }.
   canStart() {
+    if (this.phase === 'results') return { ok: false, reason: 'Showing the last match\'s results' };
     if (this.phase !== 'lobby') return { ok: false, reason: 'The match has already started' };
     const here = this.connected;
     if (here.length < MIN_PLAYERS) return { ok: false, reason: `Waiting for at least ${MIN_PLAYERS} players` };

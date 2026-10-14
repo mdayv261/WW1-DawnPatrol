@@ -17,7 +17,7 @@ import { MatchSim } from '../src/mp/matchSim.js';
 import { WorldSolids } from '../src/mp/worldSolids.js';
 import { decodeInputs } from '../src/mp/binary.js';
 import { createWorld } from '../src/world/layout.js';
-import { MAX_BAD_MESSAGES, SILENT_DROP_S, SERVER_INTERVAL_MS } from '../src/mp/netConfig.js';
+import { MAX_BAD_MESSAGES, SILENT_DROP_S, SERVER_INTERVAL_MS, RESULTS_S } from '../src/mp/netConfig.js';
 
 // The world and its trees and buildings, the same for every room (built once, when first needed).
 let shared = null;
@@ -38,10 +38,12 @@ const sendText = (socket, text) => {
 };
 
 export class Room {
-  constructor(state, env, clock = () => Date.now()) {
+  constructor(state, env, clock = () => Date.now(), timers = globalThis) {
     this.state = state;
     this.env = env;
     this.now = clock;
+    this.timers = timers; // the results timer (tests pass their own)
+    this.resultsTimer = null;
     this.core = null; // the lobby, from the moment the code is claimed
     this.sockets = new Map(); // player id -> socket
     this.heard = new Map(); // socket -> { t: when it last sent anything (ms), drop(): treat it as closed }
@@ -187,6 +189,11 @@ export class Room {
   // room goes back to the lobby, and flying exactly the players who are connected.
   syncMatch() {
     const core = this.core;
+    if (core?.endRequested && this.match) this.endMatch(this.match.finish('host')); // the host ended it
+    if (core?.phase !== 'results') {
+      this.timers.clearTimeout(this.resultsTimer);
+      this.resultsTimer = null;
+    }
     if (!core || core.phase !== 'match') return this.stopMatch();
     if (!this.match) {
       const { world, solids } = sharedWorld();
@@ -205,19 +212,34 @@ export class Room {
   // happened (impacts for the sparks, the score, and messages such as who shot whom down).
   tickMatch() {
     if (!this.match) return;
-    const { snapshots, notices, fx, score } = this.match.advanceTo(this.now());
+    const { snapshots, notices, fx, score, result } = this.match.advanceTo(this.now());
     for (const s of snapshots) sendText(this.sockets.get(s.id), s.buffer);
     if (fx.length) this.broadcast({ type: 'fx', e: fx });
     if (score) {
       this.score = score;
       this.broadcast({ type: 'score', ...score });
     }
-    if (!notices.length || !this.core) return;
+    if (result) this.endMatch(result);
+    if ((!notices.length && !result) || !this.core) return;
     for (const n of notices) {
       if (n.to !== 'all') this.core.send(n.to, notice(n.text));
       else for (const id of this.sockets.keys()) if (!n.except?.includes(id)) this.core.send(id, notice(n.text));
     }
     this.flush();
+  }
+
+  // The match is over (a limit reached, a team gone, or the host ended it): stop it, show
+  // everyone the result, and go back to the lobby RESULTS_S later (sooner if the host asks).
+  endMatch(result) {
+    this.stopMatch();
+    if (!this.core || this.core.phase !== 'match') return;
+    this.core.endMatch(result);
+    this.timers.clearTimeout(this.resultsTimer);
+    this.resultsTimer = this.timers.setTimeout(() => {
+      this.resultsTimer = null;
+      this.core?.backToLobby();
+      this.flush();
+    }, RESULTS_S * 1000);
   }
 
   // A message to every connected player, straight away (not through the lobby).

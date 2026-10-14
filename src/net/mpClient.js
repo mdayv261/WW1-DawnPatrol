@@ -56,6 +56,8 @@ export function createMpClient(options) {
     lobby: null, // the latest lobby view
     match: null, // the latest matchStart
     score: null, // the match's score: { teams, players }
+    result: null, // the last match's result, while it is shown
+    resultAt: 0, // ms, when it arrived
   };
   let conn = null;
   let join = null; // { code, name, team }: what to send when (re)connecting
@@ -89,7 +91,9 @@ export function createMpClient(options) {
       case 'lobby':
         return set({ lobby: msg });
       case 'matchStart':
-        return set({ match: msg, score: null });
+        return set({ match: msg, score: null, result: null });
+      case 'matchEnd':
+        return set({ result: msg.result, resultAt: options.now ? options.now() : Date.now() });
       case 'notice':
         return onNotice(msg.text);
       case 'fx':

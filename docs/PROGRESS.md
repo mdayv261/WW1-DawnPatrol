@@ -2,7 +2,63 @@
 
 Read this at the start of every session.
 
-## Current status: Phases 0-7 and the Pilot Roll Call are done. Published on GitHub Pages (D64) on 14 Oct 2026: https://mdayv261.github.io/WW1-DawnPatrol/ (public repository github.com/mdayv261/WW1-DawnPatrol), deployed automatically on each push to main after the tests pass. Pushing to GitHub needs the product owner's permission each time. **Multiplayer add-on (local branch `multiplayer`): Stage 1 approved; M1 (connection and lobby) and M2 (flying together) are committed on the local branch (not pushed). The room server is deployed on Cloudflare for testing (https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev), still with the M2 version (redeploying M3 needs the product owner's yes). M1, M2 and M3 (combat) are committed on the local branch (not pushed). Next: M4 (match flow), with a plan in plan mode first.**
+## Current status: Phases 0-7 and the Pilot Roll Call are done. Published on GitHub Pages (D64) on 14 Oct 2026: https://mdayv261.github.io/WW1-DawnPatrol/ (public repository github.com/mdayv261/WW1-DawnPatrol), deployed automatically on each push to main after the tests pass. Pushing to GitHub needs the product owner's permission each time. **Multiplayer add-on (local branch `multiplayer`): Stage 1 approved; M1 (connection and lobby) and M2 (flying together) are committed on the local branch (not pushed). The room server is deployed on Cloudflare for testing (https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev), now with M4. M1-M4 (rooms, flying, combat, match flow) are committed on the local branch (not pushed). Next: M5 (testing and polish), with a plan in plan mode first.**
+
+## Multiplayer M4: match flow (D69)
+
+**Done:**
+- **Score line while flying,** at the top left: "ALLIED 2 – 1 CENTRAL   7:42   First to 5", with the time left counting down.
+- **How a match ends:**
+  - the first team to the host's score to win wins;
+  - when the time limit runs out, the higher score wins, and an equal score is a draw;
+  - a team with nobody in the sky for 30 s (everyone left or dropped out) loses;
+  - the host's **End the match for everyone** (Esc) also gives results.
+- **Results screen** in every window:
+  - "Allied victory" / "Central victory" / "A draw", and why ("First to 3 victories", "Time is up", "The Allied team left", "Ended by the host");
+  - the team scores;
+  - each pilot's aircraft, shot down, times down, hits from rounds and accuracy, with your own row marked. Pilots who left during the match are still listed.
+  - After 20 s everyone is back in the lobby, not ready (the host can go sooner with **Back to the lobby now**). Someone joining while results are up sees them too.
+- **Disconnects:**
+  - A player who drops leaves the sky. Back within 60 s, they keep their team, aircraft, kills and deaths.
+  - The host leaving mid-match: the match goes on, and the next player becomes host, with End the match in their Esc menu.
+  - The server lost: after 3 tries the window returns to the Multiplayer screen with "Lost the connection to the room." (from M1).
+- Multiplayer results do not change the Roll Call (decided in Stage 1).
+- The message version is now 3 (the room's new results phase).
+
+**Checked:**
+- 11 new tests. All 1,239 tests pass (plus 15 known deviations); `npm run build` works; the flight model files are unchanged.
+- **Tested rules:**
+  - the score limit ends the match within a second;
+  - the time limit gives the higher score or a draw;
+  - an empty team ends the match after 30 s, but not if someone comes back within 30 s;
+  - the host's end, with results to everyone, then the lobby 20 s later, not ready;
+  - the result lists players who left;
+  - a rejoining player keeps their record;
+  - the score-line and results wording.
+- **`npm run mp:smoke`** against the local server: the host ends the match, everyone gets the results, and the host takes everyone back to the lobby.
+- **In Chrome (two tabs):**
+  - the score line ("ALLIED 0 – 0 CENTRAL   4:57   First to 3");
+  - End the match: "A draw — Ended by the host" with both pilots in both tabs, and only the host has the button;
+  - back in the lobby after 20 s by itself;
+  - the Allied player leaving: "Central victory — The Allied team left" exactly 30 s later;
+  - the host leaving mid-match: the other player flew on as the new host and could end the match;
+  - no console errors.
+
+**Please test (about 15 minutes, two visible windows):**
+1. In the lobby, the host sets **Score to win: 3 victories** and **Time limit: 5 minutes**. Start. The score line at the top left counts down.
+2. Shoot the other down three times: both windows show "Allied victory" (or Central), "First to 3 victories", and each pilot's record. 20 s later, or with the host's **Back to the lobby now**, you are back in the lobby.
+3. Start again and use Esc, **End the match for everyone**: "Ended by the host" (a draw at an equal score). Or let the 5 minutes run out: "Time is up".
+4. During a match, close the host's window: the other window carries on and becomes host. Close the last window of one team: 30 s later the other gets "... team left".
+
+**Cloudflare updated to M4 (product owner's yes, 14 Oct 2026):**
+- **Deployed:** version 5c531bc4, 133 KB compressed; the health check reports message version 3.
+- **`mp:smoke` against it, all passing:** 30.5 snapshots a second; controls; firing; the results to everyone; back to the lobby; host hand-over.
+- **Load test, 4 players all firing for 2 minutes:**
+  - 30.2 snapshots a second each, usually 32 ms apart (99% within 77 ms, worst 0.24 s; the drawing carries on for up to 0.5 s, so this cannot be seen);
+  - ping about 13 ms;
+  - Cloudflare's live log: every event "ok", no exceptions.
+
+**Known issues:** none new.
 
 ## Multiplayer M3: combat and damage (D68)
 
