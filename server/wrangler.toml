@@ -16,9 +16,14 @@ class_name = "Room"
 tag = "v1"
 new_sqlite_classes = ["Room"]
 
+# A test copy of the game, served from this same address (built by `npm run mp:testcopy`; the folder
+# is empty otherwise). Requests for its files are answered as files; /health and /rooms reach the Worker.
+[assets]
+directory = "./public"
+
 [vars]
 # Web pages allowed to open a room connection. An entry without a port allows any port.
-ALLOWED_ORIGINS = "https://mdayv261.github.io,http://localhost,http://127.0.0.1"
+ALLOWED_ORIGINS = "https://mdayv261.github.io,http://localhost,http://127.0.0.1,https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev"
 
 # No request logs are kept.
 [observability]

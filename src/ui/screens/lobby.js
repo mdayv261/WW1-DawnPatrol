@@ -40,6 +40,7 @@ export function createLobby({ client, onLeave, netsimNote = () => '' }) {
   const status = paragraph(s.card, '', 'dp-msg');
   const table = el('table', 'dp-keys dp-roster');
   s.card.appendChild(table);
+  paragraph(s.card, 'Send the code to the others. Everyone picks a team and presses I am ready; then the host starts the match.', 'dp-small');
 
   // Your choices.
   const mine = el('div', 'dp-section');

@@ -821,3 +821,13 @@ The propeller's turning angle is followed from the engine speed the flight model
 - **A lost server** goes back to the Multiplayer screen with the reason, not the main menu: one step from it, and the player can rejoin from there.
 - **Message version 3:** an M3 page would not understand the results phase.
 
+## D70. Multiplayer M5: testing and polish
+- **Measured, not guessed:**
+  - The headless 3-player match is run on 12 connections up to the brief (0-150 ms, 0-2% loss) as tests, and 3 beyond it in a printed report (`npm run mp:netreport`).
+  - Limits asserted up to the brief: others within 1 m of their path; frame jumps under 0.3 m; own corrections under 0.5 m. Measured: 0.46 m, 0.08 m and 3.3 cm at worst.
+- **Stick centred after 1 s without controls (was 0.5 s):** on a 250 ms line with 5% loss, a lost packet holds controls up about half a second, and a turning aircraft had its stick centred and crashed in the test. One second still covers hidden windows quickly.
+- **A 2 v 2 headless match with firing** (60 s at 150 ms and 2% loss), and timing tests for the server (about 9 ms per second for 4 aircraft all firing) and the browser (about 0.1 ms per frame).
+- **No name tags** (product owner): names stay on the modern HUD (U), keeping the default view period-authentic.
+- **The test copy** is served by the room server itself (Cloudflare Workers static assets, free). It is built with `VITE_MP_SERVER=same-origin`, so the page uses the address it came from. The workers.dev address is an allowed origin. The GitHub Pages game is untouched until M6.
+- **Help:** "How to play together" on the Multiplayer screen, a lobby hint, one line in the H help, and a family guide (`docs/MULTIPLAYER_GUIDE.md`).
+

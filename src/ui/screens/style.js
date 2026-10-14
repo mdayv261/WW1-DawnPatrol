@@ -56,6 +56,8 @@ const CSS = `
 .dp-card button:disabled { opacity: 0.5; cursor: default; outline: none; }
 .dp-section { margin-top: 1rem; padding-top: 0.6rem; border-top: 1px solid #9c8758; }
 .dp-section h3 { margin: 0 0 0.4rem; font-size: 1.05rem; font-variant: small-caps; letter-spacing: 0.05em; }
+.dp-card details summary { cursor: pointer; font-weight: bold; font-variant: small-caps; letter-spacing: 0.05em; }
+.dp-card details li { margin: 0.3rem 0; }
 .dp-inline { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: center; margin: 0.5rem 0; }
 `;
 

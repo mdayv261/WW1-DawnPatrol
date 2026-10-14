@@ -64,6 +64,21 @@ export function createMultiplayerScreen({ getName, getNetsim, onCreate, onJoin, 
   paragraph(box, 'Leave at 0 for normal play. For testing, for example 150 ms ping, 20 ms jitter and 2% loss.', 'dp-small');
   s.card.appendChild(box);
 
+  // How to play together (opens and closes).
+  const how = el('details', 'dp-section');
+  how.appendChild(el('summary', null, 'How to play together'));
+  const steps = el('ol', 'dp-small');
+  steps.style.textAlign = 'left';
+  for (const line of [
+    'One player presses Create a room and sends the six-letter code to the others (by message or phone); they type it and press Join. Two to four players.',
+    'In the room, pick your team (Allied or Central) and an aircraft of that side, then press I am ready. The host chooses the starting point, daylight, score to win and time limit, and starts the match.',
+    'In the air: the score and the time left are at the top left. U shows the others with their names and distances. Esc opens the match menu: the match goes on while it is open.',
+    'Aim with the gun sight (the guns point a little up). Shot down or crashed? You are back in the air 10 s later.',
+    'Keep the game window visible: a hidden window stops sending your controls. F3 shows your ping. If the game says "please reload", reload the page.',
+  ]) steps.appendChild(el('li', null, line));
+  how.appendChild(steps);
+  s.card.appendChild(how);
+
   buttons(s.card, [['Back', onBack]]);
 
   const show = s.show;

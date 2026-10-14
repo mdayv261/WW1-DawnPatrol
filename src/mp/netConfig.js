@@ -27,7 +27,8 @@ export const INPUTS_PER_MESSAGE = 4; // ticks of controls in one message from a 
 export const SERVER_INTERVAL_MS = 16; // how often the room's timer runs the ticks that are due
 export const MAX_TICKS_PER_CALLBACK = 24; // more than this (a stalled server) is dropped, not raced through
 export const INPUT_AHEAD_MAX = TICK_HZ; // controls more than 1 s ahead of the server are refused
-export const HANDS_OFF_TICKS = TICK_HZ / 2; // no controls from a player for this long (a hidden tab, a stalled line): stick and rudder centred, throttle kept
+export const HANDS_OFF_TICKS = TICK_HZ; // no controls from a player for this long (a hidden tab, a stalled line): stick and rudder centred, throttle kept
+// (1 s: a lost packet on a 250 ms line holds controls up about half a second, which must not count)
 export const LEAD_TARGET_TICKS = 2; // how early a browser's controls should reach the server, plus the jitter
 export const CLOCK_RATE = 0.02; // the browser runs up to 2% fast or slow to keep that lead
 export const CLOCK_RESET_TICKS = 30; // further off than this, the browser's clock jumps instead

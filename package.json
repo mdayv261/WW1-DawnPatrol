@@ -10,9 +10,12 @@
     "calibrate": "node scripts/calibrateDrag.mjs",
     "validate": "node scripts/flightValidation.mjs",
     "mp:setup": "npm --prefix server install --no-audit --no-fund",
-    "mp:server": "npm --prefix server run dev",
+    "mp:server": "mkdir -p server/public && npm --prefix server run dev",
     "mp:smoke": "node scripts/mpSmoke.mjs",
-    "mp:deploy": "npm --prefix server run deploy"
+    "mp:deploy": "mkdir -p server/public && npm --prefix server run deploy",
+    "mp:netreport": "node scripts/netReport.mjs",
+    "mp:load": "node scripts/mpLoad.mjs",
+    "mp:testcopy": "VITE_MP_SERVER=same-origin vite build --base / --outDir server/public --emptyOutDir"
   },
   "dependencies": {
     "three": "0.186.1"

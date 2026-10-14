@@ -178,5 +178,7 @@ describe('server address', () => {
     expect(serverBase({ dev: true, location: { protocol: 'http:', hostname: 'localhost' } })).toBe('http://localhost:8787');
     expect(serverBase({ dev: false, location: { protocol: 'https:', hostname: 'mdayv261.github.io' } })).toBe(null);
     expect(roomSocketUrl('https://dawn.workers.dev', 'K7QPM2')).toBe('wss://dawn.workers.dev/rooms/K7QPM2');
+    // The test copy, served by the room server itself, uses the address it was loaded from.
+    expect(serverBase({ env: { VITE_MP_SERVER: 'same-origin' }, location: { protocol: 'https:', host: 'dawn.workers.dev', hostname: 'dawn.workers.dev' } })).toBe('https://dawn.workers.dev');
   });
 });

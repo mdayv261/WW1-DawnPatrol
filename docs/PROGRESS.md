@@ -2,7 +2,62 @@
 
 Read this at the start of every session.
 
-## Current status: Phases 0-7 and the Pilot Roll Call are done. Published on GitHub Pages (D64) on 14 Oct 2026: https://mdayv261.github.io/WW1-DawnPatrol/ (public repository github.com/mdayv261/WW1-DawnPatrol), deployed automatically on each push to main after the tests pass. Pushing to GitHub needs the product owner's permission each time. **Multiplayer add-on (local branch `multiplayer`): Stage 1 approved; M1 (connection and lobby) and M2 (flying together) are committed on the local branch (not pushed). The room server is deployed on Cloudflare for testing (https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev), now with M4. M1-M4 (rooms, flying, combat, match flow) are committed on the local branch (not pushed). Next: M5 (testing and polish), with a plan in plan mode first.**
+## Current status: Phases 0-7 and the Pilot Roll Call are done. Published on GitHub Pages (D64) on 14 Oct 2026: https://mdayv261.github.io/WW1-DawnPatrol/ (public repository github.com/mdayv261/WW1-DawnPatrol), deployed automatically on each push to main after the tests pass. Pushing to GitHub needs the product owner's permission each time. **Multiplayer add-on (local branch `multiplayer`): Stage 1 approved; M1 (connection and lobby) and M2 (flying together) are committed on the local branch (not pushed). The room server is deployed on Cloudflare for testing (https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev), now with M4. M1-M5 (rooms, flying, combat, match flow, testing and polish) are committed on the local branch (not pushed). The test copy for family is live at https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev/. Waiting for the product owner's 4-window and family tests; then M6 (merge to main and publish on GitHub Pages, with confirmation).**
+
+## Multiplayer M5: testing and polish (D70)
+
+**Decided by the product owner (14 Oct 2026):**
+- a test copy of the game on the Cloudflare address for the family test;
+- other players' names only on the HUD (U), as now.
+
+**Done:**
+- **Network quality, measured on every connection up to the brief.** `npm run mp:netreport` prints the table; `tests/mp/netQuality.test.js` checks 12 connections (0-150 ms, 0-2% loss). Each line is a 40 s three-player match, the worst over every frame of every window:
+
+| Connection | Others off their path | Others' worst frame jump | Own largest correction | Own corrections a minute |
+|---|---|---|---|---|
+| 0 ms | 0.00 m | 0.00 m | 0 cm | 0 |
+| 50 ms, 7 ms jitter, 2% loss | 0.20 m | 0.08 m | 2.8 cm | 209 |
+| 100 ms, 14 ms jitter, 0% loss | 0.00 m | 0.01 m | 0.1 cm | 3 |
+| 100 ms, 14 ms jitter, 2% loss | 0.35 m | 0.08 m | 2.8 cm | 353 |
+| 150 ms, 21 ms jitter, 0% loss | 0.00 m | 0.01 m | 0.7 cm | 6 |
+| 150 ms, 21 ms jitter, 2% loss | 0.46 m | 0.08 m | 3.3 cm | 353 |
+| *beyond the brief:* 250 ms, 2% loss | 0.83 m | 0.08 m | 181 cm | 429 |
+| *beyond the brief:* 150 ms, 5% loss | 1.23 m | 0.12 m | 8.9 cm | 705 |
+| *beyond the brief:* 250 ms, 5% loss | 1.59 m | 0.70 m | 65 cm | 885 |
+
+  - **Up to the brief, nothing can be seen.** Other aircraft are drawn within half a metre of where they really are and never jump more than 8 cm a frame, and your own aircraft is corrected by centimetres (lost packets make many such corrections, all invisible).
+  - **Beyond the brief it degrades gently:** a correction of up to about 2 m at 250 ms.
+- **Fixed in testing:** a player whose controls stop arriving had the stick centred after 0.5 s (meant for hidden windows). On a 250 ms line with 5% loss, controls are sometimes held up that long, which made one test aircraft crash. It is now 1 s.
+- **Four players, two a side** (`tests/mp/fourPlayers.test.js`): a minute at 150 ms, 20 ms jitter and 2% loss, everyone weaving and firing in bursts. Every window saw the other three; others were within 0.66 m of their path; frame jumps at most 0.10 m; own corrections at most 7.5 cm; every window's guns agreed with the server's.
+- **Performance** (`tests/mp/performance.test.js`):
+  - the server with 4 aircraft all firing at each other: about 9 ms of computing per second of match alone (under 1% of one processor; 35 ms with every other test running at once);
+  - a browser in a 4-player match: 0.05-0.15 ms of multiplayer work per frame, out of 16.7 ms at 60 fps;
+  - drawing three others costs the same as three AI enemies in single-player (measured in Phases 3-5).
+- **Load test script** `npm run mp:load -- <server> <seconds>`: 4 players all firing. Locally: 31 snapshots a second each, gaps 37 ms median (99% within 63 ms), ping 1 ms.
+- **Help:**
+  - the Multiplayer screen has **How to play together** (5 short steps, opens and closes);
+  - the lobby has a one-line hint;
+  - the H help has a line for multiplayer (Esc menu, score top left).
+- **Family guide** `docs/MULTIPLAYER_GUIDE.md`: what you need, joining, controls, tips, fixing problems, and **how to test with family on different home networks** (what to read on F3 and what to report).
+- **Test copy of the game** for the family test:
+  - `npm run mp:testcopy` builds the game into `server/public/`, set to use the server it is served from;
+  - the Cloudflare Worker serves those files at its own address alongside the rooms.
+  - Checked locally (port 8788): the production build created and joined a room through its own server, a match ran with the score line and the help line, and a single-player mission started; no console errors.
+
+**Please test (needs you):**
+1. **Four windows on your Mac:** start `npm run mp:server` again (your copy stopped when I changed the server's settings file), plus `npm run dev`. Open four windows, two a side, and have a fight. Press F3 in one and read "frames": it should stay near 60 fps. Read the three "net" lines too.
+2. **The family test:** after the test copy is on Cloudflare (needs your yes), send https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev/ and a room code to family at home, with `docs/MULTIPLAYER_GUIDE.md` ("Testing with family on different home networks"). Collect their pings, largest corrections and impressions.
+
+**Test copy on Cloudflare (product owner's yes, 14 Oct 2026):**
+- **Deployed** (version c2cc4605). The game, single-player and multiplayer, is at https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev/; the GitHub Pages game is unchanged.
+- **Checked there:**
+  - `mp:smoke`: all passing;
+  - `mp:load`, 4 players firing for 60 s: 30.5 snapshots a second each, gaps 32 ms median (99% within 78 ms), ping 14 ms from the product owner's Mac;
+  - in Chrome, two tabs on the live address: created and joined a room, started a match (score line showing), ended it ("A draw"), left; no console errors.
+
+**Known issues:**
+- **Deploys include the test copy:** `npm run mp:deploy` sends whatever test copy was last built in `server/public/`, so rebuild it (`npm run mp:testcopy`) before deploying a new version.
+- **A different web address** keeps its own pilots and settings (browser storage is per address).
 
 ## Multiplayer M4: match flow (D69)
 

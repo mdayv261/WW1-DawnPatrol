@@ -77,7 +77,7 @@ export function createHarness({ players, net = { ping: 0, jitter: 0, loss: 0 }, 
         for (const p of server.players.values()) {
           let m = truth.get(p.slot);
           if (!m) truth.set(p.slot, (m = new Map()));
-          m.set(server.tick, p.sim.state.position.clone());
+          m.set(server.tick, { position: p.sim.state.position.clone(), spawn: p.spawn });
         }
         for (const s of snapshots) {
           const c = clients.find((x) => x.id === s.id);
@@ -105,7 +105,8 @@ export function createHarness({ players, net = { ping: 0, jitter: 0, loss: 0 }, 
 
   // Where the server had `slot` at a (fractional) tick (positions are recorded after each server
   // callback, every two ticks or so: this blends the nearest two either side).
-  function truthAt(slot, tick) {
+  // spawn: the drawn aircraft's spawn number (a respawned aircraft is not compared with its old self).
+  function truthAt(slot, tick, spawn = null) {
     const m = truth.get(slot);
     if (!m) return null;
     let lo = Math.floor(tick);
@@ -115,7 +116,8 @@ export function createHarness({ players, net = { ping: 0, jitter: 0, loss: 0 }, 
     const a = m.get(lo);
     const b = m.get(hi);
     if (!a || !b) return null;
-    return a.clone().lerp(b, (tick - lo) / (hi - lo));
+    if (spawn !== null && (a.spawn % 256 !== spawn || b.spawn % 256 !== spawn)) return null;
+    return a.position.clone().lerp(b.position, (tick - lo) / (hi - lo));
   }
 
   return { server, clients, run, truthAt, notices: serverNotices, get now() { return now; }, TICK_HZ };
