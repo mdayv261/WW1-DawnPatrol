@@ -12,7 +12,22 @@ Read this at the start of every session.
 - `.env.production` points the published game at the Cloudflare room server. The test copy still uses its own address.
 - `docs/GAME_SPEC.md` gains a short "Multiplayer" section; the guide puts the live address first.
 - `multiplayer` was merged into `main` (merge commit), tested and built on `main`, and pushed. GitHub Actions ran the tests, built and published.
-- The live-site check is below.
+- **GitHub Actions run 38540990191:** build (with all 1,254 tests) and deploy both succeeded. GitHub warned that some standard workflow actions are moving from Node.js 20 to 24, and that ubuntu-latest moves to Ubuntu 26 from 19 Oct 2026. These are notices, not failures; the workflow may need its action versions raised later.
+
+**Checked on the live site** (https://mdayv261.github.io/WW1-DawnPatrol/, Chrome, two tabs, 14 Oct 2026):
+- The main menu has **Multiplayer**, and the Multiplayer screen found the room server.
+- One tab created room NPKS7F and the other joined (one Allied, one Central). The host started the match: score line "ALLIED 0 – 0 CENTRAL 9:56 First to 5", and the other aircraft labelled on the HUD.
+- **End the match for everyone** showed "A draw — Ended by the host" in both tabs. Both left the room.
+- **Single-player:** a mission started and flew. It was quit from the pause menu, so nothing was recorded for the product owner's pilot.
+- No console errors in either tab.
+- `npm run mp:smoke` against the Cloudflare server afterwards: all passing.
+
+**Sharing with family:** send them https://mdayv261.github.io/WW1-DawnPatrol/ and a room code (create a room, then **Copy code**). The guide is `docs/MULTIPLAYER_GUIDE.md`.
+
+**Known issues:** none new. Older open items:
+- engine overspeed warning (later);
+- two AI pilots fighting each other mostly circle (accepted);
+- aircraft cannot collide with each other.
 
 ## Multiplayer M5: testing and polish (D70)
 
