@@ -15,5 +15,8 @@ export default defineConfig(({ command, isPreview }) => ({
   test: {
     environment: 'node',
     include: ['tests/**/*.test.js'],
+    // Some tests fly minutes of simulated combat (up to about 3 s here, twice that on GitHub's
+    // build machines), so the default 5 s limit is too tight; 30 s still catches a hang.
+    testTimeout: 30000,
   },
 }));
