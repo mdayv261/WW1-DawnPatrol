@@ -831,3 +831,10 @@ The propeller's turning angle is followed from the engine speed the flight model
 - **The test copy** is served by the room server itself (Cloudflare Workers static assets, free). It is built with `VITE_MP_SERVER=same-origin`, so the page uses the address it came from. The workers.dev address is an allowed origin. The GitHub Pages game is untouched until M6.
 - **Help:** "How to play together" on the Multiplayer screen, a lobby hint, one line in the H help, and a family guide (`docs/MULTIPLAYER_GUIDE.md`).
 
+## D71. Multiplayer M6: publishing
+- **The published game finds its room server through `.env.production`** (`VITE_MP_SERVER`, the workers.dev address). It is committed because it is a public web address, not a secret. The test-copy build sets `same-origin` on its command line, which takes precedence over the file.
+- **The `multiplayer` branch was merged into `main` with a merge commit** (no fast-forward), so the multiplayer work stays visible as one unit in the history. The branch itself was not pushed.
+- **One publish, gated by the tests:** a push to `main` runs the existing GitHub Actions workflow, and a failing test stops the deployment.
+- **The Cloudflare test copy stays up** for trying new versions with family before publishing. It and the server can be removed from the Cloudflare dashboard at any time.
+- **Undo:** a revert of the merge commit restores the single-player-only site. Single-player itself was never changed by the multiplayer work, apart from small, guarded hooks (the session's `s.net`, the flow's multiplayer states, one help line).
+

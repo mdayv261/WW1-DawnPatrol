@@ -10,8 +10,9 @@ a six-letter room code.
   broadband or a phone hotspot both work.
 - A keyboard and mouse, or a joystick (a Logitech Extreme 3D Pro works out of the box). The game's
   **Options > Controls** changes the keys.
-- The game's address. The test copy is https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev/;
-  once multiplayer is published, it is https://mdayv261.github.io/WW1-DawnPatrol/.
+- The game's address: **https://mdayv261.github.io/WW1-DawnPatrol/**. (A test copy for trying
+  new versions also runs at https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev/; everyone in
+  a room must use the same address.)
 
 ## Playing
 1. Open the game's address and click **Multiplayer** on the main menu.

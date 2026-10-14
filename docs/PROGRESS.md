@@ -2,7 +2,17 @@
 
 Read this at the start of every session.
 
-## Current status: Phases 0-7 and the Pilot Roll Call are done. Published on GitHub Pages (D64) on 14 Oct 2026: https://mdayv261.github.io/WW1-DawnPatrol/ (public repository github.com/mdayv261/WW1-DawnPatrol), deployed automatically on each push to main after the tests pass. Pushing to GitHub needs the product owner's permission each time. **Multiplayer add-on (local branch `multiplayer`): Stage 1 approved; M1 (connection and lobby) and M2 (flying together) are committed on the local branch (not pushed). The room server is deployed on Cloudflare for testing (https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev), now with M4. M1-M5 (rooms, flying, combat, match flow, testing and polish) are committed on the local branch (not pushed). The test copy for family is live at https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev/. Waiting for the product owner's 4-window and family tests; then M6 (merge to main and publish on GitHub Pages, with confirmation).**
+## Current status: Phases 0-7, the Pilot Roll Call and the multiplayer add-on (M1-M6) are done. Multiplayer is merged into main and published with the game at https://mdayv261.github.io/WW1-DawnPatrol/ (deployed automatically on each push to main after the tests pass). The room server runs on Cloudflare (https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev, free plan), which also serves a test copy of the game. Pushing to GitHub and deploying to Cloudflare need the product owner's permission each time.
+
+## Multiplayer M6: published (D71)
+
+**Brief:** merge to main only after the product owner confirms, then confirm that the live GitHub Pages version works for both modes. The product owner said "go" and approved the M6 plan (confirmation, and permission for the publishing push and one push of these notes).
+
+**Done:**
+- `.env.production` points the published game at the Cloudflare room server. The test copy still uses its own address.
+- `docs/GAME_SPEC.md` gains a short "Multiplayer" section; the guide puts the live address first.
+- `multiplayer` was merged into `main` (merge commit), tested and built on `main`, and pushed. GitHub Actions ran the tests, built and published.
+- The live-site check is below.
 
 ## Multiplayer M5: testing and polish (D70)
 

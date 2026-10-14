@@ -95,3 +95,11 @@ Avoid forums and Reddit as sources.
 - Every physics and AI module has automated tests.
 - Code is commented in plain English; functions stay small.
 - Physics constants live in data files, never hard-coded.
+
+## 12. Multiplayer (added by the product owner's brief, Oct 2026)
+- 2-4 human players in private rooms joined by a six-letter code, Allied against Central; no AI
+  aircraft in multiplayer. The single-player game is unchanged.
+- An authoritative room server (Cloudflare Workers + Durable Objects) runs the same validated
+  flight model for every aircraft and decides every hit (lag-compensated up to 0.4 s).
+- Full design: docs/MULTIPLAYER_SPEC.md. Guide for players: docs/MULTIPLAYER_GUIDE.md.
+

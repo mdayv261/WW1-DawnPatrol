@@ -1,7 +1,7 @@
 # Multiplayer Specification: Allied vs Central team dogfights
 
 Status: Stage 1 (research and recommendation) approved by the product owner on 14 Oct 2026.
-M1-M4 (D66-D69) are committed on the `multiplayer` branch; M5 (testing and polish, D70) is built. Guide for players: `docs/MULTIPLAYER_GUIDE.md`. Test server: https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev (Cloudflare free plan). The phase plan (M1-M6) is in `PROGRESS.md`. The decision record is D65 in `DECISIONS.md`.
+M1-M6 (D66-D71) are done: multiplayer is merged into `main` and published with the game on GitHub Pages. Server: https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev (Cloudflare free plan; it also serves a test copy of the game). Guide for players: `docs/MULTIPLAYER_GUIDE.md`. Test server: https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev (Cloudflare free plan). The phase plan (M1-M6) is in `PROGRESS.md`. The decision record is D65 in `DECISIONS.md`.
 
 ## 1. Goal and rules
 
