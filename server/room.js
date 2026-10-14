@@ -7,10 +7,27 @@
 //   GET  /ws?code=XXXXXX      (a WebSocket upgrade) a player connecting
 // attach(socket) does the work for one connection, so the tests can use fake sockets.
 // Browsers ping every 2 s; a connection silent for SILENT_DROP_S is closed as dropped.
+// While a match is on, a MatchSim (src/mp/matchSim.js) flies every connected player's aircraft
+// from the controls they send (binary messages), and a timer sends each player 30 snapshots a
+// second.
 
 import { RoomCore } from '../src/mp/roomCore.js';
-import { parseClientMessage, errorMessage } from '../src/mp/protocol.js';
-import { MAX_BAD_MESSAGES, SILENT_DROP_S } from '../src/mp/netConfig.js';
+import { parseClientMessage, errorMessage, notice } from '../src/mp/protocol.js';
+import { MatchSim } from '../src/mp/matchSim.js';
+import { WorldSolids } from '../src/mp/worldSolids.js';
+import { decodeInputs } from '../src/mp/binary.js';
+import { createWorld } from '../src/world/layout.js';
+import { MAX_BAD_MESSAGES, SILENT_DROP_S, SERVER_INTERVAL_MS, RESPAWN_S } from '../src/mp/netConfig.js';
+
+// The world and its trees and buildings, the same for every room (built once, when first needed).
+let shared = null;
+const sharedWorld = () => {
+  if (!shared) {
+    const world = createWorld();
+    shared = { world, solids: new WorldSolids(world) };
+  }
+  return shared;
+};
 
 const sendText = (socket, text) => {
   try {
@@ -30,6 +47,8 @@ export class Room {
     this.heard = new Map(); // socket -> { t: when it last sent anything (ms), drop(): treat it as closed }
     this.timer = null;
     this.watch = null; // the silent-connection check, while anyone is connected
+    this.match = null; // the MatchSim while a match is on
+    this.ticker = null;
   }
 
   async fetch(request) {
@@ -54,6 +73,7 @@ export class Room {
 
   // Look after one connection: its first message must be `hello` (join or rejoin).
   attach(socket) {
+    socket.binaryType = 'arraybuffer'; // controls arrive as bytes (the runtime's default is a Blob, which would need waiting for)
     let id = null;
     let bad = 0;
     const refuse = (msg) => {
@@ -65,7 +85,14 @@ export class Room {
     this.watchSilence();
     socket.addEventListener('message', (event) => {
       contact.t = this.now();
-      const { msg, error } = parseClientMessage(typeof event.data === 'string' ? event.data : null);
+      if (typeof event.data !== 'string') {
+        // Binary: a player's controls for the match.
+        const inputs = id !== null && this.match ? decodeInputs(event.data) : null;
+        if (inputs) this.match.receiveInputs(id, inputs);
+        else if (++bad > MAX_BAD_MESSAGES) socket.close(1008, 'Too many bad messages');
+        return;
+      }
+      const { msg, error } = parseClientMessage(event.data);
       if (error) {
         if (++bad > MAX_BAD_MESSAGES) socket.close(1008, 'Too many bad messages');
         else sendText(socket, JSON.stringify(errorMessage('badMessage')));
@@ -107,6 +134,7 @@ export class Room {
   // Send what the room has to say. Only the newest lobby view for everyone is worth sending.
   flush() {
     if (!this.core) return;
+    this.syncMatch();
     const out = this.core.outbox.splice(0);
     const isLobby = (o) => o.to === 'all' && o.msg.type === 'lobby';
     const last = out.findLastIndex(isLobby);
@@ -155,9 +183,49 @@ export class Room {
     this.watch ??= setInterval(() => this.checkSilent(), 5000);
   }
 
+  // Keep the match in step with the lobby: started when the host starts it, stopped when the
+  // room goes back to the lobby, and flying exactly the players who are connected.
+  syncMatch() {
+    const core = this.core;
+    if (!core || core.phase !== 'match') return this.stopMatch();
+    if (!this.match) {
+      const { world, solids } = sharedWorld();
+      this.match = new MatchSim({ settings: { ...core.settings }, world, solidAt: (x, y, z) => solids.hit(x, y, z), now: this.now() });
+      this.ticker = setInterval(() => this.tickMatch(), SERVER_INTERVAL_MS);
+    }
+    for (const p of core.players.values()) {
+      const flying = this.match.players.has(p.id);
+      if (p.connected && !flying) this.match.addPlayer({ id: p.id, slot: p.order, name: p.name, team: p.team, aircraft: p.aircraft });
+      if (!p.connected && flying) this.match.removePlayer(p.id);
+    }
+    for (const id of [...this.match.players.keys()]) if (!core.players.has(id)) this.match.removePlayer(id);
+  }
+
+  // The match timer: fly the ticks that are due, send the snapshots, tell everyone what happened.
+  tickMatch() {
+    if (!this.match) return;
+    const { snapshots, events } = this.match.advanceTo(this.now());
+    for (const s of snapshots) sendText(this.sockets.get(s.id), s.buffer);
+    if (!events.length || !this.core) return;
+    for (const e of events) {
+      if (e.kind === 'crash') {
+        this.core.send('all', notice(`${e.name} crashed (${e.reason})`));
+        this.core.send(e.id, notice(`Back in the air in ${RESPAWN_S} s`));
+      }
+    }
+    this.flush();
+  }
+
+  stopMatch() {
+    clearInterval(this.ticker);
+    this.ticker = null;
+    this.match = null;
+  }
+
   // Nobody left: forget the room. Returns true if it was forgotten.
   forgetIfEmpty() {
     if (!this.core || this.core.players.size > 0) return false;
+    this.stopMatch();
     this.core = null;
     clearTimeout(this.timer);
     this.timer = null;

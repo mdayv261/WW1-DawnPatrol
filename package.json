@@ -11,7 +11,8 @@
     "validate": "node scripts/flightValidation.mjs",
     "mp:setup": "npm --prefix server install --no-audit --no-fund",
     "mp:server": "npm --prefix server run dev",
-    "mp:smoke": "node scripts/mpSmoke.mjs"
+    "mp:smoke": "node scripts/mpSmoke.mjs",
+    "mp:deploy": "npm --prefix server run deploy"
   },
   "dependencies": {
     "three": "0.186.1"

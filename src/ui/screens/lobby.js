@@ -1,6 +1,6 @@
 // The room screens: the lobby (the code, the players, your team, aircraft and ready, the host's
-// match settings and Start) and, until flying together arrives in M2, a placeholder for the
-// match. They draw what the server last sent (mpClient.state) and pass choices on.
+// match settings and Start) and the match's Esc menu. They draw what the server last sent
+// (mpClient.state) and pass choices on.
 
 import { makeScreen, heading, buttons, choice, setChoices, paragraph, el } from './style.js';
 import { STARTS, TIMES } from '../../game/flow.js';
@@ -22,11 +22,6 @@ const SETTING_ROWS = [
 
 // A drop-down's text value back to the setting's own type (number, true / false, text).
 const settingValue = (key, text) => SETTING_CHOICES[key].find((v) => String(v) === text);
-
-// One line for each setting, for the match screen.
-export function settingsText(settings) {
-  return SETTING_ROWS.map(([key, label, options]) => `${label}: ${options.find(([v]) => v === settings[key])?.[1] ?? settings[key]}`);
-}
 
 // client: the mpClient; onLeave(): leave the room; netsimNote(): the test network in words ('' when off).
 export function createLobby({ client, onLeave, netsimNote = () => '' }) {
@@ -120,30 +115,19 @@ export function createLobby({ client, onLeave, netsimNote = () => '' }) {
   };
 }
 
-// The placeholder match screen (flying together comes in M2). onLobby(): the host's way back.
-export function createMpMatch({ client, onLobby, onLeave }) {
+// The match's Esc menu. The match never pauses: your aircraft flies on underneath. The host can
+// end the match for everyone (back to the lobby).
+export function createMpEsc({ client, onResume, onOptions, onEnd, onLeave }) {
   const s = makeScreen();
-  heading(s.card, 'Match started', 'A test match: flying together comes in the next stage (M2)');
-  paragraph(s.card, 'For now this screen is as far as a match goes: there is nothing to fly yet. The host presses "Back to the lobby" to end the test match; everyone then presses "I am ready" again for the next one.', 'dp-small');
+  heading(s.card, 'Match', 'The match goes on while this menu is open');
   const status = paragraph(s.card, '', 'dp-msg');
-  const list = el('table', 'dp-table');
-  const settings = el('p', 'dp-small');
-  s.card.append(list, settings);
-  const actions = buttons(s.card, [['Back to the lobby', onLobby], ['Leave the room', onLeave]], true);
-  const lobbyButton = actions.firstChild;
+  const actions = buttons(s.card, [['Resume', onResume], ['Options', onOptions], ['End the match for everyone', onEnd], ['Leave the room', onLeave]]);
+  const endButton = actions.children[2];
   return {
     ...s,
     render(note = '') {
-      const m = client.state.match;
-      if (!m) return;
+      endButton.hidden = !client.isHost;
       status.textContent = client.state.status === 'reconnecting' ? 'Connection lost: reconnecting...' : client.state.message || note;
-      list.replaceChildren(...m.players.map((p) => {
-        const tr = el('tr');
-        tr.append(el('td', null, `${p.name} (${TEAM_LABELS[p.team]})`), el('td', null, aircraftName(p.aircraft)));
-        return tr;
-      }));
-      settings.textContent = settingsText(m.settings).join('   ');
-      lobbyButton.hidden = !client.isHost;
     },
   };
 }

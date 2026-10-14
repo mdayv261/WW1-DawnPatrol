@@ -38,7 +38,8 @@ function newToken(rng) {
 }
 
 // options: { base (the server's address, or null), storage (sessionStorage), netsim (settings or
-// null), onChange(), onNotice(text), fetchFn, makeSocket, timers, rng, now }.
+// null), onChange(), onNotice(text), onBinary(ArrayBuffer) (the match's snapshots), fetchFn,
+// makeSocket, timers, rng, now }.
 export function createMpClient(options) {
   const { storage = null, onChange = () => {}, onNotice = () => {}, fetchFn = (...a) => fetch(...a), timers = globalThis, rng = Math.random } = options;
   let token = read(storage, TOKEN_KEY);
@@ -73,6 +74,7 @@ export function createMpClient(options) {
     conn = openConnection(url, {
       onOpen: () => conn.send({ type: 'hello', v: PROTOCOL_VERSION, name: join.name, token, team: join.team ?? null }),
       onMessage: received,
+      onBinary: (buffer) => options.onBinary?.(buffer),
       onClose: closed,
     }, { netsim: options.netsim, makeSocket: options.makeSocket, timers, rng, now: options.now });
   }
@@ -134,6 +136,10 @@ export function createMpClient(options) {
     get ping() {
       return conn?.ping ?? null;
     },
+    get jitter() {
+      return conn?.jitter ?? 0;
+    },
+    sendBinary: (buffer) => conn?.sendBinary(buffer),
     get me() {
       return state.lobby?.players.find((p) => p.id === state.you) ?? null;
     },

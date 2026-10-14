@@ -87,7 +87,7 @@ const keyHint = (action) => {
 // What each key and joystick button does (the one-shot commands; held keys go to the InputMapper).
 const keyHandlers = {
   onSelect: (i, shift) => { if (DEV && i < AIRCRAFT_LIST.length) devStart(i, shift); },
-  onRestart: () => { if (flow.flying) session.restart(); },
+  onRestart: () => { if (flow.state === 'flying') session.restart(); }, // not in a match
   onRecentre: () => {
     mouse.stick.centre();
     showNotice('Stick centred');
@@ -101,7 +101,7 @@ const keyHandlers = {
   onReadout: () => showNotice(overlays.readout.toggle() ? 'Instrument readout on' : 'Instrument readout off'),
   onQuality: () => applyQuality(nextQuality(qualityName)),
   onClearJam: () => clearJam(),
-  onTarget: () => { if (DEV) newAgent(); },
+  onTarget: () => { if (DEV && !flow.multiplayer) newAgent(); },
   onSkill: (step) => { if (DEV) changeSkill(step); },
   onPractice: () => setOptions({ ...options, practice: !options.practice }, true),
   onMute: () => {
@@ -278,15 +278,14 @@ const screens = {
     onMenu: () => flow.go('menu'),
   }),
 };
-attachMultiplayer({ flow, screens, pilot: () => activePilot(roster) }); // adds the Multiplayer, lobby and match screens
+attachMultiplayer({ flow, screens, session, idle: () => idle(), notice: showNotice, pilot: () => activePilot(roster) }); // the Multiplayer, lobby and match screens
 
 function togglePause() {
-  if (flow.state === 'flying') flow.go('paused');
-  else if (flow.state === 'paused') flow.go('flying');
+  flow.togglePause(); // a mission pauses; a match only opens its menu
 }
 
 flow.onChange((to, from) => {
-  audio.setActive(to === 'flying'); // sound only while flying: it fades out when paused and in the menus
+  audio.setActive(flow.flying); // sound only while flying: it fades out when paused and in the menus
   for (const [name, screen] of Object.entries(screens)) if (name !== to) screen.hide();
   if (to === 'results' && session.result) {
     const pilot = activePilot(roster);
@@ -299,8 +298,8 @@ flow.onChange((to, from) => {
     rosterMessage = '';
   }
   else if (screens[to]) screens[to].show();
-  if (to !== 'flying' && document.pointerLockElement) document.exitPointerLock(); // the mouse is for the menus now
-  overlays.help.allow(to === 'flying'); // the keys help only in flight
+  if (!flow.flying && document.pointerLockElement) document.exitPointerLock(); // the mouse is for the menus now
+  overlays.help.allow(flow.flying); // the keys help only in flight
   if (from === 'controls') updateHelp(); // the joystick's buttons may have changed too
   // Leaving a mission for the menu: the idle aircraft goes back on the airfield behind the menus.
   if (to === 'menu' && (from === 'paused' || from === 'results')) idle();
@@ -314,6 +313,7 @@ function idle() {
 // ---- development quick starts ----------------------------------------------------------------
 
 function devStart(index, airStart, scenario = null) {
+  if (flow.multiplayer) return; // never in the middle of a match
   session.startDev(index, airStart, scenario);
   session.combat.practice = options.practice;
   if (airStart && !scenario) {
@@ -351,7 +351,7 @@ window.addEventListener('error', (e) => showError(e.error ?? e.message));
 
 let controlsShownAt = 0;
 function step(realDt, now) {
-  const alpha = session.update(realDt, flow.flying);
+  const alpha = session.update(realDt, flow.simulating);
   if (flow.state === 'controls' && now - controlsShownAt > 100) { // the joystick tab's live bars
     controlsShownAt = now;
     screens.controls.update();

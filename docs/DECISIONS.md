@@ -749,3 +749,36 @@ The propeller's turning angle is followed from the engine speed the flight model
   - Only the game's own pages may connect (GitHub Pages, localhost). Tools sending no Origin are let through, since an Origin check only stops other web sites.
   - Messages are checked field by field; anything over 4 KB is refused, and more than 50 bad messages closes the connection.
   - Nothing is stored.
+
+## D67. Multiplayer M2: flying together
+- **The server flies every aircraft with the unchanged `Simulation`.**
+  - It runs 120 ticks a second from its own clock; a callback every 16 ms runs the ticks that are due, at most 24 (a stalled server drops its backlog instead of racing).
+  - After every 4th tick, each player gets a binary snapshot: their own aircraft in full (35 numbers at full precision) and the others compactly (49 bytes each).
+- **Controls are rounded before use (16-bit steps), on both sides.**
+  - The browser flies its prediction with exactly the rounded values the server receives, and the physics has no random numbers, so both compute identical flights (a test checks this to the last digit).
+  - Four ticks of controls go in one message.
+  - The server uses each control for its own tick. A missing tick repeats the last control; late controls and those more than 1 s ahead are dropped (no "speed hack").
+- **Prediction and corrections:**
+  - The browser records the state after every tick.
+  - Any difference beyond 2 cm, 2 cm/s, 0.1 degree or 0.01 rad/s, or any difference in surfaces, damage or crash, triggers a correction: back to the server's state, then a replay of the recorded controls.
+  - The visible difference fades with a 0.05 s time constant; over 50 m, or on a respawn (a new spawn number), it snaps.
+- **The browser's clock:**
+  - It starts a full round trip, one message of ticks and a 2-tick margin ahead of the server. The snapshot is already half a round trip old; starting only half a round trip ahead made the first second's controls late.
+  - The server reports each player's "lead". The browser runs up to 2% fast or slow to keep it at 2 ticks plus the jitter.
+  - It jumps only when the *smoothed* lead is over 30 ticks out. A single late reading (TCP resending a lost packet) used to trigger a jump and a visible 10-70 m leap.
+- **Other aircraft are drawn between snapshots:**
+  - a Hermite curve through positions and velocities, with orientations blended (slerp);
+  - delayed by 100 ms, rising to 200 ms with jitter (2.5 x jitter + 40 ms);
+  - extrapolated for up to 0.5 s, not the 0.25 s first planned, because a lost packet on TCP arrives about a round trip plus 200 ms late;
+  - gaps closed no faster than 20 m/s.
+  - **The drawing clock never jumps:** it steers toward its target at up to 10% fast or slow. A single very late packet counts as at most 60 ms of jitter. In the headless test, before this, a late packet stepped the drawing clock back and the others lurched 6-7 m.
+- **Measured (headless match, 3 players, 150 ms ping, 20 ms jitter, 2% loss, 60 s):** others drawn within 0.5 m of the server's path; largest frame-to-frame jump 8 cm; own corrections at most 3 cm. Corrections still happen about 5 times a second on that line (each lost message delays the controls behind it), but they are far too small to see.
+- **Shared trees and buildings:** 1 km tiles built when something comes below 60 m, with Medium's 16 m tree spacing. Drawn woods still follow each player's graphics quality.
+- **Start areas:** fixed places per team (-1.5, -0.5, 0.5, 1.5 spacings across), so a later joiner never appears on top of a team-mate. Respawn after a crash 10 s later at the team's start area.
+- **A match never pauses:** Esc opens a menu while the aircraft flies on (the flow's `simulating` state). Structural damage is the host's setting for everyone.
+- **Cloudflare's runtime delivers binary WebSocket messages as Blobs by default,** so the room sets `binaryType = 'arraybuffer'` on each connection; found by `npm run mp:smoke` against the real local server.
+- **The single-player code paths are unchanged:** the session's multiplayer hooks are all behind `s.net`, and R, N, the number keys and the F4 panel are disabled in a match.
+- **Hidden tabs (found by the product owner):** a hidden tab receives snapshots but draws nothing, and the drawn-aircraft fade gap grew with every snapshot (134 m after 5 s hidden).
+  - Snapshots that arrive while the window has not drawn for 250 ms are not faded, and no faded gap (others' or your own) may exceed 50 m.
+  - With no controls from a player for 0.5 s, the server centres stick and rudder and keeps throttle and trim, instead of repeating the last control indefinitely.
+

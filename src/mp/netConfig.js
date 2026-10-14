@@ -19,6 +19,30 @@ export const MAX_MESSAGE_BYTES = 4096; // larger messages are ignored
 export const MAX_BAD_MESSAGES = 50; // a socket sending more malformed messages than this is closed
 export const RECONNECT_DELAYS_S = [1, 2, 4]; // the browser's own retries after a dropped connection
 
+// ---- flying together (M2) --------------------------------------------------------------------
+export const TICK_HZ = 120; // the server's physics steps per second (the same fixed step as single-player)
+export const TICK_MS = 1000 / TICK_HZ;
+export const SNAPSHOT_EVERY = 4; // ticks between snapshots: 30 a second
+export const INPUTS_PER_MESSAGE = 4; // ticks of controls in one message from a browser: 30 messages a second
+export const SERVER_INTERVAL_MS = 16; // how often the room's timer runs the ticks that are due
+export const MAX_TICKS_PER_CALLBACK = 24; // more than this (a stalled server) is dropped, not raced through
+export const INPUT_AHEAD_MAX = TICK_HZ; // controls more than 1 s ahead of the server are refused
+export const HANDS_OFF_TICKS = TICK_HZ / 2; // no controls from a player for this long (a hidden tab, a stalled line): stick and rudder centred, throttle kept
+export const LEAD_TARGET_TICKS = 2; // how early a browser's controls should reach the server, plus the jitter
+export const CLOCK_RATE = 0.02; // the browser runs up to 2% fast or slow to keep that lead
+export const CLOCK_RESET_TICKS = 30; // further off than this, the browser's clock jumps instead
+export const HISTORY_TICKS = 2 * TICK_HZ; // own controls and states kept for replaying corrections
+export const CORRECT = { position: 0.02, velocity: 0.02, angle: (0.1 * Math.PI) / 180, rate: 0.01, other: 1e-6 }; // differences that trigger a correction
+export const SMOOTH_S = 0.05; // time constant of fading out a correction (95% gone in 0.15 s)
+export const SNAP_DISTANCE = 50; // m: a correction this big (a respawn) is not faded
+export const INTERP_DELAY_MS = 100; // other aircraft are drawn this far in the past...
+export const INTERP_DELAY_MAX_MS = 200; // ...rising to this on a jittery connection
+export const EXTRAPOLATE_MAX_S = 0.5; // past the newest snapshot, carry on for at most this long (covers a lost packet sent again)
+export const CATCH_UP_SPEED = 20; // m/s: a drawn aircraft that fell behind its true path closes the gap no faster than this
+export const RESPAWN_S = 10; // back in the air this long after going down
+export const SOLIDS = { tile: 1000, treeSpacing: 16, maxHeight: 60, border: 50 }; // trees and buildings everyone crashes into (Medium's spacing)
+export const SPAWN = { airBehindFront: 3000, airSpacing: 300, groundSpacing: 30, groundFromEnd: 0.3 }; // where teams appear
+
 // Room codes: capitals and digits without the look-alikes I, O, 0 and 1 (32 characters, so
 // about a thousand million six-character codes).
 export const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

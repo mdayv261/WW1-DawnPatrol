@@ -1,7 +1,7 @@
 # Multiplayer Specification: Allied vs Central team dogfights
 
 Status: Stage 1 (research and recommendation) approved by the product owner on 14 Oct 2026.
-M1 (connection and lobby) is built on the `multiplayer` branch (D66). The phase plan (M1-M6) is in `PROGRESS.md`. The decision record is D65 in `DECISIONS.md`.
+M1 (connection and lobby, D66) is committed and M2 (flying together, D67) is built on the `multiplayer` branch. The phase plan (M1-M6) is in `PROGRESS.md`. The decision record is D65 in `DECISIONS.md`.
 
 ## 1. Goal and rules
 
@@ -120,14 +120,15 @@ Each **browser** decides only what it shows and plays.
    - tiny maths differences between Chrome and Firefox.
 4. The visible part of a correction is faded in over about 0.15 s, so you never see a jump.
 
-The browser's tick clock runs just ahead of the server's: half the round trip plus a small margin. That way your controls reach the server just in time. It is held there by running up to 2% faster or slower, which cannot be felt.
+The browser's tick clock runs just ahead of the server's, so your controls reach the server just in time. It starts a full round trip plus a small margin ahead, because the first snapshot is already half a round trip old. It is held there by running up to 2% faster or slower, which cannot be felt. It jumps only if it stays far out, not because of one late packet.
 
 ### Other aircraft: smoothing
 - Other aircraft are drawn about **100 ms in the past**, between two snapshots that have already arrived:
   - the position follows a curve that matches each snapshot's velocity;
   - the orientation is blended smoothly.
 - The 100 ms buffer grows (to at most 200 ms) if the connection is jittery.
-- If snapshots stop briefly, the aircraft carries on along its last motion for up to 0.25 s, then eases back onto the true path when data returns.
+- If snapshots stop briefly, the aircraft carries on along its last motion for up to 0.5 s (a lost packet on TCP arrives about a round trip plus 200 ms late), then eases back onto the true path when data returns, no faster than 20 m/s.
+- The drawing clock never jumps: it runs at most 10% fast or slow to follow its target.
 
 ### Hits: fair across different delays
 - Bullets exist only on the server. The server decides every hit with the existing hit test and hit zones (`src/weapons/hits.js`, `zones.js`).

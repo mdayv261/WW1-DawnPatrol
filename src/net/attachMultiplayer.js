@@ -1,16 +1,22 @@
-// Multiplayer in the page: builds the room client and its three screens (Multiplayer, the
-// lobby, the match) and adds them to the game's screens, so the flow (src/game/flow.js) shows
-// and hides them like the others. Follows the room: joined -> lobby, match started -> match,
-// refused or lost -> back to the Multiplayer screen with the reason. Called once by main.js.
+// Multiplayer in the page: builds the room client and its screens (Multiplayer, the lobby, the
+// match's Esc menu) and adds them to the game's screens, so the flow (src/game/flow.js) shows and
+// hides them like the others. Follows the room: joined -> lobby; match started -> flying (once
+// the server has placed your aircraft); match ended -> lobby; refused or lost -> back to the
+// Multiplayer screen with the reason. Called once by main.js.
 
 import { createMpClient } from './mpClient.js';
 import { serverBase } from './serverUrl.js';
 import { parseNetsim, cleanNetsim, netsimActive, netsimText } from './netSim.js';
+import { NetFlight } from './netFlight.js';
 import { createMultiplayerScreen } from '../ui/screens/multiplayer.js';
-import { createLobby, createMpMatch } from '../ui/screens/lobby.js';
+import { createLobby, createMpEsc } from '../ui/screens/lobby.js';
+import { AIRCRAFT_LIST } from '../aircraft/index.js';
+import { WorldSolids } from '../mp/worldSolids.js';
+import { createWorld } from '../world/layout.js';
 
 const NETSIM_KEY = 'dawnPatrol.netsim';
-const ROOM_SCREENS = ['lobby', 'mpMatch'];
+const ROOM_SCREENS = ['lobby', 'mpFlying', 'mpEsc'];
+const aircraftById = (id) => AIRCRAFT_LIST.find((a) => a.id === id) ?? null;
 
 const tabStorage = () => {
   try {
@@ -20,9 +26,11 @@ const tabStorage = () => {
   }
 };
 
-// flow: the game's Flow; screens: main.js's screens (the three are added to it);
-// pilot(): the Roll Call pilot flying now (for the name and team), or null.
-export function attachMultiplayer({ flow, screens, pilot }) {
+// flow: the game's Flow; screens: main.js's screens (these are added to it); session: the flight
+// on screen (src/game/session.js); idle(): put the idle aircraft back behind the menus;
+// notice(text, ms): the in-flight message line; pilot(): the Roll Call pilot flying now (for the
+// name and team), or null.
+export function attachMultiplayer({ flow, screens, session, idle, notice, pilot }) {
   const storage = tabStorage();
   const params = new URLSearchParams(window.location.search);
   // The test network: ?netsim= in the address wins, else this tab's own setting.
@@ -37,13 +45,17 @@ export function attachMultiplayer({ flow, screens, pilot }) {
   let pending = ''; // the message for the Multiplayer screen when it opens
   let note = ''; // the room's latest notice ("Max joined")
   let noteTimer = null;
+  let flight = null; // { match (the matchStart it is for), net (NetFlight) } while a match is on
+  let solids = null; // the trees and buildings everyone shares (built when first needed)
 
   const options = {
     base: serverBase({ search: window.location.search, env: import.meta.env, location: window.location, dev: import.meta.env.DEV }),
     storage,
     netsim,
     onChange: () => sync(),
+    onBinary: (buffer) => flight?.net.receive(buffer),
     onNotice: (text) => {
+      if (flow.flying) notice(text, 3500); // in flight: the message line ("Albert crashed")
       note = text;
       clearTimeout(noteTimer);
       noteTimer = setTimeout(() => { note = ''; render(); }, 5000);
@@ -55,8 +67,47 @@ export function attachMultiplayer({ flow, screens, pilot }) {
   const team = () => ({ allied: 'allied', german: 'central' })[pilot()?.side] ?? null;
   const sideNote = () => (netsimActive(options.netsim) ? netsimText(options.netsim) : '');
 
+  // A player in the match by the slot the server gives them (their join order).
+  const lookup = (slot) => {
+    const p = client.state.lobby?.players.find((q) => q.id === `p${slot}`);
+    return p ? { name: p.name, team: p.team, aircraft: aircraftById(p.aircraft) } : null;
+  };
+
+  // The match has started (or we joined one): fly it.
+  function startFlight(match) {
+    stopFlight(false);
+    const me = match.players.find((p) => p.id === client.state.you) ?? client.me;
+    const ac = aircraftById(me?.aircraft);
+    if (!ac) return;
+    if (!solids) solids = new WorldSolids(createWorld());
+    const net = new NetFlight({
+      send: (buffer) => client.sendBinary(buffer),
+      settings: match.settings,
+      lookup,
+      solidAt: (x, y, z) => solids.hit(x, y, z),
+      ping: () => client.ping ?? 0,
+      jitter: () => client.jitter,
+      onReady: (input) => {
+        session.resetControls(input);
+        sync();
+      },
+      onRespawn: (input) => session.resetControls(input),
+    });
+    flight = { match, net };
+    session.startNet(ac, match.settings.timeOfDay, net);
+  }
+
+  // The match is over for us: back to the idle aircraft behind the menus.
+  function stopFlight(putBack = true) {
+    if (!flight) return;
+    flight = null;
+    session.stopNet();
+    if (putBack) idle();
+  }
+
   const leave = () => {
     client.leave();
+    stopFlight();
     pending = 'You left the room.';
     if (ROOM_SCREENS.includes(flow.state)) flow.go('multiplayer');
   };
@@ -78,16 +129,23 @@ export function attachMultiplayer({ flow, screens, pilot }) {
     onBack: () => flow.go('menu'),
   });
   const lobby = createLobby({ client, onLeave: leave, netsimNote: sideNote });
-  const match = createMpMatch({ client, onLobby: () => client.toLobby(), onLeave: leave });
+  const esc = createMpEsc({
+    client,
+    onResume: () => flow.go('mpFlying'),
+    onOptions: () => flow.go('options'),
+    onEnd: () => client.toLobby(),
+    onLeave: leave,
+  });
 
   // The flow calls show() with nothing; each screen draws from the client's state.
   screens.multiplayer = { ...menu, show: () => { menu.show(pending || (client.available ? '' : 'Multiplayer is not available on this copy of the game yet.')); pending = ''; } };
   screens.lobby = { ...lobby, show: () => { lobby.show(); lobby.render(note); } };
-  screens.mpMatch = { ...match, show: () => { match.show(); match.render(note); } };
+  screens.mpEsc = { ...esc, show: () => { esc.show(); esc.render(note); } };
+  screens.mpFlying = { show: () => {}, hide: () => {} }; // flying: no screen, just the game
 
   function render() {
-    if (flow.state === 'lobby') lobby.render(note);
-    if (flow.state === 'mpMatch') match.render(note);
+    if (flow.state === 'lobby') lobby.render(flight && !flight.net.ready ? note || 'Joining the match...' : note);
+    if (flow.state === 'mpEsc') esc.render(note);
   }
 
   // Follow the room's state with the screens.
@@ -96,9 +154,13 @@ export function attachMultiplayer({ flow, screens, pilot }) {
     const st = client.state;
     const here = flow.state;
     if ((st.status === 'inRoom' || st.status === 'reconnecting') && st.lobby) {
-      const want = st.lobby.phase === 'match' && st.match ? 'mpMatch' : 'lobby';
+      const on = st.lobby.phase === 'match';
+      if (on && st.match && st.match !== flight?.match) startFlight(st.match);
+      if (!on && flight) stopFlight();
+      const want = on && flight?.net.ready ? (here === 'mpEsc' ? 'mpEsc' : 'mpFlying') : 'lobby';
       if (here !== want && (here === 'multiplayer' || ROOM_SCREENS.includes(here))) return flow.go(want);
     } else if (['error', 'lost', 'idle'].includes(st.status)) {
+      stopFlight();
       if (ROOM_SCREENS.includes(here)) {
         pending = st.message;
         return flow.go('multiplayer');
@@ -107,6 +169,7 @@ export function attachMultiplayer({ flow, screens, pilot }) {
     } else if (here === 'multiplayer' && WAITING[st.status]) menu.say(WAITING[st.status]);
     render();
   }
+  flow.onChange(() => { if (flow.multiplayer) sync(); }); // e.g. back from Options while the match ended
 
   // The ping line, once a second.
   setInterval(() => { if (flow.state === 'lobby') lobby.update(); }, 1000);

@@ -3,6 +3,7 @@ import { Room } from '../../server/room.js';
 import { handle, originAllowed } from '../../server/worker.js';
 import { PROTOCOL_VERSION, MAX_BAD_MESSAGES, SILENT_DROP_S } from '../../src/mp/netConfig.js';
 import { FakeSocket } from './fakes.js';
+import { decodeSnapshot, encodeInputs, quantiseInput } from '../../src/mp/binary.js';
 
 const hello = (name) => ({ type: 'hello', v: PROTOCOL_VERSION, name, token: `token-${name}-xyz` });
 
@@ -125,6 +126,52 @@ describe('room server: connections', () => {
     room.attach(s);
     for (let i = 0; i <= MAX_BAD_MESSAGES; i++) s.receive('rubbish');
     expect(s.closed).toMatchObject({ code: 1008 });
+  });
+});
+
+describe('room server: a match', () => {
+  it('starts with the host, flies everyone, takes their controls and stops back in the lobby', () => {
+    const { room, clock } = roomWithClock();
+    room.claim('K7QPM2');
+    const a = new FakeSocket();
+    const b = new FakeSocket();
+    room.attach(a);
+    room.attach(b);
+    expect(a.binaryType).toBe('arraybuffer'); // controls arrive as bytes, not as Blobs
+    a.receive(hello('Max'));
+    b.receive(hello('Albert'));
+    for (const s of [a, b]) s.receive({ type: 'setReady', ready: true }); // Max Allied, Albert Central
+    a.receive({ type: 'start' });
+    expect(room.match).toBeTruthy();
+    expect(room.match.players.size).toBe(2);
+    clearInterval(room.ticker); // the test drives the timer itself
+    a.take();
+    b.take();
+    clock.t += 100;
+    room.tickMatch();
+    const bytes = b.sent.filter((m) => m instanceof ArrayBuffer);
+    expect(bytes.length).toBe(3); // 100 ms: ticks 4, 8 and 12
+    const snap = decodeSnapshot(bytes.at(-1));
+    expect(snap.you.slot).toBe(2);
+    expect(snap.others.map((o) => o.slot)).toEqual([1]);
+    // Albert's controls are taken (bytes); rubbish bytes are not.
+    const input = quantiseInput({ pull: 0.5, roll: 0, yaw: 0, throttle: 1, trim: 0 });
+    b.emit('message', { data: encodeInputs(room.match.tick + 3, 0, [input]) });
+    expect(room.match.players.get('p2').inputs.size).toBe(1);
+    b.emit('message', { data: new ArrayBuffer(4) });
+    expect(room.match.players.get('p2').inputs.size).toBe(1);
+    // Albert drops out: his aircraft leaves the sky; he comes back: it returns.
+    b.close(1006);
+    expect(room.match.players.has('p2')).toBe(false);
+    const b2 = new FakeSocket();
+    room.attach(b2);
+    b2.receive(hello('Albert'));
+    expect(room.match.players.has('p2')).toBe(true);
+    // The host ends the match: back in the lobby, no match.
+    a.receive({ type: 'toLobby' });
+    expect(room.match).toBe(null);
+    clearInterval(room.watch);
+    clearTimeout(room.timer);
   });
 });
 

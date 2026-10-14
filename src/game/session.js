@@ -1,7 +1,8 @@
 // One flight on screen: the player's aircraft and its model and cockpit, the fight, the
 // mission watcher, and drawing each frame. Built once by main.js; a new mission (or the
 // idle aircraft behind the menus) replaces everything from the last one, so nothing is
-// left over between missions.
+// left over between missions. In a multiplayer match `s.net` (src/net/netFlight.js) takes the
+// physics steps and supplies the other players' aircraft; everything else is the same.
 
 import { Vector3 } from 'three';
 import { createAircraftMesh, setControlSurfaces, setUpperWingChord } from '../render/aircraftMesh.js';
@@ -72,6 +73,7 @@ export function createSession(ctx) {
     wasCrashed: false, // for the crash sound
     lastOverlay: 0,
     joystickHintAt: performance.now() + 5000,
+    net: null, // a multiplayer match (NetFlight), or null
   };
 
   // The aircraft model, its cockpit and instrument panel.
@@ -110,8 +112,15 @@ export function createSession(ctx) {
     autoRudder.reset();
   }
 
+  // Leave multiplayer mode: back to single-player physics (the terrain's own trees and buildings).
+  function offline() {
+    s.net = null;
+    sim.solidAt = solidAt;
+  }
+
   // Start a mission from its settings (or, with watch = false, the idle aircraft behind the menus).
   s.startMission = (config, watch = true) => {
+    offline();
     s.config = config;
     s.runner = null;
     const ac = AIRCRAFT_LIST.find((a) => a.id === config.aircraft) ?? AIRCRAFT_LIST[0];
@@ -129,6 +138,7 @@ export function createSession(ctx) {
 
   // Development only: the old quick starts (number keys, the F4 test panel's scenarios).
   s.startDev = (index, airStart, scenario = null) => {
+    offline();
     const ac = AIRCRAFT_LIST[index];
     s.config = null;
     s.watcher = null;
@@ -147,6 +157,30 @@ export function createSession(ctx) {
     combat.reset(ac);
     afterStart(ac, input);
     return ac;
+  };
+
+  // A multiplayer match: `net` flies the player's aircraft (it is put where the server has it
+  // when the first snapshot arrives) and supplies the others.
+  s.startNet = (ac, timeOfDay, net) => {
+    s.config = null;
+    s.watcher = null;
+    s.runner = null;
+    buildAircraft(ac);
+    combat.reset(ac); // guns and sight (no AI aircraft in a match)
+    s.net = net;
+    net.attach(sim, ac);
+    setTimeOfDay(timeOfDay);
+    s.scenarioLabel = `${ac.name}: multiplayer`;
+    afterStart(ac, sim.startInput);
+  };
+  s.stopNet = () => offline();
+
+  // The pilot's controls back to a fresh aircraft's (a match's start or a respawn).
+  s.resetControls = (input) => {
+    keyboard.reset(input);
+    mouse.stick.centre();
+    autoRudder.reset();
+    terrain.prime(sim.state.position);
   };
 
   // The pause menu's End mission.
@@ -177,12 +211,14 @@ export function createSession(ctx) {
     const input = { ...keys, ...mixJoystick(keys, mouse.stick, joy, held), fire: Boolean(joy?.fire) || keyboard.isDown('fire') };
     if (import.meta.env.DEV && s.runner && (keyboard.pilotActive() || joy?.pull || joy?.roll || joy?.yaw)) s.runner.cancel();
     const o = ctx.options?.() ?? {};
-    sim.structuralDamage = o.structuralDamage !== false; // Options: g and overspeed break the wings
+    // Options: g and overspeed break the wings (in a match the host's setting, the same for all).
+    sim.structuralDamage = s.net ? s.net.settings.structuralDamage : o.structuralDamage !== false;
     if (!o.autoRudder) autoRudder.reset();
-    return loop.advance(realDt, (dt) => {
+    return loop.advance(realDt * (s.net ? s.net.timeScale : 1), (dt) => {
       if (import.meta.env.DEV && s.runner) s.runner.apply(input, dt);
       // Auto-rudder (Options) works the rudder only, through the same flight model.
       const hands = o.autoRudder ? autoRudder.apply(input, sim.diag, dt, motion(sim.state)) : input;
+      if (s.net) return s.net.step(dt, hands); // a match: the step is predicted and sent
       sim.step(dt, hands);
       combat.step(dt, sim, input.fire);
       if (s.watcher && !s.result) s.result = s.watcher.update(dt, sim, combat);
@@ -212,9 +248,9 @@ export function createSession(ctx) {
         speed: sim.crashed ? 0 : d ? d.speed : 0, density: d ? d.density : 1, velocity: sim.state.velocity,
       },
       listener: { position: camera.position, right: _right },
-      enemies: combat.agents.filter((a) => !a.crashed && a.sim.diag).map((a) => ({
+      enemies: others().filter((a) => !a.crashed && a.sim.diag).map((a) => ({
         id: a.id, kind: a.aircraft.engine.kind, cylinders: a.aircraft.engine.cylinders,
-        rpm: crankRpm(a.aircraft, a.sim.diag.rpm), position: a.state.position, velocity: a.state.velocity,
+        rpm: crankRpm(a.aircraft, a.sim.diag.rpm), position: a.position ?? a.state.position, velocity: a.velocity ?? a.state.velocity,
       })),
       sounds: combat.sounds,
       crashed,
@@ -242,9 +278,15 @@ export function createSession(ctx) {
     parts.sun.position.copy(position).addScaledVector(sunDir, 6);
   }
 
+  // The other aircraft: the AI's, or in a match the other players'.
+  const others = () => (s.net ? s.net.views() : combat.agents);
+  const TEAM_NAMES = { allied: 'Allied', central: 'Central' };
+
   // Draw one frame. paused: the game is paused or a menu is up (no gun sight, no messages).
   s.draw = (realDt, alpha, now, paused) => {
+    if (s.net) s.net.frame(realDt);
     const { position, quaternion } = sim.interpolate(alpha);
+    if (s.net) s.net.smoothOwn(position, quaternion); // a correction from the server is faded, not jumped
     const model = s.model;
     model.group.position.copy(position);
     model.group.quaternion.copy(quaternion);
@@ -270,7 +312,7 @@ export function createSession(ctx) {
     rig.update(sim.aircraft, position, quaternion, realDt);
 
     // The fight: tracers, strikes, enemy aircraft, the gun sight and the gun status.
-    targetViews.update(combat.agents, alpha, realDt);
+    targetViews.update(others(), alpha, realDt);
     tracers.update(combat.bullets, camera, alpha, 1 / 120);
     effects.update(combat.events, paused ? 0 : realDt);
     for (const text of combat.messages.splice(0)) notice(text, 3000);
@@ -282,7 +324,7 @@ export function createSession(ctx) {
     // The stall, G and overspeed warnings (Options), on screen and as a sound.
     const o = ctx.options?.() ?? {};
     const live = !paused && !sim.crashed && !pilotDead(sim.damage);
-    const w = live ? warnings(sim.aircraft, common, sim.diag, { stall: o.stallWarning, g: o.gWarning }, o.structuralDamage !== false) : noWarnings;
+    const w = live ? warnings(sim.aircraft, common, sim.diag, { stall: o.stallWarning, g: o.gWarning }, sim.structuralDamage) : noWarnings;
     overlays.warnings?.set(warningLines(w));
     if (ctx.audio) feedAudio(paused, warningSound(w));
     const hudOn = ctx.hudOn() && !paused;
@@ -305,7 +347,7 @@ export function createSession(ctx) {
         const nearest = world.nearestAirfield(sim.state.position.x, sim.state.position.z);
         overlays.debug.set(debugLines(sim.aircraft, sim.diag, {
           crashed: sim.crashed, paused, joystick: stick ? stick.id : 'not detected', airfield: airfieldLine(nearest),
-          extra: [...perfLines(ctx.frameStats, renderer.info.render, ctx.quality(), parts.view, terrain.stats()), ...combatLines(combat), ...damageLines(sim.damage, sim.aircraft), `last key  ${keyboard.lastKey || '-'}   trim ${((sim.surfaces?.trim ?? 0) * 100).toFixed(0)}%`],
+          extra: [...perfLines(ctx.frameStats, renderer.info.render, ctx.quality(), parts.view, terrain.stats()), ...(s.net ? s.net.debugLines() : combatLines(combat)), ...damageLines(sim.damage, sim.aircraft), `last key  ${keyboard.lastKey || '-'}   trim ${((sim.surfaces?.trim ?? 0) * 100).toFixed(0)}%`],
         }));
       }
       if (import.meta.env.DEV && overlays.testPanel?.visible) overlays.testPanel.update(sim, s.runner, s.scenarioLabel);
@@ -316,7 +358,10 @@ export function createSession(ctx) {
         overlays.hud.update({
           aircraft: sim.aircraft, diag: sim.diag, velocityY: sim.state.velocity.y, heading, throttle: sim.surfaces?.throttle ?? 0, trim: sim.surfaces?.trim ?? 0, damage: sim.damage,
           gunText: combat.gunBank ? `GUNS ${combat.gunBank.statusText()}` : '', camera,
-          enemies: combat.agents.filter((a) => !a.crashed).map((a) => ({ position: a.state.position, label: enemyLabel(a.aircraft.name, a.state.position.distanceTo(me)) })),
+          enemies: others().filter((a) => !a.crashed).map((a) => {
+            const at = a.position ?? a.state.position;
+            return { position: at, label: enemyLabel(a.name ? `${a.name} (${TEAM_NAMES[a.team]}, ${a.aircraft.name})` : a.aircraft.name, at.distanceTo(me)) };
+          }),
         });
       }
       if (inCockpit) s.panel.update({ diag: sim.diag, heading, damage: sim.damage, throttle: sim.surfaces?.throttle ?? 0, time: sim.time });

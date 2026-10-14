@@ -2,7 +2,87 @@
 
 Read this at the start of every session.
 
-## Current status: Phases 0-7 and the Pilot Roll Call are done. Published on GitHub Pages (D64) on 14 Oct 2026: https://mdayv261.github.io/WW1-DawnPatrol/ (public repository github.com/mdayv261/WW1-DawnPatrol), deployed automatically on each push to main after the tests pass. Pushing to GitHub needs the product owner's permission each time. **Multiplayer add-on (local branch `multiplayer`): Stage 1 approved; M1 (connection and lobby) is done and committed on the local branch (not pushed). M2 (synchronised flight) needs a plan in plan mode first.**
+## Current status: Phases 0-7 and the Pilot Roll Call are done. Published on GitHub Pages (D64) on 14 Oct 2026: https://mdayv261.github.io/WW1-DawnPatrol/ (public repository github.com/mdayv261/WW1-DawnPatrol), deployed automatically on each push to main after the tests pass. Pushing to GitHub needs the product owner's permission each time. **Multiplayer add-on (local branch `multiplayer`): Stage 1 approved; M1 (connection and lobby) and M2 (flying together) are committed on the local branch (not pushed). Left for M2: the one Cloudflare test deployment, when the product owner has created the free account. Then M3 (combat) needs a plan in plan mode first.**
+
+## Multiplayer M2: flying together (D67)
+
+**Done:**
+- **Start the match** now puts everyone in the air. The server flies every aircraft with the unchanged flight model, from the controls each browser sends 30 times a second, and sends each player 30 snapshots a second.
+- **Your own aircraft responds at once.** Your browser flies it straight away with the same physics and exactly the same rounded controls as the server. When the server's version differs (a lost or late message), the browser goes back to the server's state, replays your controls since then, and fades the difference out over about 0.15 s.
+- **Other aircraft are drawn smoothly.**
+  - They are drawn about 100 ms in the past (up to 200 ms on a jittery line), along a curve that matches their speed and direction.
+  - If news stops for a moment (a lost packet being sent again), they carry on along their last motion for up to 0.5 s.
+  - When news returns, any gap is closed gently (no faster than 20 m/s); the drawing clock never jumps or slides back.
+  - The HUD (U) labels them, for example "Albert Ball (Allied, Sopwith Camel F.1) 1.2 km". Their engines are heard as the enemies' are in single-player.
+- **Start areas:**
+  - **In the air:** each team appears about 3 km behind its side of the front, at the host's height, flying toward the front, team-mates 300 m apart.
+  - **On the airfield:** the Allies on the start field, the Central team on the German field nearest the front opposite, parked 30 m apart.
+- **Crashing:** a crash puts everyone's message line to "Max crashed (Hit the ground)". You are back in the air at your start area 10 s later.
+- **Trees and buildings:** the same solid ones (Medium quality's) for everyone and for the server, whatever each player's graphics setting.
+- **Structural damage** follows the host's setting for everyone.
+- **Esc** opens the match menu: **Resume**, **Options**, **End the match for everyone** (host only), **Leave the room**. The match does not pause: your aircraft flies on underneath.
+- **Joining and reloading:** reloading the page, or joining a match already on, puts you straight into the air. A player who drops out leaves the sky.
+- **F3** shows the network:
+  - ping, jitter, and the lead (how early your controls reach the server);
+  - corrections (how many, and the size of the last);
+  - how far behind the others are drawn;
+  - data per second, down and up.
+- In a match, R (restart), N, the number keys and the F4 test panel do nothing.
+
+**Checked:**
+- 25 new tests. All 1,212 tests pass (plus 15 known deviations); `npm run build` works; the flight model files are unchanged.
+- **The server's aircraft equals one flown in a browser with the same controls**, exactly to the last digit.
+- **A whole match without a browser:** three players, with the test network on 150 ms ping, 20 ms jitter and 2% loss, flying weaving turns for a minute:
+  - other aircraft drawn within 0.5 m of where the server had them;
+  - no jump between frames larger than 8 cm;
+  - corrections to your own aircraft at most 3 cm.
+- **Server work:** four aircraft take under 1 ms of computing per second of match. The server package is 123 KB (the free limit is 3 MB).
+- **`npm run mp:smoke`** against the real local server:
+  - 30 snapshots a second for each of three players;
+  - controls reach the server (a scripted player climbed);
+  - leaving and host hand-over.
+
+  It found one real fault, fixed: Cloudflare's runtime hands binary messages over as "Blobs", so the server ignored everyone's controls; it now asks for plain bytes. A test covers this.
+- **In Chrome (two tabs):**
+  - create, join, Start: both in the air, the other aircraft listed on the HUD, about 9 KB/s of snapshots;
+  - Esc menu (the aircraft flew on 169 m while it was open), End the match (both back in the lobby);
+  - a deliberate dive into the ground: "CRASHED", then back at 2,000 m 10 s later;
+  - reloading mid-match: straight back into the air;
+  - Leave the room, then a single-player mission (airfield start with its AI enemies);
+  - no console errors.
+- **Not judged in Chrome:** the automated browser marks its tabs as hidden, and Chrome hardly draws hidden tabs, so smoothness by eye needs your visible windows.
+
+**Please test (about 15 minutes):**
+1. Start `npm run mp:server` and `npm run dev` (or keep them running; they update themselves). Open http://localhost:5173 in **two windows side by side, both visible**.
+2. Window 1: **Multiplayer**, **Create a room**. Window 2: join with the code and pick the **Allied** team (window 1 stays Central). Both **I am ready**; window 1 **Start the match**.
+3. Fly toward each other, east and west, about 6 km apart; the HUD (U) shows the other aircraft and its distance. Watch the other aircraft in each window as it turns, climbs, dives and rolls: it should move smoothly, without jumps or stutter.
+4. Press **F3** in each window: ping, lead and corrections. Corrections should be rare and tiny.
+5. Close window 2 and open it again with http://localhost:5173/?netsim=150,20,2 (150 ms ping, 20 ms jitter, 2% loss). It rejoins the match by itself (or join again with the code). Fly again; the other aircraft should still look smooth.
+6. Dive into the ground in one window: the message line says so in both, and you are back in the air 10 s later.
+7. Esc: the menu (the aircraft flies on). In window 1, **End the match for everyone**: both back in the lobby.
+8. Try **On the airfield** as the starting point: the Allies on the start field, the Central team on a German field, ready to take off.
+
+**After the product owner's first test:** switching between tabs, the other player appeared far off to the left or right, and the guns did not fire.
+- **The guns** come in M3 (combat). M2 is flying only.
+- **The far-off aircraft was a real fault, now fixed.**
+  - What happened: a hidden tab draws nothing but still receives the server's messages. Each message added a little to the gap the drawing fades out, and over 5 s hidden it grew past 100 m. Coming back, the other aircraft was drawn 100+ m from where it really was, closing at only 20 m/s.
+  - Now a window that has not drawn for a quarter of a second shows the others exactly where they are when it comes back. The faded gap can never grow past 50 m (beyond that it is placed directly), and the same limit applies to your own aircraft.
+  - A test hides a tab for 5 s, then checks that the other aircraft is drawn within 2 m of the truth straight away. It was 134 m before the fix.
+- **A hidden tab's aircraft no longer repeats your last stick movement for ever.** It used to circle on with a hard turn. After half a second without controls (a hidden tab, or a stalled connection) the server centres the stick and rudder and keeps your throttle and trim.
+- Note: your aircraft keeps flying while its tab is hidden. When you switch back it is further on, so the two aircraft are not where they were when you left.
+- 1,214 tests pass.
+- **Product owner (14 Oct 2026):** "All good. The players are visible in the correct positions in each tab." M2 approved and committed.
+
+**Next step, when you are ready (needs you):** the one test deployment to Cloudflare, to check the free-plan limits for real.
+1. Create a free Cloudflare account at dash.cloudflare.com (your email, no card).
+2. In Claude Code, type `! npm --prefix server exec wrangler login` (it opens your browser to allow it).
+
+Then, with your yes, I deploy the server, run the smoke test against it, and fly a two-window match through it.
+
+**Known issues:**
+- **Background windows:** a minimised or fully hidden window stops drawing and stops sending controls. The server keeps its aircraft flying with the last controls received, and the window catches up when it is shown again. Use visible windows.
+- **Crash reason:** if the server reports your crash before your own browser saw it (only possible when the window was hidden), the message says just "CRASHED: Crashed".
+- **Collisions:** aircraft still cannot collide with each other (as in single-player).
 
 ## Multiplayer M1: connection and lobby (D66)
 
