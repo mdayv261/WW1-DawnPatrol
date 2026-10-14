@@ -2,7 +2,67 @@
 
 Read this at the start of every session.
 
-## Current status: Phases 0-7 and the Pilot Roll Call are done. Published on GitHub Pages (D64) on 14 Oct 2026: https://mdayv261.github.io/WW1-DawnPatrol/ (public repository github.com/mdayv261/WW1-DawnPatrol), deployed automatically on each push to main after the tests pass. Pushing to GitHub needs the product owner's permission each time. **Multiplayer add-on (local branch `multiplayer`): Stage 1 approved; M1 (connection and lobby) and M2 (flying together) are committed on the local branch (not pushed). Left for M2: the one Cloudflare test deployment, when the product owner has created the free account. Then M3 (combat) needs a plan in plan mode first.**
+## Current status: Phases 0-7 and the Pilot Roll Call are done. Published on GitHub Pages (D64) on 14 Oct 2026: https://mdayv261.github.io/WW1-DawnPatrol/ (public repository github.com/mdayv261/WW1-DawnPatrol), deployed automatically on each push to main after the tests pass. Pushing to GitHub needs the product owner's permission each time. **Multiplayer add-on (local branch `multiplayer`): Stage 1 approved; M1 (connection and lobby) and M2 (flying together) are committed on the local branch (not pushed). The room server is deployed on Cloudflare for testing (https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev), still with the M2 version (redeploying M3 needs the product owner's yes). M1, M2 and M3 (combat) are committed on the local branch (not pushed). Next: M4 (match flow), with a plan in plan mode first.**
+
+## Multiplayer M3: combat and damage (D68)
+
+**Done:**
+- **The guns fire in a match.** Your guns fire at once in your window (tracers, sound, the round counter). The server fires the same rounds, and only the server's rounds count.
+- **The server decides every hit, judged against what you saw.**
+  - Each round is tested against the other aircraft where your screen showed them (up to 0.4 s back), so shooting at what you see hits.
+  - The cost is that a target can be hit up to 0.4 s after breaking away. The 0.4 s limit covers players at 150 ms ping and stops a slow line being abused.
+- **Damage** uses the single-player damage model (wings, engine, tank, pilot, tail, fin, control cables) and changes the flight for everyone at once. Your window shows the server's damage, and the server's messages say what broke ("Right wing failed").
+- **Shot down:** pilot killed, a wing or the tail gone, or the engine seized.
+  - The aircraft falls (throttle off, stick back, full rudder, the same everywhere) and you are back in the air 10 s later.
+  - The last enemy to hit you in the last 15 s gets the kill, and so does an enemy whose hit led to your crash within 15 s.
+  - Everyone is told: "Albert Ball shot down Max (Pilot killed)", "You were shot down by Albert Ball (Wing failed)".
+- **Friendly fire** follows the host's setting: off by default, when rounds pass through team-mates. With it on, team-mate hits do damage but never count as kills.
+- **Effects:**
+  - the others' tracers leave their guns, with their gunfire sound, and their rounds crack past you when close;
+  - sparks where the server says rounds hit (the ground, trees and aircraft);
+  - "You are hit!" (at most every 2 s) with the thud;
+  - smoke from damaged engines, and spray from holed tanks.
+- **Jams:** your guns jam only when the server's do. **B** clears them, and the server decides whether clearing worked. Ammunition runs out as in single-player.
+- **Esc** menu: the team score ("Allied 1 - 0 Central") and your own record (shot down, times down, hits from rounds).
+- The message version is now 2: an old page and a new server refuse each other with "please reload".
+
+**Checked:**
+- 16 new tests. All 1,228 tests pass (plus 15 known deviations); `npm run build` works.
+- Unchanged: the flight model, aircraft data, AI, and the single-player weapons and fight code (`combat.js`, `guns.js`, `hits.js`, `ballistics.js`).
+- **Lag compensation, measured.** A crossing target 200 m ahead:
+  - a shooter with no delay: best burst 4 hits;
+  - a shooter seeing the world 0.3 s late, firing at what is on screen: 6 hits;
+  - the same burst without compensation: 2 hits;
+  - claiming more than 0.4 s gains nothing.
+- **A fight through the test network** (150 ms ping, 20 ms jitter, 2% loss):
+  - 54 rounds, 22 hits;
+  - the target's own window shows exactly the server's damage, and says "You are hit!";
+  - the shooter's counter follows the server's;
+  - when shot down, the kill is credited, the target falls the same way in its own window as on the server, and it is back in the air 10 s later.
+- **Server rules tested:**
+  - a burst from behind shoots the target down;
+  - friendly fire off and on;
+  - kill credit for a crash 5 s after a hit, and none after 20 s;
+  - respawn with full belts;
+  - the score goes out at once after a kill, and with rounds and hits at most once a second.
+- **`npm run mp:smoke`** against the local server: a player's guns fire on the server (rounds counted), and the others are told of every round for their tracers.
+- **In Chrome:** firing (24 rounds in the air, 8 tracers, counter 500 to 488 matching the server); the other window drew the reported rounds with their sounds; the Esc menu score and "0 hits from 20 rounds"; no console errors.
+- **Fixed in testing:** rounds and hits did not reach the Esc menu, because the score was only sent after a kill. It now also goes out once a second while they change.
+
+**Please test (about 15 minutes):**
+1. Keep `npm run mp:server` and `npm run dev` running (or start them). Open http://localhost:5173 in **two windows side by side, both visible**. One creates a room (Central), the other joins as Allied; ready, start.
+2. Fly toward each other (about 6 km; the HUD (U) shows the other's distance) and shoot (Space or the trigger). Your tracers leave at once, and theirs come from their aircraft. Sparks show real hits, and the window that is hit says "You are hit!".
+3. Shoot one down: both windows say who shot whom down. The loser falls, and is back in the air 10 s later.
+4. Keep firing until a gun jams ("Gun jammed"); press **B** to clear it. Fire until empty.
+5. Press **Esc**: the team score and your record.
+6. Try `?netsim=150,20,2` in one window: aim at what you see, and the hits should still count.
+
+**Next (needs your yes):** redeploy the room server to Cloudflare with M3 (`npm run mp:deploy`), and rerun the checks there. The Cloudflare copy is still M2: with the new message version, the M3 game refuses to use it until it is updated.
+
+**Known issues:**
+- **Aim with the sight.** In level flight the nose, and so the guns, point a little up, so the stream rises about 2 degrees: aim with the sight, as in single-player. A target you see at the same height straight ahead is passed over at close range.
+- **Others' tracers are drawn by your window** from the reported number of rounds, so they can pass through an aircraft the server says was missed (or the other way round). The sparks are the server's.
+- **Kills and score have no limit or score line on screen yet** (M4).
 
 ## Multiplayer M2: flying together (D67)
 
@@ -73,11 +133,23 @@ Read this at the start of every session.
 - 1,214 tests pass.
 - **Product owner (14 Oct 2026):** "All good. The players are visible in the correct positions in each tab." M2 approved and committed.
 
-**Next step, when you are ready (needs you):** the one test deployment to Cloudflare, to check the free-plan limits for real.
-1. Create a free Cloudflare account at dash.cloudflare.com (your email, no card).
-2. In Claude Code, type `! npm --prefix server exec wrangler login` (it opens your browser to allow it).
-
-Then, with your yes, I deploy the server, run the smoke test against it, and fly a two-window match through it.
+**Cloudflare test deployment (14 Oct 2026, with the product owner's account and permission):**
+- **Deployed** with `npm run mp:deploy` to https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev (free plan; Worker `dawn-patrol-mp`, version f4b71618).
+  - The account had no workers.dev subdomain yet. Wrangler, run without questions, registered `dawn-patrol-mp-server` by itself, where I had said I would ask first. It can be changed on the dashboard; the game would then need the new address.
+- **`npm run mp:smoke` against it:**
+  - 31 snapshots a second for each of three players;
+  - controls reach the server;
+  - leaving and host hand-over (the check now allows for two players joining at the same instant).
+- **Load test, 4 players for 3 minutes:**
+  - 30.2 snapshots a second for each player, usually 32 ms apart (99% within 71 ms, worst 157 ms);
+  - ping from this Mac about 25-29 ms (worst 82 ms).
+- **Cloudflare's live log** (`wrangler tail`): every request and every 3-minute connection ended "ok", with no exceptions and no CPU or other limits hit.
+- **The real game in Chrome through it** (`?server=`): create, join, start, the other aircraft shown, leave; no console errors.
+- **Free-plan budget:**
+  - Each player sends about 30 messages a second, and Cloudflare counts 20 of those as one request (out of 100,000 a day). That is about 4.5 hours of 4-player play a day, or about 9 hours with 2 players.
+  - Running time (13,000 GB-s a day) allows about 28 room-hours, so it is not the limit.
+  - If more is ever needed: sending controls 15 times a day instead of 30 would roughly double it, or Workers Paid ($5 a month).
+- **Not yet done:** the game published on GitHub Pages does not use this server; that is M6.
 
 **Known issues:**
 - **Background windows:** a minimised or fully hidden window stops drawing and stops sending controls. The server keeps its aircraft flying with the last controls received, and the window catches up when it is shown again. Use visible windows.

@@ -38,8 +38,8 @@ function newToken(rng) {
 }
 
 // options: { base (the server's address, or null), storage (sessionStorage), netsim (settings or
-// null), onChange(), onNotice(text), onBinary(ArrayBuffer) (the match's snapshots), fetchFn,
-// makeSocket, timers, rng, now }.
+// null), onChange(), onNotice(text), onBinary(ArrayBuffer) (the match's snapshots), onFx(list)
+// (impacts), fetchFn, makeSocket, timers, rng, now }.
 export function createMpClient(options) {
   const { storage = null, onChange = () => {}, onNotice = () => {}, fetchFn = (...a) => fetch(...a), timers = globalThis, rng = Math.random } = options;
   let token = read(storage, TOKEN_KEY);
@@ -55,6 +55,7 @@ export function createMpClient(options) {
     code: null,
     lobby: null, // the latest lobby view
     match: null, // the latest matchStart
+    score: null, // the match's score: { teams, players }
   };
   let conn = null;
   let join = null; // { code, name, team }: what to send when (re)connecting
@@ -88,9 +89,13 @@ export function createMpClient(options) {
       case 'lobby':
         return set({ lobby: msg });
       case 'matchStart':
-        return set({ match: msg });
+        return set({ match: msg, score: null });
       case 'notice':
         return onNotice(msg.text);
+      case 'fx':
+        return options.onFx?.(Array.isArray(msg.e) ? msg.e : []);
+      case 'score':
+        return set({ score: { teams: msg.teams, players: msg.players } });
       case 'error':
         if (FATAL.has(msg.code)) {
           leaving = true; // the server closes the connection: no retry

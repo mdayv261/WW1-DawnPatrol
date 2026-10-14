@@ -781,4 +781,29 @@ The propeller's turning angle is followed from the engine speed the flight model
 - **Hidden tabs (found by the product owner):** a hidden tab receives snapshots but draws nothing, and the drawn-aircraft fade gap grew with every snapshot (134 m after 5 s hidden).
   - Snapshots that arrive while the window has not drawn for 250 ms are not faded, and no faded gap (others' or your own) may exceed 50 m.
   - With no controls from a player for 0.5 s, the server centres stick and rudder and keeps throttle and trim, instead of repeating the last control indefinitely.
+- **Cloudflare test deployment (with the product owner's permission):**
+  - Address: https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev. The workers.dev subdomain was registered automatically by wrangler when run without questions; it can be renamed on the dashboard.
+  - Measured with 4 players for 3 minutes: 30.2 snapshots a second each, usually 32 ms apart; ping 25-29 ms from the product owner's Mac; no errors, exceptions or limits in Cloudflare's live log.
+  - **The free plan's binding limit is requests** (incoming WebSocket messages count 1/20): about 4.5 hours of 4-player play a day. If ever needed, controls could go 15 times a second (8 ticks each) to double that.
+
+## D68. Multiplayer M3: combat and damage
+- **Only the server's rounds count.**
+  - The server runs each pilot's single-player `GunBank` (with its own random numbers for jams and clearing), flies the rounds with `makeBullet`/`stepBullet`, and decides hits with `findImpact` and the hit zones.
+  - Damage is `applyHit` through each zone, losing `passLoss`, as `Combat.registerHit` does.
+  - The single-player modules are reused unchanged; the server's combat is `src/mp/matchCombat.js`.
+- **Lag compensation, capped at 0.4 s (not the 0.25 s first proposed):**
+  - Each input carries the tick of the others on the shooter's screen; a round is tested, all its flight, against the targets that many ticks back. The server keeps a second of poses (`src/mp/history.js`).
+  - At 150 ms ping the look-back is the round trip, plus the lead, plus the 100-200 ms drawing delay: about 0.3-0.4 s. 0.25 s would have left those players aiming ahead of what they see.
+  - Measured on a crossing target at 200 m: 4 hits with no delay; 6 for a shooter 0.3 s late, compensated; 2 for the same shooter uncompensated.
+- **Shot down = `destroyedReason`** (pilot killed, a wing or the tail gone, engine seized), as in single-player.
+  - **The falling rule** (`src/mp/pilotRules.js`): throttle off, stick back, full rudder, the trim kept. It is used by the server's step, the browser's step and the browser's replay alike, so a falling aircraft needs no corrections.
+  - **Kill credit:** the last enemy hit within 15 s, for a shoot-down or a crash. A team-mate's hit never credits a kill. With friendly fire off, team-mates are not targets at all.
+  - **Respawn** 10 s after going down, with full belts.
+- **Browsers show, never decide:**
+  - Your own guns fire in your window through the existing `Combat` (its rounds can hit only the ground and trees), with a gun bank whose random numbers never jam or clear it. The server's snapshot sets jams and clearing, and corrects the round count beyond 20 rounds' drift.
+  - Others' rounds: each snapshot carries the count fired since the last one, and that many effect rounds leave the drawn aircraft's guns over the next 1/30 s.
+  - Impacts come from the server in a small `fx` message.
+  - In a match the browser's own damage texts are not shown; the server sends its own, so replays cannot repeat them.
+- **Score:** sent at once after a kill or a join, and while rounds and hits change at most once a second. Shown in the Esc menu.
+- **Message version raised to 2** (the snapshot gained the guns and the round count).
 

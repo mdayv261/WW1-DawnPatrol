@@ -190,6 +190,7 @@ function clearJam() {
   if (!session.combat.gunBank) return;
   const jammed = session.combat.gunBank.guns.some((g) => g.jammed);
   session.combat.clearJam();
+  session.net?.clearJam(); // in a match the server clears it (and decides whether it worked)
   if (jammed) showNotice('Clearing the jam...', 1500);
 }
 

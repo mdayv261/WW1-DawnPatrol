@@ -125,19 +125,25 @@ export function restoreState(sim, a, crashReason = 'Crashed') {
 // ---- snapshots ------------------------------------------------------------------------------
 
 // One snapshot for one player: { tick, lead (ticks their controls arrived early), you
-// ({ slot, spawn, state }: their own aircraft in full, or null), others: [compact] }.
+// ({ slot, spawn, state, guns: [{ rounds, state }] }: their own aircraft in full, or null),
+// others: [compact] }. A gun's state: 'ready', 'jammed', 'clearing' or 'empty'.
 // A compact aircraft: { slot, spawn, crashed, down, position, quaternion, velocity, rates,
 // surfaces: { pull, roll, yaw, throttle }, rpm, damage: { wingL, wingR, engine, tank, tailplane,
-// fin, failedL, failedR, failedTail } }.
+// fin, failedL, failedR, failedTail }, shots (rounds fired since the last snapshot) }.
 const HEAD = 11;
-const FULL_BYTES = 3 + FULL_LENGTH * 8;
-const COMPACT_BYTES = 49;
+const GUN_STATES = ['ready', 'jammed', 'clearing', 'empty'];
+const GUNS_BYTES = 6;
+const FULL_BYTES = 3 + FULL_LENGTH * 8 + GUNS_BYTES;
+const COMPACT_BYTES = 50;
 
-export function compactOf(slot, spawn, sim, down = false) {
+// A GunBank's two guns as the snapshot carries them.
+export const gunsOf = (bank) => bank.guns.map((g) => ({ rounds: g.rounds, state: g.state }));
+
+export function compactOf(slot, spawn, sim, down = false, shots = 0) {
   const s = sim.state;
   const d = sim.damage;
   return {
-    slot, spawn, crashed: sim.crashed, down,
+    slot, spawn, crashed: sim.crashed, down, shots,
     position: [s.position.x, s.position.y, s.position.z],
     quaternion: [s.quaternion.x, s.quaternion.y, s.quaternion.z, s.quaternion.w],
     velocity: [s.velocity.x, s.velocity.y, s.velocity.z],
@@ -162,6 +168,11 @@ export function encodeSnapshot({ tick, lead, you, others }) {
     d.setUint16(o, you.slot);
     d.setUint8(o + 2, you.spawn & 255);
     for (let k = 0; k < FULL_LENGTH; k++) d.setFloat64(o + 3 + k * 8, you.state[k]);
+    const g = o + 3 + FULL_LENGTH * 8;
+    (you.guns ?? []).slice(0, 2).forEach((gun, k) => {
+      d.setUint16(g + k * 3, clamp(gun.rounds, 0, U16));
+      d.setUint8(g + k * 3 + 2, Math.max(0, GUN_STATES.indexOf(gun.state)));
+    });
     o += FULL_BYTES;
   }
   for (const c of others) {
@@ -178,6 +189,7 @@ export function encodeSnapshot({ tick, lead, you, others }) {
     const g = c.damage;
     ['wingL', 'wingR', 'engine', 'tank', 'tailplane', 'fin'].forEach((key, k) => d.setUint8(o + 42 + k, Math.round(clamp(g[key], 0, 1) * 255)));
     d.setUint8(o + 48, (g.failedL ? 1 : 0) | (g.failedR ? 2 : 0) | (g.failedTail ? 4 : 0));
+    d.setUint8(o + 49, clamp(c.shots ?? 0, 0, 255));
     o += COMPACT_BYTES;
   }
   return buf;
@@ -195,7 +207,9 @@ export function decodeSnapshot(buf) {
   if (yourSlot) {
     const state = new Float64Array(FULL_LENGTH);
     for (let k = 0; k < FULL_LENGTH; k++) state[k] = d.getFloat64(o + 3 + k * 8);
-    out.you = { slot: d.getUint16(o), spawn: d.getUint8(o + 2), state };
+    const g = o + 3 + FULL_LENGTH * 8;
+    const guns = [0, 1].map((k) => ({ rounds: d.getUint16(g + k * 3), state: GUN_STATES[d.getUint8(g + k * 3 + 2)] ?? 'ready' }));
+    out.you = { slot: d.getUint16(o), spawn: d.getUint8(o + 2), state, guns };
     o += FULL_BYTES;
   }
   for (let i = 0; i < n; i++) {
@@ -215,6 +229,7 @@ export function decodeSnapshot(buf) {
         wingL: d.getUint8(o + 42) / 255, wingR: d.getUint8(o + 43) / 255, engine: d.getUint8(o + 44) / 255, tank: d.getUint8(o + 45) / 255,
         tailplane: d.getUint8(o + 46) / 255, fin: d.getUint8(o + 47) / 255, failedL: Boolean(fl & 1), failedR: Boolean(fl & 2), failedTail: Boolean(fl & 4),
       },
+      shots: d.getUint8(o + 49),
     });
     o += COMPACT_BYTES;
   }

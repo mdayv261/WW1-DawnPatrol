@@ -7,6 +7,7 @@
 
 import { Quaternion, Vector3 } from 'three';
 import { captureState, restoreState, FULL_LENGTH } from '../mp/binary.js';
+import { controlsFor } from '../mp/pilotRules.js';
 import { TICK_HZ, HISTORY_TICKS, CORRECT, SMOOTH_S, SNAP_DISTANCE } from '../mp/netConfig.js';
 
 const DT = 1 / TICK_HZ;
@@ -76,7 +77,7 @@ export class Prediction {
       const h = this.history.get(t);
       input = h?.input ?? input;
       if (!input) break;
-      this.sim.step(DT, input);
+      this.sim.step(DT, controlsFor(this.sim, input)); // shot down by then (a hit the server saw): it falls
       this.history.set(t, { input, state: captureState(this.sim) });
     }
   }

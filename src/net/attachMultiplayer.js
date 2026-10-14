@@ -54,6 +54,7 @@ export function attachMultiplayer({ flow, screens, session, idle, notice, pilot 
     netsim,
     onChange: () => sync(),
     onBinary: (buffer) => flight?.net.receive(buffer),
+    onFx: (list) => flight?.net.onFx(list),
     onNotice: (text) => {
       if (flow.flying) notice(text, 3500); // in flight: the message line ("Albert crashed")
       note = text;
@@ -92,6 +93,7 @@ export function attachMultiplayer({ flow, screens, session, idle, notice, pilot 
         sync();
       },
       onRespawn: (input) => session.resetControls(input),
+      notice: (text) => notice(text, 2000),
     });
     flight = { match, net };
     session.startNet(ac, match.settings.timeOfDay, net);

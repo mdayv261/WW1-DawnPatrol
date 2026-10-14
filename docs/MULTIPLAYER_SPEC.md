@@ -1,7 +1,7 @@
 # Multiplayer Specification: Allied vs Central team dogfights
 
 Status: Stage 1 (research and recommendation) approved by the product owner on 14 Oct 2026.
-M1 (connection and lobby, D66) is committed and M2 (flying together, D67) is built on the `multiplayer` branch. The phase plan (M1-M6) is in `PROGRESS.md`. The decision record is D65 in `DECISIONS.md`.
+M1 (connection and lobby, D66) and M2 (flying together, D67) are committed on the `multiplayer` branch; M3 (combat, D68) is built. Test server: https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev (Cloudflare free plan). The phase plan (M1-M6) is in `PROGRESS.md`. The decision record is D65 in `DECISIONS.md`.
 
 ## 1. Goal and rules
 
@@ -135,10 +135,10 @@ The browser's tick clock runs just ahead of the server's, so your controls reach
 - **Lag compensation ("favour the shooter", capped):**
   1. The server keeps one second of every aircraft's positions.
   2. Each bullet carries its shooter's view delay. While it flies, it is tested against the targets *where that shooter saw them*.
-  3. The delay allowed is capped at **250 ms**, so a slow connection cannot be abused.
+  3. The delay allowed is capped at **0.4 s** (decided in M3, D68: at 150 ms ping the look-back is the round trip plus the lead plus the 100-200 ms drawing delay, about 0.3-0.4 s), so a slow connection cannot be abused.
 - **What this means in play:**
   - If your sight was on the target on your screen, you hit.
-  - The cost falls on the target: they can be hit up to a quarter of a second after breaking away.
+  - The cost falls on the target: they can be hit up to 0.4 s after breaking away.
   - Dogfights have no cover to duck behind, so this is the fairest trade.
 - **Damage** uses the existing `applyHit` with the server's random numbers. The victim's browser receives the new damage in the next snapshot. A shot-off wing therefore changes the flight for everyone at the same moment.
 - **Tracers, gun sounds and sparks** are effects that each browser draws for itself:
@@ -147,6 +147,7 @@ The browser's tick clock runs just ahead of the server's, so your controls reach
   - hit sparks appear where the server reports a hit.
 
 ### Kills and score
+- Shot down means the single-player rule: pilot killed, a wing or the tail gone, or the engine seized. A shot-down aircraft falls (throttle off, stick back, full rudder), the same in every window.
 - A kill goes to the last enemy who hit the victim within 15 s before it was shot down or crashed.
 - A crash with no recent enemy hit scores nothing.
 - Friendly fire is a host setting, **off** by default.

@@ -69,6 +69,7 @@ check([max, albert, werner].every((p) => p.got.some((m) => m.type === 'matchStar
 // Flying: each player gets about 30 snapshots a second with their own aircraft and the others.
 for (const p of [max, albert, werner]) p.snapshots.length = 0;
 const climb = quantiseInput({ pull: 0.3, roll: 0, yaw: 0, throttle: 1, trim: 0 });
+climb.fire = true; // and he fires
 const t0 = Date.now();
 while (Date.now() - t0 < 2000) {
   const tick = albert.snapshots.at(-1)?.tick ?? 0;
@@ -84,13 +85,19 @@ for (const p of [max, albert, werner]) {
 const a0 = albert.snapshots[0].you.state;
 const a1 = albert.snapshots.at(-1).you.state;
 check(a1[1] > a0[1] + 5, `Albert's controls reach the server: he climbed ${(a1[1] - a0[1]).toFixed(0)} m`);
+const rounds = albert.snapshots.at(-1).you.guns.map((g) => g.rounds);
+check(rounds.every((r) => r < 375), `Albert's guns fire on the server (rounds left ${rounds.join(' and ')})`);
+const seen = max.snapshots.reduce((n, s) => n + (s.others.find((o) => o.slot === albert.snapshots[0].you.slot)?.shots ?? 0), 0);
+check(seen > 10, `Max is told of Albert's ${seen} rounds (for his tracers)`);
 const m0 = max.snapshots[0].you.state;
 const m1 = max.snapshots.at(-1).you.state;
 check(Math.hypot(m1[0] - m0[0], m1[2] - m0[2]) > 60, `Max's aircraft flies on by itself (${Math.hypot(m1[0] - m0[0], m1[2] - m0[2]).toFixed(0)} m in 2 s)`);
 
 max.send({ type: 'leave' });
 await wait(300);
-check(albert.lobby?.hostId === albert.id, 'when Max leaves, Albert (the next to join) becomes host');
+const next = max.lobby.players[1]; // whoever joined second (Albert and Werner join at almost the same moment)
+const heir = [albert, werner].find((p) => p.id === next.id);
+check(albert.lobby?.hostId === next.id, `when Max leaves, ${heir.name} (the next to join) becomes host`);
 check(albert.lobby?.players.length === 2, 'two players are left');
 
 for (const p of [albert, werner]) p.ws.close();

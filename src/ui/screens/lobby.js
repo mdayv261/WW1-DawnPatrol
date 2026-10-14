@@ -120,6 +120,9 @@ export function createLobby({ client, onLeave, netsimNote = () => '' }) {
 export function createMpEsc({ client, onResume, onOptions, onEnd, onLeave }) {
   const s = makeScreen();
   heading(s.card, 'Match', 'The match goes on while this menu is open');
+  const score = paragraph(s.card, '', 'dp-code');
+  score.style.fontSize = '1.6rem';
+  const tally = paragraph(s.card, '', 'dp-small');
   const status = paragraph(s.card, '', 'dp-msg');
   const actions = buttons(s.card, [['Resume', onResume], ['Options', onOptions], ['End the match for everyone', onEnd], ['Leave the room', onLeave]]);
   const endButton = actions.children[2];
@@ -127,6 +130,10 @@ export function createMpEsc({ client, onResume, onOptions, onEnd, onLeave }) {
     ...s,
     render(note = '') {
       endButton.hidden = !client.isHost;
+      const sc = client.state.score;
+      score.textContent = `Allied ${sc?.teams.allied ?? 0} - ${sc?.teams.central ?? 0} Central`;
+      const me = sc?.players.find((p) => p.id === client.state.you);
+      tally.textContent = me ? `You: ${me.kills} shot down, ${me.deaths} times down, ${me.hits} hits from ${me.shots} rounds` : '';
       status.textContent = client.state.status === 'reconnecting' ? 'Connection lost: reconnecting...' : client.state.message || note;
     },
   };

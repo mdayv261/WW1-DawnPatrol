@@ -126,16 +126,17 @@ describe('match: controls and ticks', () => {
 });
 
 describe('match: crashes, joining and leaving', () => {
-  it('a crashed aircraft comes back after 10 s with a new spawn number, and everyone hears about it', () => {
+  it('a crashed aircraft comes back after 10 s with a new spawn number, and everyone is told', () => {
     const m = match(settings, [players[0], players[1]]);
     const p = m.players.get('p1');
     p.sim.state.position.y = 2; // into the ground
     p.sim.state.velocity.set(0, -30, 0);
-    const events = [];
+    const notices = [];
     let now = 0;
-    for (let i = 0; i < (RESPAWN_S + 1) * 60; i++) events.push(...m.advanceTo((now += 1000 / 60)).events);
-    expect(events[0]).toMatchObject({ kind: 'crash', id: 'p1', name: 'Max' });
-    expect(events.some((e) => e.kind === 'spawn' && e.id === 'p1')).toBe(true);
+    for (let i = 0; i < (RESPAWN_S + 1) * 60; i++) notices.push(...m.advanceTo((now += 1000 / 60)).notices);
+    expect(notices).toContainEqual({ to: 'all', except: ['p1'], text: expect.stringMatching(/^Max went down \(/) });
+    expect(notices).toContainEqual({ to: 'p1', text: `Back in the air in ${RESPAWN_S} s` });
+    expect(p.tally.deaths).toBe(1);
     expect(p.spawn).toBe(2);
     expect(p.sim.crashed).toBe(false);
     expect(p.sim.state.position.y).toBeGreaterThan(1500);

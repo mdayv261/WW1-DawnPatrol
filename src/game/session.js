@@ -166,9 +166,9 @@ export function createSession(ctx) {
     s.watcher = null;
     s.runner = null;
     buildAircraft(ac);
-    combat.reset(ac); // guns and sight (no AI aircraft in a match)
+    combat.reset(ac); // guns, sight and effects (no AI aircraft in a match)
     s.net = net;
-    net.attach(sim, ac);
+    net.attach(sim, ac, combat);
     setTimeOfDay(timeOfDay);
     s.scenarioLabel = `${ac.name}: multiplayer`;
     afterStart(ac, sim.startInput);
@@ -218,7 +218,13 @@ export function createSession(ctx) {
       if (import.meta.env.DEV && s.runner) s.runner.apply(input, dt);
       // Auto-rudder (Options) works the rudder only, through the same flight model.
       const hands = o.autoRudder ? autoRudder.apply(input, sim.diag, dt, motion(sim.state)) : input;
-      if (s.net) return s.net.step(dt, hands); // a match: the step is predicted and sent
+      if (s.net) {
+        // A match: the step is predicted and sent; your guns fire here at once for the eyes and
+        // ears (the server's rounds are the ones that count).
+        s.net.step(dt, hands);
+        combat.step(dt, sim, input.fire && s.net.canFire);
+        return;
+      }
       sim.step(dt, hands);
       combat.step(dt, sim, input.fire);
       if (s.watcher && !s.result) s.result = s.watcher.update(dt, sim, combat);
@@ -313,10 +319,10 @@ export function createSession(ctx) {
 
     // The fight: tracers, strikes, enemy aircraft, the gun sight and the gun status.
     targetViews.update(others(), alpha, realDt);
-    tracers.update(combat.bullets, camera, alpha, 1 / 120);
+    tracers.update(s.net ? [...combat.bullets, ...s.net.tracers] : combat.bullets, camera, alpha, 1 / 120);
     effects.update(combat.events, paused ? 0 : realDt);
     for (const text of combat.messages.splice(0)) notice(text, 3000);
-    for (const text of sim.damage.events.splice(0)) notice(text, 3000); // the player's own damage
+    for (const text of sim.damage.events.splice(0)) if (!s.net) notice(text, 3000); // the player's own damage (in a match the server says)
     const jammed = Boolean(combat.gunBank?.guns.some((g) => g.jammed));
     if (jammed && !s.wasJammed) notice(`Gun jammed: press ${ctx.keyHint('clearJam')} to clear it`, 3500);
     s.wasJammed = jammed;

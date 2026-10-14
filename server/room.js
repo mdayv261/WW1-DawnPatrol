@@ -17,7 +17,7 @@ import { MatchSim } from '../src/mp/matchSim.js';
 import { WorldSolids } from '../src/mp/worldSolids.js';
 import { decodeInputs } from '../src/mp/binary.js';
 import { createWorld } from '../src/world/layout.js';
-import { MAX_BAD_MESSAGES, SILENT_DROP_S, SERVER_INTERVAL_MS, RESPAWN_S } from '../src/mp/netConfig.js';
+import { MAX_BAD_MESSAGES, SILENT_DROP_S, SERVER_INTERVAL_MS } from '../src/mp/netConfig.js';
 
 // The world and its trees and buildings, the same for every room (built once, when first needed).
 let shared = null;
@@ -201,19 +201,29 @@ export class Room {
     for (const id of [...this.match.players.keys()]) if (!core.players.has(id)) this.match.removePlayer(id);
   }
 
-  // The match timer: fly the ticks that are due, send the snapshots, tell everyone what happened.
+  // The match timer: fly the ticks that are due, send the snapshots, and tell everyone what
+  // happened (impacts for the sparks, the score, and messages such as who shot whom down).
   tickMatch() {
     if (!this.match) return;
-    const { snapshots, events } = this.match.advanceTo(this.now());
+    const { snapshots, notices, fx, score } = this.match.advanceTo(this.now());
     for (const s of snapshots) sendText(this.sockets.get(s.id), s.buffer);
-    if (!events.length || !this.core) return;
-    for (const e of events) {
-      if (e.kind === 'crash') {
-        this.core.send('all', notice(`${e.name} crashed (${e.reason})`));
-        this.core.send(e.id, notice(`Back in the air in ${RESPAWN_S} s`));
-      }
+    if (fx.length) this.broadcast({ type: 'fx', e: fx });
+    if (score) {
+      this.score = score;
+      this.broadcast({ type: 'score', ...score });
+    }
+    if (!notices.length || !this.core) return;
+    for (const n of notices) {
+      if (n.to !== 'all') this.core.send(n.to, notice(n.text));
+      else for (const id of this.sockets.keys()) if (!n.except?.includes(id)) this.core.send(id, notice(n.text));
     }
     this.flush();
+  }
+
+  // A message to every connected player, straight away (not through the lobby).
+  broadcast(msg) {
+    const text = JSON.stringify(msg);
+    for (const s of this.sockets.values()) sendText(s, text);
   }
 
   stopMatch() {

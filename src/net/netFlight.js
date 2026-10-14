@@ -6,6 +6,9 @@
 import { NetClock } from './clock.js';
 import { Prediction } from './prediction.js';
 import { RemoteTrack, RenderClock, toSample } from './interpolation.js';
+import { NetCombat } from './netCombat.js';
+import { controlsFor } from '../mp/pilotRules.js';
+import { destroyedReason } from '../physics/damage.js';
 import { quantiseInput, encodeInputs, decodeSnapshot, restoreState, damageFromSummary } from '../mp/binary.js';
 import { INPUTS_PER_MESSAGE, INTERP_DELAY_MS, INTERP_DELAY_MAX_MS, TICK_HZ, LEAD_TARGET_TICKS } from '../mp/netConfig.js';
 
@@ -18,9 +21,13 @@ const startInputOf = (sim) => quantiseInput({ pull: 0, roll: 0, yaw: 0, throttle
 export class NetFlight {
   // send(ArrayBuffer); settings: the match settings; lookup(slot): { name, team, aircraft } or
   // null; solidAt: the shared trees and buildings; ping() / jitter(): ms; now(): ms;
-  // onReady(startInput) and onRespawn(startInput): your aircraft has (re)appeared.
-  constructor({ send, settings, lookup, solidAt = null, ping = () => 0, jitter = () => 0, now = () => performance.now(), onReady = () => {}, onRespawn = () => {} }) {
-    Object.assign(this, { send, settings, lookup, solidAt, ping, jitter, now, onReady, onRespawn });
+  // onReady(startInput) and onRespawn(startInput): your aircraft has (re)appeared;
+  // notice(text): the message line ("You are hit!").
+  constructor({ send, settings, lookup, solidAt = null, ping = () => 0, jitter = () => 0, now = () => performance.now(), onReady = () => {}, onRespawn = () => {}, notice = () => {} }) {
+    Object.assign(this, { send, settings, lookup, solidAt, ping, jitter, now, onReady, onRespawn, notice });
+    this.fight = null; // NetCombat: the guns, tracers and sparks as shown here
+    this.mySlot = 0;
+    this.clearJamNext = false;
     this.clock = new NetClock();
     this.render = new RenderClock({ delayMs: INTERP_DELAY_MS, maxDelayMs: INTERP_DELAY_MAX_MS });
     this.tracks = new Map(); // slot -> { track, view }
@@ -40,13 +47,34 @@ export class NetFlight {
   }
 
   // The player's own Simulation (the session's), set up with their aircraft; the first snapshot
-  // then puts it where the server has it.
-  attach(sim, aircraft) {
+  // then puts it where the server has it. combat: the session's Combat (for the guns and effects).
+  attach(sim, aircraft, combat = null) {
     if (aircraft) sim.start(aircraft);
     this.sim = sim;
     sim.solidAt = this.solidAt;
     sim.structuralDamage = this.settings.structuralDamage;
     this.prediction = new Prediction(sim);
+    if (combat) this.fight = new NetCombat({ combat, sim, solidAt: this.solidAt, notice: this.notice, now: this.now });
+  }
+
+  // Can your guns fire (not crashed, not shot down)?
+  get canFire() {
+    return Boolean(this.sim) && !this.sim.crashed && !destroyedReason(this.sim.damage);
+  }
+
+  // B: the next controls ask the server to clear the jam.
+  clearJam() {
+    this.clearJamNext = true;
+  }
+
+  // The others' rounds as drawn here (for the tracer drawing).
+  get tracers() {
+    return this.fight ? this.fight.tracers : [];
+  }
+
+  // Impacts the server reports (sparks; the thud if it was you).
+  onFx(list) {
+    this.fight?.impacts(list, this.mySlot);
   }
 
   // A snapshot from the server.
@@ -64,6 +92,10 @@ export class NetFlight {
       let entry = this.tracks.get(c.slot);
       if (!entry) this.tracks.set(c.slot, (entry = { slot: c.slot, track: new RemoteTrack(), view: null }));
       entry.track.push(toSample(snap.tick, c), drawing);
+      if (c.shots && this.fight) {
+        const view = this.viewOf(entry);
+        if (view) this.fight.shots(view, c.shots);
+      }
     }
     for (const slot of this.tracks.keys()) if (!seen.has(slot)) this.tracks.delete(slot); // gone from the match
     if (snap.you) this.ownState(snap);
@@ -72,6 +104,8 @@ export class NetFlight {
   ownState(snap) {
     const { tick } = snap;
     const { state, spawn } = snap.you;
+    this.mySlot = snap.you.slot;
+    this.fight?.syncGuns(snap.you.guns);
     if (!this.ready) {
       // The first sight of our aircraft: take the server's state and run on to our own clock.
       this.clock.start(tick, this.ping());
@@ -109,7 +143,9 @@ export class NetFlight {
   // One physics step of our own aircraft with the pilot's controls (after any auto-rudder).
   step(dt, hands) {
     if (!this.ready) return;
-    const input = quantiseInput(hands);
+    // A shot-down aircraft falls (the same rule as the server's); B asks for the jam to be cleared.
+    const input = quantiseInput(controlsFor(this.sim, { ...hands, clearJam: this.clearJamNext }));
+    this.clearJamNext = false;
     const t = this.clock.tick + 1;
     this.sim.step(DT, input);
     this.prediction.record(t, input);
@@ -135,6 +171,7 @@ export class NetFlight {
     this.render.advance(realDt, now);
     const tick = this.render.tickAt();
     for (const e of this.tracks.values()) e.track.update(tick, realDt);
+    if (this.fight) this.fight.frame(realDt, this.views());
     const s = this.stats;
     if (now - s.since >= 1000) {
       const seconds = (now - s.since) / 1000 || 1;
@@ -158,25 +195,34 @@ export class NetFlight {
   views() {
     const out = [];
     for (const e of this.tracks.values()) {
-      const who = this.lookup(e.slot);
-      const s = e.track.latest;
-      if (!who || !s) continue;
-      if (!e.view || e.view.aircraft !== who.aircraft) {
-        const track = e.track;
-        e.view = {
-          id: `mp${e.slot}`, aircraft: who.aircraft, name: who.name, team: who.team,
-          sim: { interpolate: () => ({ position: track.position, quaternion: track.quaternion }), surfaces: { trim: 0 }, damage: damageFromSummary(s.damage), diag: { rpm: 0 } },
-        };
-      }
-      Object.assign(e.view.sim.surfaces, s.surfaces);
-      damageFromSummary(s.damage, e.view.sim.damage);
-      e.view.sim.diag.rpm = s.rpm;
-      e.view.crashed = s.crashed;
-      e.view.position = e.track.position;
-      e.view.velocity = s.velocity;
-      out.push(e.view);
+      const view = this.viewOf(e);
+      if (view) out.push(view);
     }
     return out;
+  }
+
+  // One other aircraft's view, brought up to date (null until its player is known).
+  viewOf(e) {
+    const who = this.lookup(e.slot);
+    const s = e.track.latest;
+    if (!who || !s) return null;
+    if (!e.view || e.view.aircraft !== who.aircraft) {
+      const track = e.track;
+      e.view = {
+        id: `mp${e.slot}`, aircraft: who.aircraft, name: who.name, team: who.team,
+        sim: { interpolate: () => ({ position: track.position, quaternion: track.quaternion }), surfaces: { trim: 0 }, damage: damageFromSummary(s.damage), diag: { rpm: 0 } },
+      };
+    }
+    const v = e.view;
+    Object.assign(v.sim.surfaces, s.surfaces);
+    damageFromSummary(s.damage, v.sim.damage);
+    v.sim.diag.rpm = s.rpm;
+    v.crashed = s.crashed;
+    v.down = s.down;
+    v.position = e.track.position;
+    v.quaternion = e.track.quaternion;
+    v.velocity = s.velocity;
+    return v;
   }
 
   // Numbers for the F3 panel.

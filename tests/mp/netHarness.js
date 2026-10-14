@@ -21,10 +21,12 @@ const world = createWorld();
 
 // players: [{ id, slot, name, team, aircraft, pilot(timeSeconds, sim) -> input }];
 // net: { ping, jitter, loss } for every browser.
-export function createHarness({ players, net = { ping: 0, jitter: 0, loss: 0 }, settings = DEFAULT_SETTINGS, seed = 5 }) {
+// place(server): optional, to set up the aircraft before the match runs (tests).
+export function createHarness({ players, net = { ping: 0, jitter: 0, loss: 0 }, settings = DEFAULT_SETTINGS, seed = 5, place = null, combat = null }) {
   let now = 0; // ms of simulated time
   const server = new MatchSim({ settings, world, now: 0 });
   const truth = new Map(); // slot -> Map(tick -> position) on the server
+  const serverNotices = []; // every message the server gave out ({ to, text })
   const rng = seeded(seed);
   const clients = players.map((p) => {
     const up = createNetSim(net, rng);
@@ -35,17 +37,28 @@ export function createHarness({ players, net = { ping: 0, jitter: 0, loss: 0 }, 
       const q = players.find((x) => x.slot === slot);
       return q ? { name: q.name, team: q.team, aircraft: AIRCRAFT_LIST.find((a) => a.id === q.aircraft) } : null;
     };
+    c.notices = [];
     c.flight = new NetFlight({
       send: (buffer) => c.toServer.push({ at: up.schedule(now), buffer }),
       settings, lookup, ping: () => net.ping, jitter: () => net.jitter / 2, now: () => now,
+      notice: (text) => c.notices.push(text),
     });
-    c.flight.attach(sim, AIRCRAFT_LIST.find((a) => a.id === p.aircraft));
+    if (combat) {
+      // The browser's own Combat (as the session has), for the guns and effects.
+      c.combat = new combat.Combat({});
+      c.combat.reset(AIRCRAFT_LIST.find((a) => a.id === p.aircraft));
+    }
+    c.flight.attach(sim, AIRCRAFT_LIST.find((a) => a.id === p.aircraft), c.combat ?? null);
     return c;
   });
   for (const p of players) server.addPlayer(p);
+  if (place) place(server);
 
   const deliver = (queue, f) => {
-    while (queue.length && queue[0].at <= now) f(queue.shift().buffer);
+    while (queue.length && queue[0].at <= now) {
+      const m = queue.shift();
+      f(m.buffer ?? m);
+    }
   };
 
   // Run `seconds` more of simulated time; onFrame(clients, now) after each browser frame.
@@ -58,7 +71,9 @@ export function createHarness({ players, net = { ping: 0, jitter: 0, loss: 0 }, 
       now = Math.min(nextServer, nextFrame);
       for (const c of clients) deliver(c.toServer, (b) => server.receiveInputs(c.id, decode(b)));
       if (now >= nextServer) {
-        const { snapshots } = server.advanceTo(now);
+        const { snapshots, fx, notices } = server.advanceTo(now);
+        serverNotices.push(...notices);
+        if (fx.length) for (const c of clients) c.toClient.push({ at: c.down.schedule(now), fx });
         for (const p of server.players.values()) {
           let m = truth.get(p.slot);
           if (!m) truth.set(p.slot, (m = new Map()));
@@ -72,9 +87,13 @@ export function createHarness({ players, net = { ping: 0, jitter: 0, loss: 0 }, 
       }
       if (now >= nextFrame) {
         for (const c of clients) {
-          deliver(c.toClient, (b) => c.flight.receive(b)); // messages arrive even in a hidden tab
+          deliver(c.toClient, (m) => (m.fx ? c.flight.onFx(m.fx) : c.flight.receive(m))); // messages arrive even in a hidden tab
           if (c.hidden) continue; // a hidden browser tab: no frames, so no steps and no controls sent
-          c.loop.advance((frame / 1000) * c.flight.timeScale, (dt) => c.flight.step(dt, c.pilot(now / 1000, c.sim)));
+          c.loop.advance((frame / 1000) * c.flight.timeScale, (dt) => {
+            const hands = c.pilot(now / 1000, c.sim, c);
+            c.flight.step(dt, hands);
+            if (c.combat) c.combat.step(dt, c.sim, Boolean(hands.fire) && c.flight.canFire); // the session does this too
+          });
           c.flight.frame(frame / 1000);
           c.frames += 1;
         }
@@ -99,7 +118,7 @@ export function createHarness({ players, net = { ping: 0, jitter: 0, loss: 0 }, 
     return a.clone().lerp(b, (tick - lo) / (hi - lo));
   }
 
-  return { server, clients, run, truthAt, get now() { return now; }, TICK_HZ };
+  return { server, clients, run, truthAt, notices: serverNotices, get now() { return now; }, TICK_HZ };
 }
 
 let decodeInputs;
