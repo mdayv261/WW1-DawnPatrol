@@ -1,22 +1,31 @@
 // The game's screens and how one leads to another, with no drawing: the main menu, mission
-// setup, options (and its controls screen), the Pilot Roll Call, flying, paused and results. Also the mission settings the player chooses,
+// setup, options (and its controls screen), the Pilot Roll Call, flying, paused and results,
+// and the multiplayer screens (Multiplayer, the room's lobby, flying in a match and its Esc menu,
+// under which the match flies on). Also the mission settings the player chooses,
 // cleaned up and remembered in the browser. The screens themselves are in src/ui/screens/.
 
 import { AIRCRAFT_LIST } from '../aircraft/index.js';
 import { SKILL_ORDER } from '../aircraft/aiData.js';
 
-export const STATES = ['menu', 'setup', 'options', 'controls', 'roster', 'flying', 'paused', 'results'];
+export const STATES = ['menu', 'setup', 'options', 'controls', 'roster', 'flying', 'paused', 'results', 'multiplayer', 'lobby', 'mpFlying', 'mpEsc', 'mpResults'];
+const MULTIPLAYER = ['multiplayer', 'lobby', 'mpFlying', 'mpEsc', 'mpResults'];
+const PAUSE = { flying: 'paused', paused: 'flying', mpFlying: 'mpEsc', mpEsc: 'mpFlying' }; // what Esc does
 
 // Where each screen may go next.
 const NEXT = {
-  menu: ['setup', 'options', 'roster'],
+  menu: ['setup', 'options', 'roster', 'multiplayer'],
   roster: ['menu'],
   setup: ['menu', 'flying'],
-  options: ['menu', 'paused', 'controls'], // options goes back to where it was opened from
+  options: ['menu', 'paused', 'mpEsc', 'controls'], // options goes back to where it was opened from
   controls: ['options'],
   flying: ['paused', 'results'],
   paused: ['flying', 'options', 'results', 'menu'],
   results: ['flying', 'setup', 'menu'],
+  multiplayer: ['menu', 'lobby', 'mpFlying', 'mpResults'], // into a room (or back into a match or its results after a reload)
+  lobby: ['multiplayer', 'mpFlying', 'mpResults'], // leaving, or refused / lost, goes back to Multiplayer
+  mpFlying: ['mpEsc', 'mpResults', 'lobby', 'multiplayer'], // the match ends (results) or the room is lost
+  mpEsc: ['mpFlying', 'options', 'mpResults', 'lobby', 'multiplayer'],
+  mpResults: ['lobby', 'multiplayer'],
 };
 
 export class Flow {
@@ -56,8 +65,23 @@ export class Flow {
     this.listeners.push(f);
   }
 
+  // Flying with the controls (single-player or a match).
   get flying() {
-    return this.state === 'flying';
+    return this.state === 'flying' || this.state === 'mpFlying';
+  }
+
+  // The aircraft is moving: flying, or a match's Esc menu (a match never pauses).
+  get simulating() {
+    return this.flying || this.state === 'mpEsc';
+  }
+
+  get multiplayer() {
+    return MULTIPLAYER.includes(this.state) || (this.state === 'options' && this.optionsFrom === 'mpEsc') || (this.state === 'controls' && this.optionsFrom === 'mpEsc');
+  }
+
+  // Esc / P: pause and resume a mission; open and close a match's menu.
+  togglePause() {
+    if (PAUSE[this.state]) this.go(PAUSE[this.state]);
   }
 }
 

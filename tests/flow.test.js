@@ -45,6 +45,35 @@ describe('the flow between screens', () => {
     expect(new Flow('results').can('paused')).toBe(false);
   });
 
+  it('multiplayer: menu > Multiplayer > lobby > flying and back; leaving goes back to Multiplayer', () => {
+    const f = new Flow('menu');
+    for (const to of ['multiplayer', 'lobby', 'mpFlying', 'mpEsc', 'mpFlying', 'lobby', 'multiplayer', 'mpFlying', 'multiplayer', 'menu']) f.go(to);
+    expect(f.state).toBe('menu');
+    expect(new Flow('lobby').can('flying')).toBe(false); // a room never leads into a single-player flight
+    expect(new Flow('mpFlying').can('paused')).toBe(false); // nor into the single-player pause menu
+    expect(new Flow('mpFlying').can('results')).toBe(false);
+    for (const s of ['multiplayer', 'lobby', 'mpFlying', 'mpEsc']) expect(STATES).toContain(s);
+  });
+
+  it('a match never pauses: its Esc menu keeps the aircraft flying; Options returns to it', () => {
+    const f = new Flow('mpFlying');
+    expect(f.flying && f.simulating && f.multiplayer).toBe(true);
+    f.togglePause();
+    expect(f.state).toBe('mpEsc');
+    expect(f.flying).toBe(false); // the controls are the menu's
+    expect(f.simulating).toBe(true); // but the aircraft flies on
+    f.go('options');
+    expect(f.multiplayer).toBe(true);
+    expect(f.back()).toBe('mpEsc');
+    f.togglePause();
+    expect(f.state).toBe('mpFlying');
+    const sp = new Flow('flying');
+    sp.togglePause();
+    expect(sp.state).toBe('paused');
+    expect(sp.simulating).toBe(false); // a mission does pause
+    expect(sp.multiplayer).toBe(false);
+  });
+
   it('tells its listeners each change, with where it came from', () => {
     const f = new Flow();
     const seen = [];

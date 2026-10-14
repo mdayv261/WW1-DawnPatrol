@@ -701,3 +701,140 @@ The propeller's turning angle is followed from the engine speed the flight model
 - **Privacy, checked before publishing:** no keys, passwords, tokens, personal file paths or email addresses in any file or any past version. The commit history was rewritten before the first upload so every commit shows the GitHub username and its private noreply address instead of the product owner's name, Mac username and computer name (product owner's choice). The product owner's reference photos are ignored by git and never uploaded.
 - **No licence** (product owner's choice): the code is public to read and the game to play, with all rights reserved.
 - Players' pilots and settings stay in their own browser (local storage of the github.io site), separate from the local development copy.
+
+## D65. Multiplayer: an authoritative server on Cloudflare (Stage 1, 14 Oct 2026)
+- **Approved by the product owner.** Full design in `docs/MULTIPLAYER_SPEC.md`.
+- **Hosted authoritative server, not peer-to-peer.** In peer-to-peer play the host's browser decides everything. The host could then edit their own copy undetected, which breaks the brief's rule that no client may gain an advantage. The host would also play with zero delay, and the match would end if the host left. A neutral server that runs the physics for every aircraft avoids all three problems. Peer-to-peer would also need a relay (TURN) for players on strict networks, so it would not have saved an account.
+- **Cloudflare Workers + Durable Objects:**
+  - free plan, no card;
+  - no sleeping and no cold start;
+  - one room per Durable Object, placed near the first player;
+  - nothing to maintain.
+- **Rejected alternatives:**
+  - Render free: a 1-minute wake-up and one region.
+  - Fly.io: about $2 a month, and a card is needed.
+  - A virtual server of our own: it needs looking after.
+- **Main risk:** how CPU time is counted for a room ticking continuously on the free plan. To be measured in M2. Fallbacks: Workers Paid ($5 a month) or Render.
+- **The server runs the existing physics files unchanged.** They are plain JavaScript that already runs in Node. The physics has no random numbers (only bullet damage does, on the server), so a browser can predict its own aircraft exactly. Corrections are replayed and faded in. Other aircraft are drawn 100 ms in the past, between snapshots.
+- **Hits are decided on the server, with capped lag compensation** ("favour the shooter", at most 250 ms): a fair trade in a fight with no cover.
+- **WebSockets (TCP) for now:** packet loss shows up as short delays, which the smoothing hides. WebTransport stays possible later.
+- **Single-player is not touched:** no changes in `src/physics/`, the physics data in `src/aircraft/`, or `src/ai/`.
+
+## D66. Multiplayer M1: rooms, lobby and the test network
+- **The server is its own small package (`server/`).**
+  - It has its own wrangler, pinned at 4.143.1, so the game's install and the GitHub Pages build are unchanged.
+  - It imports the shared, pure `src/mp/` files. The lobby rules (`src/mp/roomCore.js`) have no sockets or clock, so every rule is tested in Node, and the same file runs in the Durable Object (`server/room.js`).
+- **Creating a room takes two steps.**
+  1. `POST /rooms` picks a random code (cryptographic randomness) and asks that code's room to claim it. It tries again if the code is in use.
+  2. The browser then connects to `/rooms/CODE`.
+- **Codes** are 6 characters from 32 (A-Z and 2-9 without I, O, 0 and 1), about 10^9 codes. Typed codes ignore capitals, spaces and dashes.
+- **Start rules:** 2-4 connected players, everyone ready, and at least one pilot on each team (friendly fire is off by default, so a one-team match has no enemy). Uneven teams are allowed. Confirmed by the product owner, who also agreed that a player arriving during a match is let in (and flies, from M2).
+- **Names:**
+  - The Roll Call rules (`checkName`).
+  - A duplicate in the room gets a number instead of being refused.
+  - New players join their Roll Call pilot's side, else the smaller team.
+  - Changing team or aircraft clears "ready".
+- **Dropping out and coming back:**
+  - Each tab keeps a private random token, so a reload or reconnect takes back the same place. A place is held for 60 s.
+  - Leaving on purpose gives the place up at once.
+  - The host role passes to the earliest joined player still connected, and stays there when the old host returns.
+- **Dead connections:**
+  - The page closes its connection on `pagehide`. Chrome was found to keep a left page's WebSocket open, so the room thought the player was still there.
+  - The server also treats 20 s without a message (browsers ping every 2 s) as a drop, which covers sleep and lost Wi-Fi where no close ever arrives.
+- **Test network:** in the browser, both directions.
+  - Extra ping is split half each way, plus up to the jitter.
+  - "Loss" is modelled as TCP behaves: a lost message arrives one more round trip plus 200 ms late, and holds up those behind it.
+  - Set per tab (`?netsim=` or the Multiplayer screen).
+- **Security basics:**
+  - Only the game's own pages may connect (GitHub Pages, localhost). Tools sending no Origin are let through, since an Origin check only stops other web sites.
+  - Messages are checked field by field; anything over 4 KB is refused, and more than 50 bad messages closes the connection.
+  - Nothing is stored.
+
+## D67. Multiplayer M2: flying together
+- **The server flies every aircraft with the unchanged `Simulation`.**
+  - It runs 120 ticks a second from its own clock; a callback every 16 ms runs the ticks that are due, at most 24 (a stalled server drops its backlog instead of racing).
+  - After every 4th tick, each player gets a binary snapshot: their own aircraft in full (35 numbers at full precision) and the others compactly (49 bytes each).
+- **Controls are rounded before use (16-bit steps), on both sides.**
+  - The browser flies its prediction with exactly the rounded values the server receives, and the physics has no random numbers, so both compute identical flights (a test checks this to the last digit).
+  - Four ticks of controls go in one message.
+  - The server uses each control for its own tick. A missing tick repeats the last control; late controls and those more than 1 s ahead are dropped (no "speed hack").
+- **Prediction and corrections:**
+  - The browser records the state after every tick.
+  - Any difference beyond 2 cm, 2 cm/s, 0.1 degree or 0.01 rad/s, or any difference in surfaces, damage or crash, triggers a correction: back to the server's state, then a replay of the recorded controls.
+  - The visible difference fades with a 0.05 s time constant; over 50 m, or on a respawn (a new spawn number), it snaps.
+- **The browser's clock:**
+  - It starts a full round trip, one message of ticks and a 2-tick margin ahead of the server. The snapshot is already half a round trip old; starting only half a round trip ahead made the first second's controls late.
+  - The server reports each player's "lead". The browser runs up to 2% fast or slow to keep it at 2 ticks plus the jitter.
+  - It jumps only when the *smoothed* lead is over 30 ticks out. A single late reading (TCP resending a lost packet) used to trigger a jump and a visible 10-70 m leap.
+- **Other aircraft are drawn between snapshots:**
+  - a Hermite curve through positions and velocities, with orientations blended (slerp);
+  - delayed by 100 ms, rising to 200 ms with jitter (2.5 x jitter + 40 ms);
+  - extrapolated for up to 0.5 s, not the 0.25 s first planned, because a lost packet on TCP arrives about a round trip plus 200 ms late;
+  - gaps closed no faster than 20 m/s.
+  - **The drawing clock never jumps:** it steers toward its target at up to 10% fast or slow. A single very late packet counts as at most 60 ms of jitter. In the headless test, before this, a late packet stepped the drawing clock back and the others lurched 6-7 m.
+- **Measured (headless match, 3 players, 150 ms ping, 20 ms jitter, 2% loss, 60 s):** others drawn within 0.5 m of the server's path; largest frame-to-frame jump 8 cm; own corrections at most 3 cm. Corrections still happen about 5 times a second on that line (each lost message delays the controls behind it), but they are far too small to see.
+- **Shared trees and buildings:** 1 km tiles built when something comes below 60 m, with Medium's 16 m tree spacing. Drawn woods still follow each player's graphics quality.
+- **Start areas:** fixed places per team (-1.5, -0.5, 0.5, 1.5 spacings across), so a later joiner never appears on top of a team-mate. Respawn after a crash 10 s later at the team's start area.
+- **A match never pauses:** Esc opens a menu while the aircraft flies on (the flow's `simulating` state). Structural damage is the host's setting for everyone.
+- **Cloudflare's runtime delivers binary WebSocket messages as Blobs by default,** so the room sets `binaryType = 'arraybuffer'` on each connection; found by `npm run mp:smoke` against the real local server.
+- **The single-player code paths are unchanged:** the session's multiplayer hooks are all behind `s.net`, and R, N, the number keys and the F4 panel are disabled in a match.
+- **Hidden tabs (found by the product owner):** a hidden tab receives snapshots but draws nothing, and the drawn-aircraft fade gap grew with every snapshot (134 m after 5 s hidden).
+  - Snapshots that arrive while the window has not drawn for 250 ms are not faded, and no faded gap (others' or your own) may exceed 50 m.
+  - With no controls from a player for 0.5 s, the server centres stick and rudder and keeps throttle and trim, instead of repeating the last control indefinitely.
+- **Cloudflare test deployment (with the product owner's permission):**
+  - Address: https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev. The workers.dev subdomain was registered automatically by wrangler when run without questions; it can be renamed on the dashboard.
+  - Measured with 4 players for 3 minutes: 30.2 snapshots a second each, usually 32 ms apart; ping 25-29 ms from the product owner's Mac; no errors, exceptions or limits in Cloudflare's live log.
+  - **The free plan's binding limit is requests** (incoming WebSocket messages count 1/20): about 4.5 hours of 4-player play a day. If ever needed, controls could go 15 times a second (8 ticks each) to double that.
+
+## D68. Multiplayer M3: combat and damage
+- **Only the server's rounds count.**
+  - The server runs each pilot's single-player `GunBank` (with its own random numbers for jams and clearing), flies the rounds with `makeBullet`/`stepBullet`, and decides hits with `findImpact` and the hit zones.
+  - Damage is `applyHit` through each zone, losing `passLoss`, as `Combat.registerHit` does.
+  - The single-player modules are reused unchanged; the server's combat is `src/mp/matchCombat.js`.
+- **Lag compensation, capped at 0.4 s (not the 0.25 s first proposed):**
+  - Each input carries the tick of the others on the shooter's screen; a round is tested, all its flight, against the targets that many ticks back. The server keeps a second of poses (`src/mp/history.js`).
+  - At 150 ms ping the look-back is the round trip, plus the lead, plus the 100-200 ms drawing delay: about 0.3-0.4 s. 0.25 s would have left those players aiming ahead of what they see.
+  - Measured on a crossing target at 200 m: 4 hits with no delay; 6 for a shooter 0.3 s late, compensated; 2 for the same shooter uncompensated.
+- **Shot down = `destroyedReason`** (pilot killed, a wing or the tail gone, engine seized), as in single-player.
+  - **The falling rule** (`src/mp/pilotRules.js`): throttle off, stick back, full rudder, the trim kept. It is used by the server's step, the browser's step and the browser's replay alike, so a falling aircraft needs no corrections.
+  - **Kill credit:** the last enemy hit within 15 s, for a shoot-down or a crash. A team-mate's hit never credits a kill. With friendly fire off, team-mates are not targets at all.
+  - **Respawn** 10 s after going down, with full belts.
+- **Browsers show, never decide:**
+  - Your own guns fire in your window through the existing `Combat` (its rounds can hit only the ground and trees), with a gun bank whose random numbers never jam or clear it. The server's snapshot sets jams and clearing, and corrects the round count beyond 20 rounds' drift.
+  - Others' rounds: each snapshot carries the count fired since the last one, and that many effect rounds leave the drawn aircraft's guns over the next 1/30 s.
+  - Impacts come from the server in a small `fx` message.
+  - In a match the browser's own damage texts are not shown; the server sends its own, so replays cannot repeat them.
+- **Score:** sent at once after a kill or a join, and while rounds and hits change at most once a second. Shown in the Esc menu.
+- **Message version raised to 2** (the snapshot gained the guns and the round count).
+
+## D69. Multiplayer M4: match flow
+- **Room phases:** `lobby` → `match` → `results` → `lobby`.
+- **How a match ends** (`MatchSim`, checked once a second):
+  - the score limit (that team wins);
+  - the time limit, measured from the match start (the higher score wins, equal is a draw);
+  - a team with nobody in the sky for 30 s (the other team wins);
+  - the host's end request ("Ended by the host"; the higher score wins, or a draw).
+- **The result** lists everyone who took part, from a roster kept by id, with their kills, deaths, rounds and hits. The first ending stands.
+- **The host's `toLobby`:** in a match it now asks the room server to end the match with results, instead of going straight to the lobby as in M1/M2. In the results phase it means "back to the lobby now".
+- **Results show for 20 s,** then the room returns to the lobby with everyone not ready. The room server holds this timer; it is cleared whenever the phase changes. A player joining during results is sent the result (`catchUp`).
+- **Score line** at the top left, so it is clear of the heading tape and warnings at the top centre. It updates 4 times a second from the score message and the server tick; the time left counts from the match start and never goes below 0:00.
+- **A lost server** goes back to the Multiplayer screen with the reason, not the main menu: one step from it, and the player can rejoin from there.
+- **Message version 3:** an M3 page would not understand the results phase.
+
+## D70. Multiplayer M5: testing and polish
+- **Measured, not guessed:**
+  - The headless 3-player match is run on 12 connections up to the brief (0-150 ms, 0-2% loss) as tests, and 3 beyond it in a printed report (`npm run mp:netreport`).
+  - Limits asserted up to the brief: others within 1 m of their path; frame jumps under 0.3 m; own corrections under 0.5 m. Measured: 0.46 m, 0.08 m and 3.3 cm at worst.
+- **Stick centred after 1 s without controls (was 0.5 s):** on a 250 ms line with 5% loss, a lost packet holds controls up about half a second, and a turning aircraft had its stick centred and crashed in the test. One second still covers hidden windows quickly.
+- **A 2 v 2 headless match with firing** (60 s at 150 ms and 2% loss), and timing tests for the server (about 9 ms per second for 4 aircraft all firing) and the browser (about 0.1 ms per frame).
+- **No name tags** (product owner): names stay on the modern HUD (U), keeping the default view period-authentic.
+- **The test copy** is served by the room server itself (Cloudflare Workers static assets, free). It is built with `VITE_MP_SERVER=same-origin`, so the page uses the address it came from. The workers.dev address is an allowed origin. The GitHub Pages game is untouched until M6.
+- **Help:** "How to play together" on the Multiplayer screen, a lobby hint, one line in the H help, and a family guide (`docs/MULTIPLAYER_GUIDE.md`).
+
+## D71. Multiplayer M6: publishing
+- **The published game finds its room server through `.env.production`** (`VITE_MP_SERVER`, the workers.dev address). It is committed because it is a public web address, not a secret. The test-copy build sets `same-origin` on its command line, which takes precedence over the file.
+- **The `multiplayer` branch was merged into `main` with a merge commit** (no fast-forward), so the multiplayer work stays visible as one unit in the history. The branch itself was not pushed.
+- **One publish, gated by the tests:** a push to `main` runs the existing GitHub Actions workflow, and a failing test stops the deployment.
+- **The Cloudflare test copy stays up** for trying new versions with family before publishing. It and the server can be removed from the Cloudflare dashboard at any time.
+- **Undo:** a revert of the merge commit restores the single-player-only site. Single-player itself was never changed by the multiplayer work, apart from small, guarded hooks (the session's `s.net`, the flow's multiplayer states, one help line).
+

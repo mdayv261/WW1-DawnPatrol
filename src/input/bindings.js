@@ -170,6 +170,7 @@ export function helpText(bindings, joystick = null, buttonLabels = {}) {
   }
   lines.push(line.trimEnd());
   lines.push('  Mouse: click the game to fly with the mouse, Esc to release');
+  lines.push('  In multiplayer: Esc opens the match menu (the match goes on); the score and time left are at the top left');
   if (joystick) {
     const names = Object.entries(joystick.buttons).filter(([, i]) => i !== null).sort((a, b) => a[1] - b[1])
       .map(([id, i]) => `${i + 1} ${(buttonLabels[id] ?? id).toLowerCase()}`);
