@@ -697,7 +697,7 @@ The propeller's turning angle is followed from the engine speed the flight model
 
 ## D64. Publishing on GitHub Pages
 - **Where:** the public repository github.com/mdayv261/WW1-DawnPatrol, served at https://mdayv261.github.io/WW1-DawnPatrol/. The release build (and `vite preview`) uses the base path `/WW1-DawnPatrol/` (`vite.config.js`); the dev server stays at the site root.
-- **Automatic deployment** (`.github/workflows/deploy.yml`): every push to main installs, **runs the tests**, builds and deploys with GitHub's own Pages actions. A failing test stops the deployment. It can also be run by hand from the Actions tab.
+- **Automatic deployment** (`.github/workflows/deploy.yml`): every push to main installs, **runs the tests**, builds and deploys with GitHub's own Pages actions. A failing test stops the deployment. It can also be run by hand from the Actions tab. The tests get 30 s each (`testTimeout` in `vite.config.js`): the longest simulated fight took 6 s on GitHub's machines, past the 5 s default, and stopped the first deployment.
 - **Privacy, checked before publishing:** no keys, passwords, tokens, personal file paths or email addresses in any file or any past version. The commit history was rewritten before the first upload so every commit shows the GitHub username and its private noreply address instead of the product owner's name, Mac username and computer name (product owner's choice). The product owner's reference photos are ignored by git and never uploaded.
 - **No licence** (product owner's choice): the code is public to read and the game to play, with all rights reserved.
 - Players' pilots and settings stay in their own browser (local storage of the github.io site), separate from the local development copy.

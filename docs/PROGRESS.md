@@ -2,7 +2,7 @@
 
 Read this at the start of every session.
 
-## Current status: Phases 0-7 and the Pilot Roll Call are done. Being published on GitHub Pages (D64): https://mdayv261.github.io/WW1-DawnPatrol/ (repository github.com/mdayv261/WW1-DawnPatrol), deployed automatically on each push to main. The next phase needs the product owner's brief and a plan in plan mode first.
+## Current status: Phases 0-7 and the Pilot Roll Call are done. Published on GitHub Pages (D64) on 14 Oct 2026: https://mdayv261.github.io/WW1-DawnPatrol/ (public repository github.com/mdayv261/WW1-DawnPatrol), deployed automatically on each push to main after the tests pass. Pushing to GitHub needs the product owner's permission each time. The next phase needs the product owner's brief and a plan in plan mode first.
 
 ## Pilot Roll Call (D63)
 
