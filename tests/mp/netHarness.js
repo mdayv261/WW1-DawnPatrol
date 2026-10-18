@@ -8,7 +8,11 @@ import { NetFlight } from '../../src/net/netFlight.js';
 import { createNetSim } from '../../src/net/netSim.js';
 import { Simulation } from '../../src/core/simulation.js';
 import { FixedStepLoop } from '../../src/core/fixedStepLoop.js';
-import { AIRCRAFT_LIST } from '../../src/aircraft/index.js';
+import { AIRCRAFT } from '../../src/aircraft/index.js';
+import { withLoadout } from '../../src/weapons/mounts.js';
+
+// A player's aircraft with their loadout (as the room server and the browser fly it).
+const flown = (p) => withLoadout(AIRCRAFT[p.aircraft], p.loadout);
 import { createWorld } from '../../src/world/layout.js';
 import { DEFAULT_SETTINGS, SERVER_INTERVAL_MS, TICK_HZ } from '../../src/mp/netConfig.js';
 
@@ -24,7 +28,8 @@ const world = createWorld();
 // place(server): optional, to set up the aircraft before the match runs (tests).
 export function createHarness({ players, net = { ping: 0, jitter: 0, loss: 0 }, settings = DEFAULT_SETTINGS, seed = 5, place = null, combat = null }) {
   let now = 0; // ms of simulated time
-  const server = new MatchSim({ settings, world, now: 0 });
+  // The server's guns get seeded random numbers too (their jams), so every run is the same.
+  const server = new MatchSim({ settings, world, now: 0, combat: { rng: seeded(seed + 1) } });
   const truth = new Map(); // slot -> Map(tick -> position) on the server
   const serverNotices = []; // every message the server gave out ({ to, text })
   const rng = seeded(seed);
@@ -35,7 +40,7 @@ export function createHarness({ players, net = { ping: 0, jitter: 0, loss: 0 }, 
     const c = { ...p, sim, up, down, toServer: [], toClient: [], loop: new FixedStepLoop(), frames: 0 };
     const lookup = (slot) => {
       const q = players.find((x) => x.slot === slot);
-      return q ? { name: q.name, team: q.team, aircraft: AIRCRAFT_LIST.find((a) => a.id === q.aircraft) } : null;
+      return q ? { name: q.name, team: q.team, aircraft: flown(q) } : null;
     };
     c.notices = [];
     c.flight = new NetFlight({
@@ -46,9 +51,9 @@ export function createHarness({ players, net = { ping: 0, jitter: 0, loss: 0 }, 
     if (combat) {
       // The browser's own Combat (as the session has), for the guns and effects.
       c.combat = new combat.Combat({});
-      c.combat.reset(AIRCRAFT_LIST.find((a) => a.id === p.aircraft));
+      c.combat.reset(flown(p));
     }
-    c.flight.attach(sim, AIRCRAFT_LIST.find((a) => a.id === p.aircraft), c.combat ?? null);
+    c.flight.attach(sim, flown(p), c.combat ?? null);
     return c;
   });
   for (const p of players) server.addPlayer(p);

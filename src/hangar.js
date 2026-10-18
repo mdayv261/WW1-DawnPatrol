@@ -1,4 +1,4 @@
-// Hangar: a separate page (/hangar.html) for looking at the four aircraft
+// Hangar: a separate page (/hangar.html) for looking at all the aircraft
 // models without flying. Drag to orbit, wheel to zoom, buttons for the views,
 // "Silhouette" for black shapes against the sky (the recognisability test).
 
@@ -6,7 +6,7 @@ import {
   WebGLRenderer, Scene, PerspectiveCamera, Color, MeshBasicMaterial, DirectionalLight,
   HemisphereLight, Mesh, PlaneGeometry, MeshLambertMaterial, Vector3,
 } from 'three';
-import { AIRCRAFT_LIST, common } from './aircraft/index.js';
+import { ALL_AIRCRAFT as AIRCRAFT_LIST, common } from './aircraft/index.js'; // every aircraft, Late and Early War
 import { gearGeometry } from './physics/ground.js';
 import { createAircraftMesh, setControlSurfaces } from './render/aircraftMesh.js';
 
@@ -42,7 +42,7 @@ let spin = true;
 const SPACING = 10;
 function layout() {
   models.forEach((m, i) => {
-    const x = selected === 'all' ? (i - 1.5) * SPACING : 0;
+    const x = selected === 'all' ? (i - (models.length - 1) / 2) * SPACING : 0;
     m.group.position.set(x, groundHeight(m.ac), 0);
     m.group.visible = selected === 'all' || selected === i;
   });
@@ -72,7 +72,7 @@ function place() {
 function setView(name) {
   const views = { side: [0, 0], front: [Math.PI / 2, 0], top: [0, 1.5], back: [-Math.PI / 2, 0], three: [0.6, 0.3] };
   [yaw, pitch] = views[name];
-  distance = selected === 'all' ? 55 : 18;
+  distance = selected === 'all' ? 14 * models.length : 18; // far enough back for the whole row, even in a narrow window
   place();
 }
 
@@ -92,9 +92,9 @@ function button(text, onClick) {
 }
 function newRow() { panel.appendChild(document.createElement('br')); }
 function describe() {
-  label.textContent = selected === 'all' ? 'All four aircraft (side view shows them side by side)' : `${AIRCRAFT_LIST[selected].name}`;
+  label.textContent = selected === 'all' ? `All ${models.length} aircraft (side view shows them side by side)` : `${AIRCRAFT_LIST[selected].name}`;
 }
-button('All four', () => { selected = 'all'; layout(); describe(); setView('side'); });
+button('All', () => { selected = 'all'; layout(); describe(); setView('side'); });
 AIRCRAFT_LIST.forEach((ac, i) => button(ac.name, () => { selected = i; layout(); describe(); setView('three'); }));
 newRow();
 button('Side', () => setView('side'));

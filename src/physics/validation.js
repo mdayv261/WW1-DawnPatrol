@@ -62,3 +62,24 @@ export function runValidation(aircraftById, cm, cases = VALIDATION_CASES) {
   }
   return results;
 }
+
+// The results as the Markdown tables `npm run validate` prints: one table per aircraft, one
+// row per check. aircraftById: for the aircraft names. Starts with a blank line.
+export function validationReport(results, aircraftById) {
+  const lines = [];
+  let current = null;
+  for (const r of results) {
+    if (r.case.aircraft !== current) {
+      current = r.case.aircraft;
+      lines.push(`\n## ${aircraftById[current].name}\n`);
+      lines.push('| Case (source) | Quantity | Sourced | Simulated | Diff | Tolerance | Result |');
+      lines.push('|---|---|---|---|---|---|---|');
+    }
+    const diff = Number.isFinite(r.diff) ? `${r.diff >= 0 ? '+' : ''}${(r.diff * 100).toFixed(1)}%` : 'n/a';
+    const result = r.check.calibration ? 'calibration' : r.pass ? 'pass' : r.case.deviations?.[r.key] ? 'KNOWN DEVIATION' : 'FAIL';
+    lines.push(
+      `| ${r.case.id} (${r.case.source}) | ${CHECK_LABEL(r.check)} | ${formatValue(r.check.type, r.check.value)} | ${formatValue(r.check.type, r.simulated)} | ${diff} | ±${(r.tolerance * 100).toFixed(0)}% | ${result} |`,
+    );
+  }
+  return lines.join('\n');
+}

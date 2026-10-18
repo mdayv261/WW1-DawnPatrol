@@ -6,7 +6,8 @@
 // the player lands and stops on one of his own side's airfields (a safe return), or he ends
 // it from the pause menu.
 
-import { AIRCRAFT, AIRCRAFT_LIST } from '../aircraft/index.js';
+import { AIRCRAFT, ALL_AIRCRAFT } from '../aircraft/index.js';
+import { withLoadout } from '../weapons/mounts.js';
 import { SKILLS } from '../aircraft/aiData.js';
 import { STARTS } from './flow.js';
 import { destroyedReason, damageLines } from '../physics/damage.js';
@@ -21,12 +22,16 @@ export const MISSION = {
   altitudeStep: 300, // m: an Ace patrols this much above the start height and a Novice this much below
 };
 
-const aircraftOf = (id) => AIRCRAFT_LIST.find((a) => a.id === id) ?? AIRCRAFT_LIST[0];
+// The player's aircraft as flown in a mission: the chosen type (of either era) with its loadout.
+export function missionAircraft(config) {
+  const ac = ALL_AIRCRAFT.find((a) => a.id === config.aircraft) ?? ALL_AIRCRAFT[0];
+  return withLoadout(ac, config.loadout);
+}
 
 // Start a mission: the player's aircraft (on the ground or in the air), the enemies, and a watcher.
 // Returns { input (the player's starting controls), watcher }.
 export function startMission(config, { sim, combat, world }) {
-  const ac = aircraftOf(config.aircraft);
+  const ac = missionAircraft(config);
   const start = STARTS.find((s) => s.id === config.start) ?? STARTS[1];
   const input = start.altitude > 0 ? sim.start(ac, start.altitude) : sim.startOnGround(ac);
   combat.reset(ac);

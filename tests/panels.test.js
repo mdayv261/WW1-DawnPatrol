@@ -6,7 +6,7 @@ import { readings } from '../src/ui/instruments/readings.js';
 import { drawInstrument } from '../src/ui/instruments/dials.js';
 import { oneTurnAltimeterAngle, twoHandAltimeter } from '../src/ui/instrumentMath.js';
 import { altitudeForPressure, atmosphere } from '../src/physics/atmosphere.js';
-import { AIRCRAFT, AIRCRAFT_LIST } from '../src/aircraft/index.js';
+import { AIRCRAFT, ALL_AIRCRAFT as AIRCRAFT_LIST } from '../src/aircraft/index.js'; // every aircraft
 import { createDamage } from '../src/physics/damage.js';
 
 // Cockpit panels (Phase 6): the data matches the research, and each needle behaves.

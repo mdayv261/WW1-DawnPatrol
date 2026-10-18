@@ -1,7 +1,7 @@
 // The 3D models of the agent aircraft: one per Agent, made when it appears,
 // moved to its physics pose every frame, and taken away when it is gone.
 
-import { createAircraftMesh, setControlSurfaces } from './aircraftMesh.js';
+import { createAircraftMesh, setControlSurfaces, showDrum } from './aircraftMesh.js';
 import { deflections } from '../physics/controls.js';
 import { damagedDeflections } from '../physics/damage.js';
 import { showDamage } from './damageView.js';
@@ -28,6 +28,7 @@ export class TargetViews {
       v.model.group.quaternion.copy(quaternion);
       if (t.sim.surfaces) setControlSurfaces(v.model, damagedDeflections(t.sim.damage, deflections(common, t.sim.surfaces), common));
       showDamage(v.model, t.sim.damage);
+      showDrum(v.model, t.gunBank);
       if (t.sim.diag) v.model.prop.rotation.x += (t.sim.diag.rpm / 60) * Math.PI * 2 * realDt * 0.15;
     }
     for (const [id, v] of this.views) {

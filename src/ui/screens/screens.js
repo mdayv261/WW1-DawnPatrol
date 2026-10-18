@@ -3,19 +3,20 @@
 // gather choices and call back; they do not fly anything themselves.
 
 import { makeScreen, heading, buttons, choice, setChoices, paragraph, el } from './style.js';
-import { AIRCRAFT_LIST } from '../../aircraft/index.js';
+import { AIRCRAFT } from '../../aircraft/index.js';
+import { ERAS } from '../../aircraft/eras.js';
 import { SKILLS, SKILL_ORDER } from '../../aircraft/aiData.js';
 import { QUALITY_ORDER } from '../../render/quality.js';
-import { STARTS, TIMES, MAX_ENEMIES, enemyChoices, cleanConfig, aircraftFor } from '../../game/flow.js';
+import { STARTS, TIMES, MAX_ENEMIES, enemyChoices, cleanConfig, aircraftFor, loadoutChoices } from '../../game/flow.js';
 import { formatTime } from '../../game/mission.js';
 import { createKeysTab } from './controlsKeys.js';
 import { createJoystickTab } from './controlsJoystick.js';
 
-const aircraftName = (id) => AIRCRAFT_LIST.find((a) => a.id === id)?.name ?? id;
+const aircraftName = (id) => AIRCRAFT[id]?.name ?? id;
 
 export function createMainMenu({ onFly, onRoster, onOptions, onMultiplayer }) {
   const s = makeScreen();
-  heading(s.card, 'Dawn Patrol', 'Western Front, 1917-1918');
+  heading(s.card, 'Dawn Patrol', 'Western Front, 1916-1918');
   const pilotLine = paragraph(s.card, '', 'dp-pilot');
   buttons(s.card, [['Fly a mission', onFly], ['Multiplayer', onMultiplayer], ['Pilot Roll Call', onRoster], ['Options', onOptions]]);
   paragraph(s.card, 'Keyboard, mouse or joystick: Options > Controls changes the keys and buttons, and the help in flight lists them. Esc pauses.', 'dp-small');
@@ -34,11 +35,21 @@ export function createSetup({ config, getSide = () => null, onFly, onBack }) {
   let c = cleanConfig(config, getSide());
   heading(s.card, 'Mission orders');
   const enemy = () => enemyChoices(c.aircraft).map((id) => [id, id === 'mixed' ? 'Mixed (all enemy types)' : aircraftName(id)]);
-  const mine = () => aircraftFor(getSide()).map((a) => [a.id, `${a.name} (${a.side === 'Allied' ? 'Allied' : 'German'})`]);
+  const mine = () => aircraftFor(getSide(), c.era).map((a) => [a.id, `${a.name} (${a.side === 'Allied' ? 'Allied' : 'German'})`]);
+  const guns = () => loadoutChoices(c.aircraft);
+  // The era decides the aircraft on both sides; the aircraft decides the enemies and the guns.
+  const eraSelect = choice(s.card, 'Era', ERAS.map((e) => [e.id, e.label]), c.era, (v) => {
+    c = cleanConfig({ ...c, era: v }, getSide());
+    setChoices(aircraftSelect, mine(), c.aircraft);
+    setChoices(gunsSelect, guns(), c.loadout);
+    setChoices(enemySelect, enemy(), c.enemyType);
+  });
   const aircraftSelect = choice(s.card, 'Your aircraft', mine(), c.aircraft, (v) => {
     c = cleanConfig({ ...c, aircraft: v }, getSide());
-    setChoices(enemySelect, enemy(), c.enemyType); // the enemy is always the other side
+    setChoices(gunsSelect, guns(), c.loadout);
+    setChoices(enemySelect, enemy(), c.enemyType); // the enemy is always the other side, of the same era
   });
+  const gunsSelect = choice(s.card, 'Guns', guns(), c.loadout, (v) => { c.loadout = v; });
   const enemySelect = choice(s.card, 'Enemy aircraft', enemy(), c.enemyType, (v) => { c.enemyType = v; });
   choice(s.card, 'Number of enemies', Array.from({ length: MAX_ENEMIES + 1 }, (_, i) => [i, i === 0 ? 'None (free flight)' : String(i)]), c.enemyCount, (v) => { c.enemyCount = Number(v); });
   choice(s.card, 'Enemy skill', SKILL_ORDER.map((k) => [k, k === 'drone' ? 'Drone (target practice)' : SKILLS[k].name]), c.skill, (v) => { c.skill = v; });
@@ -48,7 +59,9 @@ export function createSetup({ config, getSide = () => null, onFly, onBack }) {
   const show = s.show;
   return { ...s, getConfig: () => cleanConfig(c, getSide()), show() {
     c = cleanConfig(c, getSide()); // the pilot (and so the side) may have changed
+    setChoices(eraSelect, ERAS.map((e) => [e.id, e.label]), c.era);
     setChoices(aircraftSelect, mine(), c.aircraft);
+    setChoices(gunsSelect, guns(), c.loadout);
     setChoices(enemySelect, enemy(), c.enemyType);
     show();
   } };

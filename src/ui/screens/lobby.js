@@ -3,15 +3,23 @@
 // (mpClient.state) and pass choices on.
 
 import { makeScreen, heading, buttons, choice, setChoices, paragraph, el } from './style.js';
-import { STARTS, TIMES } from '../../game/flow.js';
-import { AIRCRAFT_LIST } from '../../aircraft/index.js';
+import { STARTS, TIMES, loadoutChoices } from '../../game/flow.js';
+import { AIRCRAFT } from '../../aircraft/index.js';
+import { ERAS } from '../../aircraft/eras.js';
 import { TEAM_IDS, TEAM_LABELS, SETTING_CHOICES } from '../../mp/netConfig.js';
 import { aircraftOfTeam } from '../../mp/roomCore.js';
 
-const aircraftName = (id) => AIRCRAFT_LIST.find((a) => a.id === id)?.name ?? id;
+const aircraftName = (id) => AIRCRAFT[id]?.name ?? id;
+// The aircraft and, if it is not the standard one, its loadout ("Fokker E.IV, three guns").
+const flownName = (p) => {
+  const label = p.loadout && p.loadout !== 'standard' ? AIRCRAFT[p.aircraft]?.loadouts?.[p.loadout]?.label : null;
+  return label ? `${aircraftName(p.aircraft)}, ${label.charAt(0).toLowerCase()}${label.slice(1)}` : aircraftName(p.aircraft);
+};
 
 // The host's settings as drop-downs: [key, label, [[value, text], ...]].
 const SETTING_ROWS = [
+  ['era', 'Era', ERAS.map((e) => [e.id, e.label])],
+  ['mixedEras', 'Mixed eras', [[false, 'Off (one era\'s aircraft)'], [true, 'On (aircraft of both eras)']]],
   ['start', 'Starting point', STARTS.map((s) => [s.id, s.label])],
   ['timeOfDay', 'Daylight', TIMES.map((t) => [t.id, t.label])],
   ['scoreLimit', 'Score to win', SETTING_CHOICES.scoreLimit.map((n) => [n, `${n} victories`])],
@@ -46,7 +54,8 @@ export function createLobby({ client, onLeave, netsimNote = () => '' }) {
   const mine = el('div', 'dp-section');
   mine.appendChild(el('h3', null, 'Your aircraft'));
   const team = choice(mine, 'Team', TEAM_IDS.map((t) => [t, TEAM_LABELS[t]]), 'allied', (v) => client.setTeam(v));
-  const aircraft = choice(mine, 'Aircraft', [], '', (v) => client.setAircraft(v));
+  const aircraft = choice(mine, 'Aircraft', [], '', (v) => client.setAircraft(v, 'standard'));
+  const guns = choice(mine, 'Guns', [['standard', 'Standard']], 'standard', (v) => client.setAircraft(client.me?.aircraft, v));
   const readyRow = buttons(mine, [['Ready', () => client.setReady(!client.me?.ready)]], true);
   const readyButton = readyRow.firstChild;
   s.card.appendChild(mine);
@@ -75,7 +84,7 @@ export function createLobby({ client, onLeave, netsimNote = () => '' }) {
       const tr = el('tr', p.id === client.state.you ? 'dp-active' : null);
       const who = `${p.name}${p.id === lobby.hostId ? ' (host)' : ''}${p.id === client.state.you ? ' (you)' : ''}`;
       const state = !p.connected ? 'reconnecting...' : p.ready ? 'READY' : 'not ready';
-      tr.append(el('td', null, who), el('td', null, TEAM_LABELS[p.team]), el('td', null, aircraftName(p.aircraft)), el('td', null, state));
+      tr.append(el('td', null, who), el('td', null, TEAM_LABELS[p.team]), el('td', null, flownName(p)), el('td', null, state));
       return tr;
     });
     table.replaceChildren(head, ...rows);
@@ -93,7 +102,8 @@ export function createLobby({ client, onLeave, netsimNote = () => '' }) {
       const host = client.isHost;
       if (me) {
         team.value = me.team;
-        setChoices(aircraft, aircraftOfTeam(me.team).map((a) => [a.id, a.name]), me.aircraft);
+        setChoices(aircraft, aircraftOfTeam(me.team, lobby.settings).map((a) => [a.id, a.name]), me.aircraft);
+        setChoices(guns, loadoutChoices(me.aircraft), me.loadout ?? 'standard');
         readyButton.textContent = me.ready ? 'Not ready after all' : 'I am ready';
       }
       for (const [key] of SETTING_ROWS) {

@@ -28,6 +28,7 @@ export function quantiseInput(i) {
     trim: Math.round(clamp(i.trim, -1, 1) * S16) / S16,
     fire: Boolean(i.fire),
     clearJam: Boolean(i.clearJam),
+    changeDrum: Boolean(i.changeDrum),
   };
 }
 
@@ -47,7 +48,7 @@ export function encodeInputs(firstTick, viewTick, inputs) {
     d.setInt16(o + 4, Math.round(clamp(i.yaw, -1, 1) * S16));
     d.setUint16(o + 6, Math.round(clamp(i.throttle, 0, 1) * U16));
     d.setInt16(o + 8, Math.round(clamp(i.trim, -1, 1) * S16));
-    d.setUint8(o + 10, (i.fire ? 1 : 0) | (i.clearJam ? 2 : 0));
+    d.setUint8(o + 10, (i.fire ? 1 : 0) | (i.clearJam ? 2 : 0) | (i.changeDrum ? 4 : 0));
   });
   return buf;
 }
@@ -70,6 +71,7 @@ export function decodeInputs(buf) {
       trim: clamp(d.getInt16(o + 8) / S16, -1, 1),
       fire: Boolean(b & 1),
       clearJam: Boolean(b & 2),
+      changeDrum: Boolean(b & 4),
     });
   }
   return { firstTick: d.getUint32(1), viewTick: d.getUint32(6), inputs };
@@ -78,7 +80,7 @@ export function decodeInputs(buf) {
 // ---- a Simulation's full state as numbers --------------------------------------------------
 
 // Everything the next physics step depends on, in a fixed order.
-export const FULL_LENGTH = 35;
+export const FULL_LENGTH = 39; // 35, plus the weak lower wing (Nieuport 11) from protocol 4
 const CABLES = ['aileron', 'elevator', 'rudder'];
 
 export function captureState(sim, out = new Float64Array(FULL_LENGTH)) {
@@ -94,6 +96,7 @@ export function captureState(sim, out = new Float64Array(FULL_LENGTH)) {
     ...CABLES.map((c) => (d.cables[c] === null ? NaN : d.cables[c])),
     d.failed.L ? 1 : 0, d.failed.R ? 1 : 0, d.failed.tailplane ? 1 : 0,
     sim.crashed ? 1 : 0, s.chocked ? 1 : 0,
+    d.lower.L, d.lower.R, d.lowerFailed.L ? 1 : 0, d.lowerFailed.R ? 1 : 0,
   ]);
   return out;
 }
@@ -118,6 +121,9 @@ export function restoreState(sim, a, crashReason = 'Crashed') {
   sim.crashed = crashed;
   if (!crashed) sim.crashReason = null;
   s.chocked = a[34] === 1;
+  d.lower.L = a[35];
+  d.lower.R = a[36];
+  Object.assign(d.lowerFailed, { L: a[37] === 1, R: a[38] === 1 });
   sim.previous.position.copy(s.position);
   sim.previous.quaternion.copy(s.quaternion);
 }
@@ -126,18 +132,21 @@ export function restoreState(sim, a, crashReason = 'Crashed') {
 
 // One snapshot for one player: { tick, lead (ticks their controls arrived early), you
 // ({ slot, spawn, state, guns: [{ rounds, state }] }: their own aircraft in full, or null),
-// others: [compact] }. A gun's state: 'ready', 'jammed', 'clearing' or 'empty'.
+// others: [compact] }. A gun's state: 'ready', 'jammed', 'clearing', 'empty', or for a drum-fed
+// gun 'changing' (a drum change) and 'drumEmpty'; `spares` is its spare drums. One to three guns.
 // A compact aircraft: { slot, spawn, crashed, down, position, quaternion, velocity, rates,
 // surfaces: { pull, roll, yaw, throttle }, rpm, damage: { wingL, wingR, engine, tank, tailplane,
 // fin, failedL, failedR, failedTail }, shots (rounds fired since the last snapshot) }.
 const HEAD = 11;
-const GUN_STATES = ['ready', 'jammed', 'clearing', 'empty'];
-const GUNS_BYTES = 6;
-const FULL_BYTES = 3 + FULL_LENGTH * 8 + GUNS_BYTES;
+const GUN_STATES = ['ready', 'jammed', 'clearing', 'empty', 'changing', 'drumEmpty'];
+const GUN_BYTES = 4; // rounds (2), state (1), spare drums (1)
+const MAX_GUNS = 3;
+// Your own aircraft: slot, spawn, full state, then the gun count and each gun.
+const fullBytes = (guns) => 3 + FULL_LENGTH * 8 + 1 + guns * GUN_BYTES;
 const COMPACT_BYTES = 50;
 
-// A GunBank's two guns as the snapshot carries them.
-export const gunsOf = (bank) => bank.guns.map((g) => ({ rounds: g.rounds, state: g.state }));
+// A GunBank's guns as the snapshot carries them.
+export const gunsOf = (bank) => bank.guns.map((g) => ({ rounds: g.rounds, state: g.state, spares: g.spares }));
 
 export function compactOf(slot, spawn, sim, down = false, shots = 0) {
   const s = sim.state;
@@ -155,7 +164,8 @@ export function compactOf(slot, spawn, sim, down = false, shots = 0) {
 }
 
 export function encodeSnapshot({ tick, lead, you, others }) {
-  const buf = new ArrayBuffer(HEAD + (you ? FULL_BYTES : 0) + others.length * COMPACT_BYTES);
+  const yourGuns = you ? (you.guns ?? []).slice(0, MAX_GUNS) : [];
+  const buf = new ArrayBuffer(HEAD + (you ? fullBytes(yourGuns.length) : 0) + others.length * COMPACT_BYTES);
   const d = new DataView(buf);
   d.setUint8(0, MSG_SNAPSHOT);
   d.setUint32(1, tick);
@@ -169,11 +179,14 @@ export function encodeSnapshot({ tick, lead, you, others }) {
     d.setUint8(o + 2, you.spawn & 255);
     for (let k = 0; k < FULL_LENGTH; k++) d.setFloat64(o + 3 + k * 8, you.state[k]);
     const g = o + 3 + FULL_LENGTH * 8;
-    (you.guns ?? []).slice(0, 2).forEach((gun, k) => {
-      d.setUint16(g + k * 3, clamp(gun.rounds, 0, U16));
-      d.setUint8(g + k * 3 + 2, Math.max(0, GUN_STATES.indexOf(gun.state)));
+    d.setUint8(g, yourGuns.length);
+    yourGuns.forEach((gun, k) => {
+      const at = g + 1 + k * GUN_BYTES;
+      d.setUint16(at, clamp(gun.rounds, 0, U16));
+      d.setUint8(at + 2, Math.max(0, GUN_STATES.indexOf(gun.state)));
+      d.setUint8(at + 3, clamp(gun.spares ?? 0, 0, 255));
     });
-    o += FULL_BYTES;
+    o += fullBytes(yourGuns.length);
   }
   for (const c of others) {
     d.setUint16(o, c.slot);
@@ -201,16 +214,21 @@ export function decodeSnapshot(buf) {
   if (d.getUint8(0) !== MSG_SNAPSHOT) return null;
   const yourSlot = d.getUint16(7);
   const n = d.getUint8(9);
-  if (buf.byteLength !== HEAD + (yourSlot ? FULL_BYTES : 0) + n * COMPACT_BYTES) return null;
+  const gunAt = HEAD + 3 + FULL_LENGTH * 8;
+  if (yourSlot && buf.byteLength <= gunAt) return null;
+  const gunCount = yourSlot ? d.getUint8(gunAt) : 0;
+  if (gunCount > MAX_GUNS || buf.byteLength !== HEAD + (yourSlot ? fullBytes(gunCount) : 0) + n * COMPACT_BYTES) return null;
   const out = { tick: d.getUint32(1), lead: d.getInt16(5), you: null, others: [] };
   let o = HEAD;
   if (yourSlot) {
     const state = new Float64Array(FULL_LENGTH);
     for (let k = 0; k < FULL_LENGTH; k++) state[k] = d.getFloat64(o + 3 + k * 8);
-    const g = o + 3 + FULL_LENGTH * 8;
-    const guns = [0, 1].map((k) => ({ rounds: d.getUint16(g + k * 3), state: GUN_STATES[d.getUint8(g + k * 3 + 2)] ?? 'ready' }));
+    const g = o + 3 + FULL_LENGTH * 8 + 1;
+    const guns = Array.from({ length: gunCount }, (_, k) => ({
+      rounds: d.getUint16(g + k * GUN_BYTES), state: GUN_STATES[d.getUint8(g + k * GUN_BYTES + 2)] ?? 'ready', spares: d.getUint8(g + k * GUN_BYTES + 3),
+    }));
     out.you = { slot: d.getUint16(o), spawn: d.getUint8(o + 2), state, guns };
-    o += FULL_BYTES;
+    o += fullBytes(gunCount);
   }
   for (let i = 0; i < n; i++) {
     const flags = d.getUint8(o + 3);

@@ -6,10 +6,11 @@
 // pilot would have: never pull into a stall, and never fly into the ground or a tree.
 
 import { Vector3, Quaternion } from 'three';
-import { STEERING as S } from '../aircraft/aiData.js';
+import { STEERING as S, STEERING_FOR } from '../aircraft/aiData.js';
 import { DAMAGE } from '../aircraft/damageModel.js';
 import { common } from '../aircraft/common.js';
 import { wingConstants } from '../physics/aero.js';
+import { structureLimits } from '../physics/damage.js';
 import { G } from '../core/constants.js';
 
 const clamp = (v, lo = -1, hi = 1) => Math.min(hi, Math.max(lo, v));
@@ -34,13 +35,14 @@ export class Pilot {
     this.iThrottle = 0;
     this.started = false;
     this.debug = { roll: 0, nCmd: 0, nTarget: 0, nMax: 0, recovering: false, avoiding: false };
+    this.pitchDamping = STEERING_FOR[aircraft.id]?.pitchDamping ?? S.pitchDamping; // the hands adapted to this aircraft
   }
 
   // The most load factor the pilot will ask for now: the aircraft's structural limit
   // (times the skill's share), and a share of what the wing can lift at this speed.
   maxLoad(sim, share) {
     const ac = this.aircraft;
-    const limitLoad = ac.structure.ultimateLoad / DAMAGE.safetyFactor;
+    const limitLoad = structureLimits(ac).ultimateLoad / DAMAGE.safetyFactor; // the weakest part's
     const q = sim.diag ? sim.diag.dynamicPressure : 0;
     const lift = (S.stallMargin * q * wingConstants(ac, common).S * ac.aero.clMax) / (ac.mass.loaded * G);
     return Math.max(1, Math.min(share * limitLoad, lift));
@@ -102,7 +104,7 @@ export class Pilot {
     }
     // And it never dives faster than its wings are safe: the dive flattens as it nears the never-exceed speed.
     if (wanted.y < -0.01) {
-      const vne = ac.structure.neverExceedSpeed;
+      const vne = structureLimits(ac).neverExceedSpeed;
       const eas = diag.speed * Math.sqrt(diag.density);
       const ease = clamp((S.diveSpeedFraction * vne - eas) / (S.diveEaseBand * vne), 0, 1);
       if (ease < 1) wanted = _probe.copy(wanted).setY(wanted.y * ease).normalize().clone();
@@ -110,7 +112,7 @@ export class Pilot {
     let safe = this.safeDirection(sim, wanted, solidAt);
     // Diving too fast whatever it wanted (a manoeuvre gone steep): pull out now, as hard as is safe.
     const easNow = diag.speed * Math.sqrt(diag.density);
-    if (!safe.urgent && s.velocity.y < 0 && easNow > S.overspeedPullOut * ac.structure.neverExceedSpeed) {
+    if (!safe.urgent && s.velocity.y < 0 && easNow > S.overspeedPullOut * structureLimits(ac).neverExceedSpeed) {
       _e.set(s.velocity.x, 0, s.velocity.z);
       if (_e.lengthSq() < 1) _e.set(1, 0, 0).applyQuaternion(s.quaternion).setY(0);
       _e.normalize();
@@ -125,7 +127,11 @@ export class Pilot {
     const cosA = clamp(vhat.dot(dir), -1, 1);
     const angle = Math.acos(cosA);
     _e.copy(dir).addScaledVector(vhat, -cosA); // the part of the wanted direction across the flight path
-    if (_e.lengthSq() < 1e-8) _e.set(0, 1, 0).addScaledVector(vhat, -vhat.y); // straight on or straight back: turn up
+    // Exactly straight back (it has no side to prefer): a climbing turn up and to the right. Pulling
+    // straight up into a half loop, as it did, stalls a slow aircraft with little engine torque to
+    // tip it into a bank (the Nieuport 11).
+    if (_e.lengthSq() < 1e-8 && cosA < 0) _e.set(-vhat.z, 1, vhat.x).addScaledVector(vhat, -vhat.y);
+    if (_e.lengthSq() < 1e-8) _e.set(0, 1, 0).addScaledVector(vhat, -vhat.y); // straight on: turn up
     if (_e.lengthSq() < 1e-8) _e.set(1, 0, 0);
     _e.normalize();
     // The turn rate it already has toward the wanted direction damps the demand (so it does not overshoot).
@@ -156,7 +162,7 @@ export class Pilot {
     const scale = clamp(qRef / Math.max(diag.dynamicPressure, 1), 0.5, S.maxGainScale);
     const err = nTarget - diag.loadFactor;
     this.iPull = clamp(this.iPull + S.loadIntegral * err * dt * scale, -S.loadIntegralLimit, S.loadIntegralLimit);
-    input.pull = clamp(S.loadGain * scale * err + this.iPull - S.pitchDamping * scale * s.angularVelocity.z, -1, 1);
+    input.pull = clamp(S.loadGain * scale * err + this.iPull - this.pitchDamping * scale * s.angularVelocity.z, -1, 1);
     // A hard stop at the load it allows itself: an overshoot is taken off at once.
     const over = diag.loadFactor - nMax;
     if (over > 0) {
@@ -205,7 +211,7 @@ Pilot.prototype.aimNose = function aimNose(sim, aimDir, speed, dt, gShare = 1) {
   input.yaw = clamp(S.aimYaw * scale * yawErr + S.aimYawDamping * scale * w.y + S.sideslipGain * 0.3 * diag.beta);
   input.roll = clamp(S.aimRoll * yawErr - S.rollDamping * w.x);
   this.iPull = clamp(this.iPull + S.aimPitchIntegral * scale * pitchErr * dt, -S.loadIntegralLimit, S.loadIntegralLimit);
-  input.pull = clamp(S.aimPitch * scale * pitchErr + this.iPull - S.pitchDamping * scale * w.z);
+  input.pull = clamp(S.aimPitch * scale * pitchErr + this.iPull - this.pitchDamping * scale * w.z);
   // Never more than the load it allows itself (the same limit as in steer()).
   const over = diag.loadFactor - this.maxLoad(sim, gShare);
   if (over > 0) {

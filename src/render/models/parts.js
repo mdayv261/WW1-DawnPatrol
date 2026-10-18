@@ -233,6 +233,13 @@ export function strut(a, b, chordwise, thin, material) {
   return m;
 }
 
+// A bracing wire (or cable) between two points: a very thin strut, cheap in triangles.
+export function wire(a, b, material) {
+  const m = strut(a, b, 0.006, 0.006, material);
+  m.userData.part = 'wire';
+  return m;
+}
+
 export function box(w, h, d, material, x = 0, y = 0, z = 0) {
   const m = new Mesh(new BoxGeometry(w, h, d), material);
   m.position.set(x, y, z);

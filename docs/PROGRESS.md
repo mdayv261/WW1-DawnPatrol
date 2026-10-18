@@ -4,6 +4,239 @@ Read this at the start of every session.
 
 ## Current status: Phases 0-7, the Pilot Roll Call and the multiplayer add-on (M1-M6) are done. Multiplayer is merged into main and published with the game at https://mdayv261.github.io/WW1-DawnPatrol/ (deployed automatically on each push to main after the tests pass). The room server runs on Cloudflare (https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev, free plan), which also serves a test copy of the game. Pushing to GitHub and deploying to Cloudflare need the product owner's permission each time.
 
+**In progress: the Early War add-on (E1-E6)** on the branch `early-war`. Stage 1 is approved and committed. E1 is approved and committed. E2 (weapons) is approved and committed. E3 is approved and committed. E4 is approved and committed. E5 (eras in the multiplayer lobby) is approved and committed. Next: plan E6 (full test pass, merge and publish, with permission).
+
+## Early War E5: eras in multiplayer (D77)
+
+**Done:**
+- **Lobby:**
+  - the host chooses Era (Late or Early War) and Mixed eras (off by default);
+  - teams see only that era's aircraft;
+  - the E.IV pilot can choose three guns;
+  - changing the era moves and un-readies anyone in the wrong era's aircraft.
+- **Through the room server:**
+  - the Nieuport's drum change (key F);
+  - one to three guns with their drum states and spares;
+  - the Nieuport's lower wing in the player's own state.
+  - Protocol version 4, so an old page is asked to reload.
+- **Tests:**
+  - New: room, message and server tests (`tests/mp/earlyWarRoom.test.js`), and a 2 v 2 Early War match through the simulated network, plus a two-player drum test (`tests/mp/earlyWar.test.js`).
+  - 1,463 pass, 25 expected failures, 3 skipped. Late War tables unchanged.
+- **Checked locally in two browser tabs** against the local room server (`npm run mp:server`; nothing deployed):
+  - Host and second player joined room F4KDLU.
+  - Era: Early War moved the host to the Nieuport, with a notice.
+  - The second player chose the three-gun E.IV.
+  - The match started.
+  - The Nieuport's F gave CHANGING DRUM, then DRUM 97/97 · 2 SPARE, through the server.
+  - The E.IV's window showed 475 | 475 | 475.
+  - No console errors.
+
+**How to test it (four tabs, local, nothing deployed):**
+1. In one terminal run `npm run mp:server`, and in another `npm run dev`.
+2. Open the game in four tabs. In each, choose Multiplayer.
+3. One tab creates a room; the other three join with its code.
+4. As host, set Era to Early War. Two players fly the Nieuport (Allied) and two the E.IV (Central), one with three guns.
+5. Everyone presses I am ready, and the host starts.
+6. Fire off a Nieuport's drum, press F, and watch CHANGING DRUM, then a full drum.
+
+**Left:** E6 (full test pass, merge to main, publish the game and the room server together, with your permission).
+
+**Known issues:**
+- **The Late War four-player network test fails now and then.** The server's jams are random and its scripted pilots do not clear them. This was already so before E5.
+- **A jammed Lewis gun cannot have its drum changed;** clear the jam first (B).
+
+## Early War E4: era selection and AI (D76)
+
+**Done:**
+- **Mission screen:** a new Era choice (Late War or Early War), a Guns choice for the E.IV, and enemies from the same era. Old saved settings become Late War.
+- **AI:** flies, fights and changes drums in the E.IV and Nieuport, and respects the Nieuport's lower-wing limits (as do the player's warnings).
+- **AI tuning:** the E.IV's AI and drone pilots needed extra pitch damping. An exact reversal is now a climbing turn.
+- **Tests:** `eras.test.js` and `earlyWarFight.test.js` are new, and the AI tests now run on all six aircraft. 1,452 pass, 25 expected failures, 3 skipped.
+
+**Left:**
+- a browser check of the menus (Fly a mission, then Era: Early War), not yet done.
+
+**Known issues:**
+- The E.IV and Nieuport AI do not fly the Immelmann.
+- The scripted engagement test skips the Nieuport.
+- See D76.
+
+## Early War E3: models, colour schemes and cockpits (D75)
+
+**Done:**
+- **Fokker E.IV model, as Boelcke's 123/15.**
+  - Shape: a slim fuselage with a turtle-deck, and a horseshoe cowling open underneath.
+  - Wing and bracing: a shoulder wing with no ailerons; a pylon over the cockpit and one under the fuselage, with 16 bracing wires.
+  - Tail: an all-moving comma rudder and elevators.
+  - Guns: twin barrels, three with Immelmann's loadout.
+  - Markings: 1915-style black crosses on white squares, red, white and black wheel covers, "OB" on the cowling.
+- **Nieuport 11 model, as Navarre's N.576.**
+  - Nose: a horseshoe cowling and cheek panels in bare metal.
+  - Wings: the large upper wing over the narrow lower wing on V-struts, with cabane struts and wires.
+  - Tail: the wide tailplane and a horn-balanced rudder with no fin.
+  - Gun: the Lewis on its mount over the wing. Its drum disappears while it is changed.
+  - Finish: pale doped finish with six French roundels.
+- **Own cockpits:**
+  - E.IV: aluminium decking, guns forward with the fuel gauge between them, an altimeter on the port side, an airspeed dial on the port wing root, a rev counter, and ring sights on the guns.
+  - Nieuport: bare-metal decking, the upper wing overhead, a ring-and-bead sight, French rev counter, Hatot altimeter and fuel gauge.
+  - Neither borrows a Late War cockpit any more.
+- **Hangar page (`/hangar.html`):** all six aircraft side by side.
+- **Corrections:**
+  - The E.IV's wing now sits on the top of the fuselage, at 2.05 m (it was at mid-fuselage).
+  - The Nieuport's tailplane is 0.45 m deep, sourced from Davilla and Soltan; its 3.25 m span is confirmed by the same book.
+- **Checked in the browser:** the hangar with six aircraft, both models close up, both cockpits in flight, no console errors.
+- **Tests:** 1,390 pass, 25 expected failures, 2 skipped (the Nieuport nose-over; the aileron-position check, which the E.IV has no ailerons for). The model, cockpit and panel checks now run on all six aircraft, and new tests cover the markings, the third gun and the drum. Late War tables still identical.
+
+**How to test it (browser):**
+1. `npm run dev`, then open `/hangar.html` (the address it prints, plus `hangar.html`).
+   - **All:** six aircraft in a row.
+   - **Fokker E.IV** and **Nieuport 11:** orbit round each and check the markings.
+   - **Silhouette:** each type should be recognisable in outline.
+   - **Roll and Pull buttons:** the E.IV has no ailerons to move; its elevators and rudder swing whole.
+2. In the game, **Shift+5** and **Shift+6**, press C until **Camera: cockpit**.
+   - E.IV: the pylon and wires ahead, the guns on the decking with the fuel gauge between, the rev counter below.
+   - Nieuport: the upper wing overhead, the ring sight, the French dials.
+3. **Shift+6, C for the chase view:** fire off a drum, press F, and watch the drum leave the gun for 6 seconds.
+4. **Shift+7, cockpit:** three guns.
+
+**Known issues:**
+- **The Nieuport's Lewis gun is hidden by the upper wing from the seat,** so the drum change is seen only from outside. Real Nieuports varied here; no source describes the view.
+- **The E.IV's rev counter sits low,** at the bottom of the cockpit view. It can be raised if you prefer.
+- **Both cockpits' layouts and colours are mostly estimates,** to tune by eye.
+
+## Early War E2: weapons (D74)
+
+**Done:**
+- **Nieuport 11: the over-wing Lewis gun.**
+  - It fires .303 rounds at 550 a minute and is not synchronised, so it fires at its full rate whatever the engine speed.
+  - Drums of 97 rounds, with 3 spares. A drum change takes 6 s and the gun cannot fire meanwhile; both figures are estimates.
+- **Drum change:**
+  - key F (rebindable on the Controls screen), or joystick button 10;
+  - an unlatch and a clunk, made in code;
+  - status line `DRUM 63/97 · 2 SPARE`, `CHANGING DRUM`, `DRUM EMPTY · 3 SPARE` and `NO DRUMS LEFT`, plus a "Drum empty: press F" notice;
+  - AI pilots change their own drums, and count the spares when deciding whether to break off.
+- **Fokker E.IV: the optional Immelmann three-gun loadout.** It carries a third LMG 08/15 with 475 rounds and 25 kg more (both estimates), so it climbs a little worse. Test flight: key 7. Choosing it in mission setup comes in E4.
+- **The Late War aircraft's guns are unchanged:** same data, same positions, same tests. Their validation tables are still identical to the baseline.
+- **Checked in the browser:**
+  - Nieuport: emptied a drum, pressed F, saw CHANGING DRUM, then a full drum with 2 spares.
+  - Three-gun E.IV: shows three guns of 475 rounds.
+  - No console errors.
+- **Tests:** 1,351 pass, 25 expected failures, 1 skipped.
+
+**How to test it (browser):**
+1. `npm run dev` in the project folder, open the address it prints, and click the page.
+2. **Shift+6 (Nieuport).**
+   - Hold Space: one gun fires steadily, with no pauses for the propeller.
+   - After 97 rounds: `DRUM EMPTY` and a notice.
+   - Press F: you hear the change and see `CHANGING DRUM` for 6 s, then a full drum.
+   - After the third spare: `NO DRUMS LEFT`.
+   - Try F halfway through a drum: the rest of that drum is lost.
+3. **Shift+5 (E.IV):** two guns as before.
+4. **Shift+7 (E.IV with three guns):** `475 | 475 | 475`, and it climbs a little slower.
+5. **Shift+1 to Shift+4:** guns exactly as before.
+6. **N spawns an enemy, for the AI:** the AI Nieuports appear only once era selection (E4) puts them into missions; their drum changes are covered by the tests.
+
+**Left:**
+- E3: models, cockpits, and the over-wing Lewis drawn properly. It is a stand-in for now, drawn ahead of the pilot.
+- E4: loadout and era choice in mission setup.
+- E5: drum changes and gun counts in multiplayer.
+
+**Known issues:** none new. The drum-change time (6 s) and the number of spare drums (3) are estimates you may want to tune after flying.
+
+## Early War E1: aircraft data, validation and flight-model features (D73)
+
+**Done:**
+- **Two new aircraft files:** `src/aircraft/fokkerE4.js` and `nieuport11.js`. Every value has a row in `AIRCRAFT_DATA.md`, sourced or an estimate with a reason. Each aircraft now has an `era` ('early' or 'late').
+- **New shared flight-model features.** Each is optional, so the Late War four are untouched.
+  - Per-aircraft control values (`commonFor`).
+  - Wing warping: slower roll, a pilot force limit at speed, extra drag, adverse yaw. Lightened after your first test flight: about 46 degrees a second at cruise (was 26), against 72-88 for the aileron aircraft.
+  - All-moving tail.
+  - Monoplane wing height.
+  - The U.III's loss of revs at height.
+  - The Nieuport's weak lower wing, which can break away. An F4 button damages it for testing.
+- **Validation:** 20 checks, two of them calibration points. Nieuport: 7 of 9 independent checks pass; Thetford's three slower figures are a source conflict. E.IV: 2 of 9 pass. At its 160 hp rating it climbs far too fast; kept by product owner decision and documented. See `FLIGHT_VALIDATION.md`.
+- **Proof the Late War aircraft are unchanged:** their validation tables match the saved baseline character for character (`tests/physics/lateWarFrozen.test.js`). Their own tests all pass unchanged.
+- **Test flights:** dev keys 5 (E.IV) and 6 (Nieuport), with Shift for an air start. Both also appear in the F4 test panel. They use a plain stand-in model and borrow the Dr.I's and SPAD's cockpits until E3. The E.IV has its twin LMG 08/15 guns; the Nieuport flies unarmed until E2. Neither is in the menus or the lobby yet (E4, E5).
+- **Tests:** 1,333 pass, 25 expected failures (documented deviations), 1 skipped (see below).
+
+**How to test it (browser):**
+1. `npm run dev`, open the address it prints, and click the page.
+2. **Shift+5: Fokker E.IV in the air.**
+   - Roll hard left and right: clearly slower than the Camel (Shift+1), but no longer sluggish.
+   - Dive to over 200 km/h and roll again: hardly quicker. The pilot cannot twist the wing fully at speed.
+   - Stall it (stick fully back at low power), then push forward: ease the stick back as soon as it flies, or it bunts over onto its back.
+   - Pull the stick gently: the nose answers quickly and needs constant correction.
+   - Press C for the outside view: a plain single-wing stand-in model.
+3. **Shift+6: Nieuport 11 in the air.**
+   - Roll: about as quick as the Camel.
+   - Dive steeply past about 190 km/h with F3 open: the damage line shows "lower wing", and if you keep diving it breaks away and the aircraft rolls toward that side.
+   - The status line shows GUNS none.
+4. **F4, Nieuport:** "Left lower wing 50%" damages it on demand.
+5. **Shift+1 to Shift+4:** the Late War aircraft should fly exactly as before.
+
+**Left for later phases:**
+- E2: weapons (the Nieuport's Lewis and drum changes, the three-gun E.IV).
+- E3: models, liveries, cockpits.
+- E4: era choice and AI in single-player.
+- E5: multiplayer, including sending the lower-wing damage in the snapshot.
+
+**Known issues:**
+- **E.IV climb and ceiling:** too good at the sourced 160 hp, so it out-climbs the Nieuport (product owner decision; documented).
+- **E.IV roll:** lightened to about 46 degrees a second at cruise after your test flight. Every warping value is still an estimate.
+- **E.IV stall recovery:** holding the stick forward bunts it over into an inverted stall; ease it back once the wing flies.
+- **E.IV left spin:** recovery takes up to 40 s, three times longer than the other aircraft.
+- **Nieuport at full power from a standstill:** with full forward stick it does not nose over as the others do; the torque rolls it onto a wingtip first. This depends on undercarriage estimates; the nose-over test skips the Nieuport.
+- **Nieuport tailplane:** resolved in E3. Davilla and Soltan confirm the 3.25 m span and give the depth, 0.45 m.
+
+## Early War add-on: Fokker E.IV and Nieuport 11 (D72)
+
+**Brief (product owner, 18 Oct 2026):** add a balanced "Early War" era (Nieuport 11, Allied, against Fokker E.IV, Central) beside the existing "Late War" era (Camel, SPAD, Dr.I, Albatros), in single-player and multiplayer. The behaviour and validation results of the existing four aircraft must not change.
+
+**Decided by the product owner (18 Oct 2026):**
+- Nieuport 11 Lewis drum: **97 rounds** (Davilla and Soltan). Bruce's 47 rounds (RNAS) is recorded as the alternative.
+- Oberursel U.III unreliability: **only sourced effects** are modelled (the extra loss of revs at altitude, from Weyl). No random engine failures.
+
+**Research findings (Stage 1).** The full tables go into `AIRCRAFT_DATA.md` in E1. The new sources are S54-S63.
+- **Fokker E.IV**
+  - Dimensions and weights: span 9.75-10.05 m, wing area 16-16.3 m², loaded 724 kg (three books agree).
+  - Engine: U.III 14-cylinder two-row rotary, 160 hp at 1,200 rpm, 193 kg (Deutsches Museum).
+  - Performance: top speed 160 km/h at an unstated altitude. Climb times from Herris and Scott, and from Weyl's account of the Parschau test. Ceiling 4,115-4,500 m.
+  - Confirmed: wing warping (Weyl: "considerable force" needed in steep turns), and all-moving elevators and rudder with no fixed fin or tailplane (Thetford and Gray).
+  - Three-gun version: sourced (Immelmann; Herris and Scott; Green and Swanborough). It becomes an optional loadout.
+- **Nieuport 11**
+  - Dimensions and weights: upper span 7.52 m, chords 1.20 m (upper) and 0.70 m (lower), area 13.3 m², loaded 480 kg.
+  - Engine: Le Rhône 9C, 80 hp at 1,200 rpm (Smithsonian, Australian War Memorial).
+  - Top speed: the sources disagree by 7%. Davilla and Soltan give 162 km/h at 2,000 m, Green and Swanborough 167 km/h at sea level, and Thetford 97 mph at sea level.
+  - Gun: an over-wing Lewis with no synchroniser.
+  - Lower wing: sourced as weak; it tended to twist and break (Green and Swanborough; Davilla and Soltan).
+- **Not found (will be estimates with reasons):**
+  - the Nieuport's lower-wing span and wing gap;
+  - the number of spare drums;
+  - the drum-change time;
+  - any roll rate or stick force for wing warping (no NACA comparison of warping and ailerons was found);
+  - period cockpit instruments for either type (to be searched again in E3).
+
+**Validation plan:**
+- One calibration point per aircraft:
+  - E.IV: 160 km/h at 724 kg, taken as sea level because no altitude is given (the rule used for the Albatros).
+  - Nieuport 11: 162 km/h at 2,000 m (Davilla and Soltan).
+- Every other figure is an independent check. The tolerances are unchanged.
+- Before any code changes, the `npm run validate` output for the existing four aircraft is saved as a baseline. After every phase it must be identical.
+
+**Phase plan.** Each phase works the same way:
+- I plan it, build it and run `npm test`.
+- I give you browser test steps.
+- I stop until you approve and ask me to commit.
+
+| Phase | Content |
+|---|---|
+| E1 | Aircraft data, validation cases and tests. New shared flight-model features, each optional so the existing four are unchanged: per-aircraft control values, wing warping (slower, heavier roll with a pilot force limit, extra drag and adverse yaw), all-moving tail, monoplane wing position, U.III altitude rev loss, and the Nieuport's weak lower wing. The new aircraft fly with placeholder models. `FLIGHT_VALIDATION.md` updated. |
+| E2 | Weapons: guns become a list of mounts. Twin LMG 08/15 on the E.IV, plus an optional three-gun loadout. Over-wing Lewis with 97-round drums. Drum change: key F, joystick button, sound, HUD indicator, and the AI changes drums too. |
+| E3 | Low-polygon models, period colour schemes, cockpits and instruments; the hangar page shows six aircraft. |
+| E4 | Era choice in single-player mission setup; the AI flies both new types under the same physics. |
+| E5 | Era and mixed-era host settings in the multiplayer lobby. Protocol version 3 to 4, because of the gun count, the drum state and the drum-change input. Test 2 v 2 Early War. |
+| E6 | Full test pass. Merge to main and publish the game and the room server, together and only after you confirm. Check the live site in both eras and both modes. |
+
 ## Multiplayer M6: published (D71)
 
 **Brief:** merge to main only after the product owner confirms, then confirm that the live GitHub Pages version works for both modes. The product owner said "go" and approved the M6 plan (confirmation, and permission for the publishing push and one push of these notes).
@@ -924,4 +1157,5 @@ Still open:
 - **Phase 5: AI opponents.** Done and signed off. AI pilots on the player's flight model and controls, with patrol, engage, attack, evade and disengage; the six manoeuvres of the spec; Novice, Regular and Ace skill levels plus the Drone. Acceptance: see "Phase 5 checkpoint 3 and acceptance test" above.
 - **Phase 6: Game loop, HUD and audio.** Done and signed off. Start menu, mission setup, pause and results; period cockpit instruments and an optional modern HUD; engine, gun, wind and hit sounds. Acceptance: a full mission runs from menu to result screen and back without reloading the page.
 - **Phase 7: Controls screen and assists.** Done and signed off. Rebinding of keyboard and joystick controls; options for auto-rudder, stall warning, G warning and structural damage. Proposed acceptance: a key and a joystick button rebound on the Controls screen work in flight and survive a reload, and each of the four options visibly changes the flight when switched on.
+- **Early War add-on (E1-E6):** in progress on the branch `early-war`; see "Early War add-on" at the top.
 - Later phases: not yet defined. Candidates: other gamepads (per the spec); an engine overspeed warning, with engine speed rising in dives and documented rpm limits (product owner, Phase 7: "I will add later").

@@ -14,6 +14,7 @@ import { SKILLS, PATROL, COMBAT } from '../aircraft/aiData.js';
 import { CARTRIDGES, GUN_TYPES } from '../aircraft/weapons.js';
 import { Observer, geometry } from './perception.js';
 import { Pilot } from './steering.js';
+import { structureLimits } from '../physics/damage.js';
 import { aimSolution, AimError, Trigger } from './aiming.js';
 import { DefensiveBreak, BreakAway } from './manoeuvres.js';
 import { chooseManoeuvre, chooseEscape } from './tactics.js';
@@ -110,8 +111,7 @@ export class AiBrain {
 
   // Should it break off the fight now?
   shouldFlee(self) {
-    const left = self.gunBank.roundsLeft;
-    const ammo = (left[0] + left[1]) / (2 * self.aircraft.guns.rounds);
+    const ammo = self.gunBank.ammoFraction; // spare drums included
     const d = self.sim.damage;
     return ammo < COMBAT.fleeAmmo || d.fuel < COMBAT.fleeLowFuel || damageScore(d) >= this.skill.fleeDamage;
   }
@@ -215,13 +215,15 @@ export class AiBrain {
     }
     // Fine aim only while it is safe: not near the ground, and not diving toward its never-exceed speed.
     const eas = sim.diag ? sim.diag.speed * Math.sqrt(sim.diag.density) : 0;
-    const tooFast = eas > COMBAT.fineAimSpeed * this.aircraft.structure.neverExceedSpeed;
+    const tooFast = eas > COMBAT.fineAimSpeed * structureLimits(this.aircraft).neverExceedSpeed;
     this.lastInput = want.fineAim && !tooFast && !this.pilot.safeDirection(sim, want.dir, solidAt).urgent
       ? this.pilot.aimNose(sim, want.fineAim, want.speed, dt, want.gShare)
       : this.pilot.steer(sim, want, dt, solidAt);
     this.lastInput.fire = this.firing;
     // A stoppage: the pilot hammers it clear while he is not firing.
     if (!this.firing && self.gunBank.guns.some((g) => g.jammed)) self.gunBank.clearJam();
+    // An empty drum (the Lewis gun): he changes it while he is not firing.
+    if (!this.firing && self.gunBank.guns.some((g) => g.state === 'drumEmpty')) self.gunBank.changeDrum();
     return this.lastInput;
   }
 

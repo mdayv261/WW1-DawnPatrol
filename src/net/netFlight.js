@@ -27,6 +27,7 @@ export class NetFlight {
     Object.assign(this, { send, settings, lookup, solidAt, ping, jitter, now, onReady, onRespawn, notice });
     this.fight = null; // NetCombat: the guns, tracers and sparks as shown here
     this.mySlot = 0;
+    this.changeDrumNext = false; // a drum change to send with the next controls
     this.clearJamNext = false;
     this.clock = new NetClock();
     this.render = new RenderClock({ delayMs: INTERP_DELAY_MS, maxDelayMs: INTERP_DELAY_MAX_MS });
@@ -63,6 +64,11 @@ export class NetFlight {
   }
 
   // B: the next controls ask the server to clear the jam.
+  // The drum change goes to the server with the next controls, as a clear-jam does.
+  changeDrum() {
+    this.changeDrumNext = true;
+  }
+
   clearJam() {
     this.clearJamNext = true;
   }
@@ -144,8 +150,9 @@ export class NetFlight {
   step(dt, hands) {
     if (!this.ready) return;
     // A shot-down aircraft falls (the same rule as the server's); B asks for the jam to be cleared.
-    const input = quantiseInput(controlsFor(this.sim, { ...hands, clearJam: this.clearJamNext }));
+    const input = quantiseInput(controlsFor(this.sim, { ...hands, clearJam: this.clearJamNext, changeDrum: this.changeDrumNext }));
     this.clearJamNext = false;
+    this.changeDrumNext = false;
     const t = this.clock.tick + 1;
     this.sim.step(DT, input);
     this.prediction.record(t, input);

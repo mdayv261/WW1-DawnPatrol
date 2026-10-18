@@ -10,7 +10,7 @@ import { createInstrumentPanel } from '../src/ui/instrumentPanel.js';
 import { triangleCount, fuselageAt } from '../src/render/models/parts.js';
 import { COCKPITS } from '../src/aircraft/cockpits.js';
 import { PANELS } from '../src/aircraft/panels.js';
-import { AIRCRAFT_LIST } from '../src/aircraft/index.js';
+import { AIRCRAFT_LIST, ALL_AIRCRAFT } from '../src/aircraft/index.js';
 
 // The 3D cockpits (Phase 6): rendering only, so these are geometry checks, run without a browser.
 
@@ -49,7 +49,7 @@ describe('code-made textures', () => {
 });
 
 describe('cockpits', () => {
-  for (const ac of AIRCRAFT_LIST) {
+  for (const ac of ALL_AIRCRAFT) {
     describe(ac.name, () => {
       const { cockpit } = build(ac);
       const eye = eyePosition(ac);
@@ -183,7 +183,7 @@ describe('SPAD upper wing in the cockpit view', () => {
   });
 
   it('only the SPAD narrows its wing', () => {
-    for (const ac of AIRCRAFT_LIST) if (ac.id !== 'spad13') expect(COCKPITS[ac.id].upperWingChord ?? 1).toBe(1);
+    for (const ac of ALL_AIRCRAFT) if (ac.id !== 'spad13') expect(COCKPITS[ac.id].upperWingChord ?? 1).toBe(1);
   });
 });
 

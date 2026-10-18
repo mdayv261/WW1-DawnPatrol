@@ -11,8 +11,9 @@ import { deflections, updateSurfaces } from './controls.js';
 import { stepRigidBody, worldToBody } from './rigidBody.js';
 import { groundContact } from './ground.js';
 import { propellerMoments, slipstreamPressure } from './propEffects.js';
-import { wingLoss, powerFactor, stoppedPropDrag, stoppedPropRpm, damagedDeflections, engineSeized, fuelOut, controlSpeed } from './damage.js';
+import { wingLoss, lowerWingLoss, powerFactor, stoppedPropDrag, stoppedPropRpm, damagedDeflections, engineSeized, fuelOut, controlSpeed } from './damage.js';
 import { DAMAGE as DMG } from '../aircraft/damageModel.js';
+import { commonFor, warpAuthority } from './aircraftCommon.js';
 
 const _vBody = new Vector3();
 
@@ -21,7 +22,8 @@ const _vBody = new Vector3();
 //           inertia, mass, diag (numbers for the debug overlay) }.
 // damage (optional, physics/damage.js): wings, engine, tail and cables that are hurt. With none
 // (or a fresh one) the result is exactly the undamaged aircraft's.
-export function evaluate(ac, common, state, surfaces, damage = null) {
+export function evaluate(ac, sharedCommon, state, surfaces, damage = null) {
+  const common = commonFor(ac, sharedCommon); // the aircraft's own control values, if it has any
   const altitude = state.position.y;
   const air = atmosphere(altitude);
   const w = wingConstants(ac, common);
@@ -38,18 +40,26 @@ export function evaluate(ac, common, state, surfaces, damage = null) {
   const alpha = speed > 0.1 ? Math.atan2(wz, u) : 0;
   const beta = speed > 0.1 ? Math.asin(Math.max(-1, Math.min(1, v / speed))) : 0;
   const q = 0.5 * air.density * speed * speed;
-  const defl = damage ? damagedDeflections(damage, deflections(common, surfaces), common) : deflections(common, surfaces);
+  const pilotDefl = deflections(common, surfaces);
+  pilotDefl.roll *= warpAuthority(common, q, ISA.RHO0); // a warping wing gets too heavy to twist fully at speed
+  const defl = damage ? damagedDeflections(damage, pilotDefl, common) : pilotDefl;
 
   const { cl, cd, stall } = liftDrag(ac, common, alpha);
   const lift0 = q * w.S * cl;
-  const drag0 = q * w.S * cd;
+  // A warped wing is twisted out of its best shape and makes extra drag (wing warping only).
+  const drag0 = common.cdWarp ? q * w.S * (cd + common.cdWarp * Math.abs(defl.roll)) : q * w.S * cd;
   const side = q * w.S * sideForce(common, beta);
 
   // Hurt wings: each loses part of its lift and makes more drag.
-  const lossL = damage ? wingLoss(damage, 'L') : 0;
-  const lossR = damage ? wingLoss(damage, 'R') : 0;
-  const hurtL = damage ? Math.max(damage.wing.L, damage.failed.L ? 1 : 0) : 0;
-  const hurtR = damage ? Math.max(damage.wing.R, damage.failed.R ? 1 : 0) : 0;
+  let lossL = damage ? wingLoss(damage, 'L') : 0;
+  let lossR = damage ? wingLoss(damage, 'R') : 0;
+  let hurtL = damage ? Math.max(damage.wing.L, damage.failed.L ? 1 : 0) : 0;
+  let hurtR = damage ? Math.max(damage.wing.R, damage.failed.R ? 1 : 0) : 0;
+  // A weak lower wing (Nieuport 11) that is damaged or gone takes its share of that side's lift.
+  const lowerL = damage ? lowerWingLoss(ac, damage, 'L') : 0;
+  const lowerR = damage ? lowerWingLoss(ac, damage, 'R') : 0;
+  if (lowerL) [lossL, hurtL] = [1 - (1 - lossL) * (1 - lowerL), Math.min(1, hurtL + lowerL)];
+  if (lowerR) [lossR, hurtR] = [1 - (1 - lossR) * (1 - lowerR), Math.min(1, hurtR + lowerR)];
   const lift = lift0 * (1 - (lossL + lossR) / 2);
   const dragL = 0.5 * drag0 * DMG.wingDragGain * hurtL; // extra drag of each wing
   const dragR = 0.5 * drag0 * DMG.wingDragGain * hurtR;
@@ -133,7 +143,8 @@ export function evaluate(ac, common, state, surfaces, damage = null) {
 // Move the controls toward the input, then advance the aircraft by dt.
 // This is the only place the ground acts: evaluate() is the free-air model
 // used by the trim solver and performance calculations at any altitude.
-export function advance(ac, common, state, surfaces, input, dt, damage = null) {
+export function advance(ac, sharedCommon, state, surfaces, input, dt, damage = null) {
+  const common = commonFor(ac, sharedCommon);
   updateSurfaces(surfaces, input, common, damage ? dt * controlSpeed(damage) : dt); // a wounded pilot moves the controls slowly
   const e = evaluate(ac, common, state, surfaces, damage);
   const ground = groundContact(ac, common, state); // zero when clear of the ground

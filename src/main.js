@@ -6,6 +6,7 @@
 import { createScene } from './render/scene.js';
 import { CameraRig } from './render/cameraRig.js';
 import { AIRCRAFT_LIST } from './aircraft/index.js';
+import { DEV_FLIGHTS } from './game/devFlights.js';
 import { attachKeyboard, pressAction } from './input/keyboard.js';
 import { loadBindings, saveBindings, defaultBindings, helpText, keysText } from './input/bindings.js';
 import { BUTTON_LABELS } from './input/joystickMapping.js';
@@ -86,7 +87,7 @@ const keyHint = (action) => {
 
 // What each key and joystick button does (the one-shot commands; held keys go to the InputMapper).
 const keyHandlers = {
-  onSelect: (i, shift) => { if (DEV && i < AIRCRAFT_LIST.length) devStart(i, shift); },
+  onSelect: (i, shift) => { if (DEV && i < DEV_FLIGHTS.length) devStart(i, shift); },
   onRestart: () => { if (flow.state === 'flying') session.restart(); }, // not in a match
   onRecentre: () => {
     mouse.stick.centre();
@@ -101,6 +102,7 @@ const keyHandlers = {
   onReadout: () => showNotice(overlays.readout.toggle() ? 'Instrument readout on' : 'Instrument readout off'),
   onQuality: () => applyQuality(nextQuality(qualityName)),
   onClearJam: () => clearJam(),
+  onChangeDrum: () => changeDrum(),
   onTarget: () => { if (DEV && !flow.multiplayer) newAgent(); },
   onSkill: (step) => { if (DEV) changeSkill(step); },
   onPractice: () => setOptions({ ...options, practice: !options.practice }, true),
@@ -149,7 +151,7 @@ const session = createSession({
   notice: showNotice, noticeText: () => notice.text, noticeUntil: () => notice.until, quality: () => qualityName,
   hudOn: () => options.hud, audio, keyHint, options: () => options,
 });
-if (DEV) overlays.testPanel = createTestPanel(AIRCRAFT_LIST, (i, id) => devStart(i, false, id), (id) => applyTestDamage(session.sim.damage, id, session.sim.surfaces));
+if (DEV) overlays.testPanel = createTestPanel(DEV_FLIGHTS, (i, id) => devStart(i, false, id), (id) => applyTestDamage(session.sim.damage, id, session.sim.surfaces));
 
 function applyQuality(name) {
   qualityName = name;
@@ -192,6 +194,15 @@ function clearJam() {
   session.combat.clearJam();
   session.net?.clearJam(); // in a match the server clears it (and decides whether it worked)
   if (jammed) showNotice('Clearing the jam...', 1500);
+}
+
+// A drum-fed gun (the Nieuport 11's Lewis): fit a full drum. In a match the server changes it
+// too (and its state wins); this window starts the change at once so it shows straight away.
+function changeDrum() {
+  if (!session.combat.gunBank?.drumFed) return;
+  const started = session.combat.changeDrum();
+  session.net?.changeDrum();
+  if (started) showNotice('Changing the drum...', 1500);
 }
 
 // ---- pilots --------------------------------------------------------------------------------

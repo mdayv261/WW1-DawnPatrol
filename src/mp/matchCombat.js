@@ -63,9 +63,11 @@ export class MatchCombat {
     this.tick = tick;
     p.history.record(tick, p.sim.state);
     if (input.clearJam) p.guns.clearJam();
+    if (input.changeDrum) p.guns.changeDrum(); // a drum-fed gun (the Nieuport's Lewis)
     const sim = p.sim;
     const trigger = Boolean(input.fire) && !p.down && !sim.crashed && !pilotDead(sim.damage);
     const shots = p.guns.update(DT, trigger, sim.diag ? sim.diag.rpm : 0);
+    p.guns.events.length = 0; // the drum sounds are the browser's own; the server keeps none
     if (!shots.length) return;
     p.shotsSince += shots.length;
     p.tally.shots += shots.length;

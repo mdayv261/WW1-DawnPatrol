@@ -187,6 +187,12 @@ The browser's tick clock runs just ahead of the server's, so your controls reach
 - **The server connection is lost:** the screen says so and returns to the main menu. Single-player is unaffected.
 - **Empty rooms:** an empty room is forgotten at once.
 - **Version check:** browser and server check a protocol version, so an old cached page says "please reload".
+- **Early War add-on (protocol version 4, Oct 2026):**
+  - host settings `era` ('late' or 'early') and `mixedEras` (off by default), sent in `setSettings`, `lobby` and `matchStart`; a team chooses only that era's aircraft (`aircraftOfTeam(team, settings)`);
+  - `setAircraft` carries an optional `loadout` (the E.IV's three guns);
+  - the inputs gain a drum-change bit;
+  - your own aircraft's snapshot carries one to three guns, each with its rounds, state (with 'changing' and 'drumEmpty') and spare drums;
+  - its full state carries the Nieuport's lower wing.
 
 ### Trees, buildings and the ground on the server
 The server builds the same trees and buildings as the browsers (`src/world/solids.js`), from the same world seed. It builds them only for the 1 km tiles near an aircraft flying low. Crashing into them, and bullets stopping in them, are therefore decided by the server too.

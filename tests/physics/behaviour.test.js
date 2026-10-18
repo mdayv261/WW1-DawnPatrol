@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AIRCRAFT_LIST, AIRCRAFT } from '../../src/aircraft/index.js';
+import { AIRCRAFT_LIST, ALL_AIRCRAFT, AIRCRAFT } from '../../src/aircraft/index.js';
 import { holdBankTurn, stallAndSpin, DEG } from '../helpers/flight.js';
 
 // These tests lock in the handling behaviour listed in the spec: stall with
@@ -8,7 +8,7 @@ import { holdBankTurn, stallAndSpin, DEG } from '../helpers/flight.js';
 // so they guard against accidental change, not against history.
 
 describe('stall and wing drop', () => {
-  for (const ac of AIRCRAFT_LIST) {
+  for (const ac of ALL_AIRCRAFT) {
     it(`${ac.name}: full back stick at idle stalls within 1 to 3 seconds and drops a wing`, () => {
       const r = stallAndSpin(ac, { seconds: 8 });
       expect(r.firstStall).toBeGreaterThan(1);
@@ -17,8 +17,11 @@ describe('stall and wing drop', () => {
       expect(r.bankAtMax).toBeLessThan(0); // left wing, from the rigging asymmetry
     });
 
-    it(`${ac.name}: stick forward, throttle open and wings level recovers from the stall`, () => {
-      const r = stallAndSpin(ac, { recoverAt: 4, forward: 0.3, seconds: 14, recoverThrottle: 1, levelWings: true });
+    // The E.IV's strong all-moving elevator and near-neutral stability bunt it over into an
+    // inverted stall if the stick is held forward, so its pilot eases back once the wing flies.
+    const easeOff = ac.id === 'e4';
+    it(`${ac.name}: stick forward${easeOff ? ' (eased off once flying)' : ''}, throttle open and wings level recovers from the stall`, () => {
+      const r = stallAndSpin(ac, { recoverAt: 4, forward: 0.3, seconds: 14, recoverThrottle: 1, levelWings: true, easeOff });
       expect(r.stall).toBeLessThan(0.2);
       expect(r.speed).toBeGreaterThan(25);
     });
@@ -102,7 +105,7 @@ describe('spin and spin recovery', () => {
   }
 
   it('every aircraft rotates (incipient spin) at some point with pro-spin controls', () => {
-    for (const ac of AIRCRAFT_LIST) {
+    for (const ac of ALL_AIRCRAFT) {
       const r = window(ac);
       expect(r.maxYaw, ac.name).toBeGreaterThan(0.9);
     }
@@ -118,6 +121,22 @@ describe('spin and spin recovery', () => {
     for (const rudder of [-1, 1]) {
       it(`${ac.name}: a spin (rudder ${rudder > 0 ? 'right' : 'left'}) is recoverable with a standard technique`, () => {
         const ok = recovered(stallAndSpin(ac, { rudder, ...RAE })) || recovered(stallAndSpin(ac, { rudder, ...CENTRAL }));
+        expect(ok).toBe(true);
+      });
+    }
+  }
+
+  // The Early War pair also recover, by one of three standard techniques: the two above, or
+  // the RAE technique with the opposite rudder released after 3 s (the 1918 trials recovered in
+  // about 3 s and found rudder held across could start a spin the other way, S33). Measured: the
+  // Nieuport recovers within 14 s; the E.IV's left spin takes up to 40 s (its heavy two-row
+  // rotary and slow warping), so it is given that long.
+  const RAE3 = { ...RAE, rudderHold: 3 };
+  for (const [ac, recovery] of [[AIRCRAFT.n11, 14], [AIRCRAFT.e4, 40]]) {
+    for (const rudder of [-1, 1]) {
+      it(`${ac.name}: a spin (rudder ${rudder > 0 ? 'right' : 'left'}) is recoverable within ${recovery} s`, () => {
+        const seconds = 12 + recovery;
+        const ok = [RAE, CENTRAL, RAE3].some((t) => recovered(stallAndSpin(ac, { rudder, ...t, seconds })));
         expect(ok).toBe(true);
       });
     }

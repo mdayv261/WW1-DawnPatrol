@@ -44,6 +44,13 @@ export class NetCombat {
     guns.forEach((s, i) => {
       const g = bank.guns[i];
       if (!g) return;
+      if (g.drum) {
+        // A drum-fed gun: the spare drums and any drum change as the server has them.
+        g.spares = s.spares ?? g.spares;
+        if (s.state === 'changing' && g.changing <= 0) g.changing = g.drum.changeTime;
+        if (s.state !== 'changing') g.changing = 0;
+        if (s.state === 'changing' || s.state === 'drumEmpty') g.rounds = 0;
+      }
       if (s.state === 'jammed') {
         g.jammed = true;
         g.clearing = 0;

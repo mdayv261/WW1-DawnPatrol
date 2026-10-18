@@ -6,6 +6,7 @@ export const fokkerDr1 = {
   id: 'dr1',
   name: 'Fokker Dr.I',
   side: 'Central',
+  era: 'late', // 1917-1918 (Late War)
   instruments: { speed: 'kmh', altitude: 'm' }, // German instruments
   wings: 3,
   geometry: {

@@ -11,7 +11,8 @@ export function wingLevels(ac, common) {
   const v = ac.visual;
   const g = gearGeometry(ac, common);
   const n = ac.wingStack.length;
-  const upperY = g.contactY + ac.geometry.height - 0.1;
+  // A biplane's top wing is the overall height; a monoplane's wing sits lower (visual.wingHeight).
+  const upperY = g.contactY + (v.wingHeight ?? ac.geometry.height - 0.1);
   const topX = 0.12 + (v.stagger * (n - 1)) / 2;
   return ac.wingStack.map((w, i) => {
     const chord = i === n - 1 && v.lowerChord ? v.lowerChord : v.chord;

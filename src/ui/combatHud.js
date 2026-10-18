@@ -28,7 +28,7 @@ export function createCombatHud() {
     // point: the sight point in the world; camera: the view; show: draw the pipper at all.
     update(point, camera, show, text) {
       status.textContent = text;
-      if (!show) {
+      if (!show || !point) { // no point: an unarmed aircraft has no gun sight
         pipper.style.display = 'none';
         return;
       }

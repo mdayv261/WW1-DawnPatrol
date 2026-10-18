@@ -3,7 +3,8 @@
 // cockpit view; the model hides the fuselage section it replaces.
 
 import { Group, Mesh, Shape, ShapeGeometry, CapsuleGeometry } from 'three';
-import { COCKPITS } from '../../aircraft/cockpits.js';
+import { COCKPITS, cockpitId } from '../../aircraft/cockpits.js';
+import { gunMounts } from '../../weapons/mounts.js';
 import { wingPlan, cockpitSpan } from '../models/layout.js';
 import { fuselageAt } from '../models/parts.js';
 import { cockpitMaterials } from './materials.js';
@@ -24,10 +25,10 @@ const THROTTLE_SWEEP = 0.9; // rad the throttle lever travels from closed to ope
 // struts: the model's right-hand rear cabane strut ends [a, b], for a strut-mounted dial (or null).
 // Returns { group, materials, animate(surfaces, values) }.
 export function buildCockpit(aircraft, eye, stations, panel, strut = null) {
-  const c = COCKPITS[aircraft.id];
+  const c = COCKPITS[cockpitId(aircraft)];
   const m = cockpitMaterials(c.style);
   const group = new Group();
-  const german = aircraft.guns.type === 'lmg0815';
+  const german = aircraft.guns?.type === 'lmg0815';
   const { opening } = c;
 
   group.add(named('coaming', coaming(stations, opening, m.leather)));
@@ -103,12 +104,16 @@ export function buildCockpit(aircraft, eye, stations, panel, strut = null) {
     group.add(pad);
   }
 
-  // The guns, from the aircraft's own gun data, on posts where the cockpit has them.
-  const { muzzleX, muzzleY, muzzleZ } = aircraft.guns;
-  for (const s of [-1, 1]) group.add(gun(aircraft.guns.type, c.breechX, muzzleX, muzzleY, s * muzzleZ, m));
-  if (c.gunPosts) group.add(named('gunPosts', gunPosts(c.gunPosts, muzzleY, muzzleZ, german ? 0.12 : 0.11, m.paintedSteel)));
+  // The guns on the decking, from the aircraft's own gun data (one per mount: two, or three with
+  // the E.IV's loadout), on posts where the cockpit has them. An over-wing gun (the Nieuport's
+  // Lewis) is up on the wing, drawn with the aircraft's model, not here.
+  const { muzzleY, muzzleZ } = aircraft.guns ?? {};
+  const overWing = aircraft.guns?.count === 1;
+  if (!overWing) for (const mount of gunMounts(aircraft)) group.add(gun(aircraft.guns.type, c.breechX, mount.x, mount.y, mount.z, m));
+  const pair = aircraft.guns && !overWing; // the cockpit fittings below belong to a pair of guns on the decking
+  if (c.gunPosts && pair) group.add(named('gunPosts', gunPosts(c.gunPosts, muzzleY, muzzleZ, german ? 0.12 : 0.11, m.paintedSteel)));
   if (c.crossBar) group.add(named('crossBar', rod([c.crossBar.x, c.crossBar.y, -c.crossBar.halfWidth], [c.crossBar.x, c.crossBar.y, c.crossBar.halfWidth], 0.012, m.paintedSteel, 10)));
-  if (c.gunPads) for (const s of [-1, 1]) group.add(named('gunPad', gunPad(c.breechX, muzzleY, s * muzzleZ, m.leather)));
+  if (c.gunPads && pair) for (const s of [-1, 1]) group.add(named('gunPad', gunPad(c.breechX, muzzleY, s * muzzleZ, m.leather)));
   const deckAt = (x, z = 0) => deckHeight(stations, x, z, c.decking.hump);
   if (c.sight.kind === 'gunRings') {
     const sight = named('sight', new Group());

@@ -5,6 +5,7 @@
 
 import { CanvasTexture, SRGBColorSpace } from 'three';
 import { PANELS } from '../aircraft/panels.js';
+import { cockpitId } from '../aircraft/cockpits.js';
 import { readings } from './instruments/readings.js';
 import { drawInstrument, STYLES } from './instruments/dials.js';
 
@@ -28,7 +29,7 @@ function makeFace(kind, px) {
 
 // px: pixels across a round dial's face.
 export function createInstrumentPanel(aircraft, px = 256) {
-  const panel = PANELS[aircraft.id];
+  const panel = PANELS[cockpitId(aircraft)];
   const faces = panel.instruments.map((inst) => makeFace(inst.kind, px));
   let values = readings({ aircraft });
 

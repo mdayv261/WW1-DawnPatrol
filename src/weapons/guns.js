@@ -9,6 +9,7 @@
 // are in src/aircraft/weapons.js; the positions and rounds in each aircraft file.
 
 import { GUN_TYPES, CARTRIDGES, SYNC, BULLETS } from '../aircraft/weapons.js';
+import { gunMounts, drumFed } from './mounts.js';
 
 // A small repeatable random number generator (mulberry32), so tests can fix the sequence.
 export function seededRandom(seed = 1) {
@@ -27,10 +28,15 @@ const SUBSTEPS = 8; // propeller angle checks per physics step (the blades turn 
 
 
 export class Gun {
-  constructor(index, muzzle, rounds) {
+  // drum (drum-fed guns only): { capacity, spares, changeTime }; `rounds` is then what is in the
+  // drum fitted now.
+  constructor(index, muzzle, rounds, drum = null) {
     this.index = index;
     this.muzzle = muzzle; // { x, y, z } in body axes
     this.rounds = rounds;
+    this.drum = drum;
+    this.spares = drum ? drum.spares : 0; // full drums still to fit
+    this.changing = 0; // s left of a drum change (0 = not changing)
     this.cooldown = 0; // s until the gun can fire again
     this.jammed = false;
     this.clearing = 0; // s left of a clearing attempt (0 = not clearing)
@@ -38,19 +44,37 @@ export class Gun {
   }
 
   get state() {
-    if (this.rounds <= 0) return 'empty';
+    if (this.changing > 0) return 'changing';
+    if (this.rounds <= 0) return this.spares > 0 ? 'drumEmpty' : 'empty';
     if (this.clearing > 0) return 'clearing';
     return this.jammed ? 'jammed' : 'ready';
+  }
+
+  // Rounds still to fire, the spare drums included.
+  get totalRounds() {
+    return this.rounds + (this.drum ? this.spares * this.drum.capacity : 0);
+  }
+
+  // Rounds it started with, the spare drums included.
+  get fullLoad() {
+    return this.drum ? this.drum.capacity * (1 + this.drum.spares) : this.initialRounds;
   }
 }
 
 export class GunBank {
   constructor(aircraft, rng = Math.random) {
     this.aircraft = aircraft;
-    this.type = GUN_TYPES[aircraft.guns.type];
-    this.cartridge = CARTRIDGES[this.type.cartridge];
-    const g = aircraft.guns;
-    this.guns = [-1, 1].map((side, i) => new Gun(i, { x: g.muzzleX, y: g.muzzleY, z: side * g.muzzleZ }, g.rounds));
+    const g = aircraft.guns; // none on an unarmed aircraft
+    this.type = g ? GUN_TYPES[g.type] : null;
+    this.cartridge = g ? CARTRIDGES[this.type.cartridge] : null;
+    this.synchronised = g?.synchronised !== false; // an over-wing gun fires over the propeller and never waits
+    const drum = g && drumFed(aircraft) ? { capacity: g.rounds, spares: g.spareDrums, changeTime: g.drumChangeTime } : null;
+    this.guns = gunMounts(aircraft).map((m, i) => {
+      const gun = new Gun(i, m, g.rounds, drum);
+      gun.initialRounds = g.rounds;
+      return gun;
+    });
+    this.events = []; // 'drumOff' (a change starts) and 'drumOn' (the new drum is on), for the sounds
     this.rng = rng;
     this.propAngle = 0; // rad, where blade 0 points (0 = straight up)
     this.shots = 0; // rounds fired in all (for tracer spacing)
@@ -59,6 +83,18 @@ export class GunBank {
 
   get roundsLeft() {
     return this.guns.map((g) => g.rounds);
+  }
+
+  // Share of the ammunition left (0 to 1), spare drums included.
+  get ammoFraction() {
+    if (this.guns.length === 0) return 0;
+    const left = this.guns.reduce((sum, g) => sum + g.totalRounds, 0);
+    return left / (this.guns.length * this.guns[0].fullLoad);
+  }
+
+  // Does it feed from drums that the pilot changes in flight?
+  get drumFed() {
+    return this.guns.length > 0 && this.guns[0].drum !== null;
   }
 
   // Is a propeller blade in the way of this muzzle's line of fire?
@@ -79,10 +115,25 @@ export class GunBank {
     for (const g of this.guns) if (g.jammed && g.clearing <= 0) g.clearing = this.type.clearTime;
   }
 
+  // The pilot changes the drum of every drum-fed gun that has a spare and is not jammed or
+  // already changing. Rounds left in the old drum are lost. Returns true if a change began.
+  changeDrum() {
+    let started = false;
+    for (const g of this.guns) {
+      if (!g.drum || g.spares <= 0 || g.changing > 0 || g.jammed || g.clearing > 0) continue;
+      g.rounds = 0;
+      g.changing = g.drum.changeTime;
+      started = true;
+    }
+    if (started) this.events.push('drumOff');
+    return started;
+  }
+
   // Advance dt seconds. trigger: is the trigger down; rpm: propeller speed.
   // Returns the shots fired: { gun, muzzle (body axes), cartridge, tracer, age (s since it left) }.
   update(dt, trigger, rpm) {
     const shots = [];
+    if (this.guns.length === 0) return shots; // unarmed
     const omega = (rpm / 60) * TAU;
     const sub = dt / SUBSTEPS;
     const period = 60 / this.type.cyclicRate;
@@ -91,6 +142,16 @@ export class GunBank {
       this.time += sub;
       for (const g of this.guns) {
         g.cooldown -= sub;
+        if (g.changing > 0) {
+          g.changing -= sub;
+          if (g.changing <= 0) {
+            g.changing = 0;
+            g.spares--;
+            g.rounds = g.drum.capacity;
+            this.events.push('drumOn');
+          }
+          continue;
+        }
         if (g.clearing > 0) {
           g.clearing -= sub;
           if (g.clearing <= 0) {
@@ -99,7 +160,7 @@ export class GunBank {
           }
           continue;
         }
-        if (!trigger || g.jammed || g.rounds <= 0 || g.cooldown > 0 || this.blocked(g)) continue;
+        if (!trigger || g.jammed || g.rounds <= 0 || g.cooldown > 0 || (this.synchronised && this.blocked(g))) continue;
         g.rounds--;
         g.fired++;
         g.cooldown = period;
@@ -117,9 +178,22 @@ export class GunBank {
     return shots;
   }
 
-  // One line for the screen, e.g. "250 | 250" or "JAMMED | 248".
+  // One line for the screen, e.g. "250 | 250" or "JAMMED | 248"; for a drum-fed gun
+  // "DRUM 63/97 · 2 SPARE", "CHANGING DRUM" or "DRUM EMPTY".
   statusText() {
+    if (this.guns.length === 0) return 'none';
+    if (this.drumFed) return this.guns.map(drumText).join('  |  ');
     return this.guns.map((g) => (g.state === 'ready' ? String(g.rounds) : g.state === 'clearing' ? 'CLEARING' : g.state === 'jammed' ? 'JAMMED' : 'EMPTY')).join('  |  ');
   }
 }
 
+function drumText(g) {
+  switch (g.state) {
+    case 'changing': return 'CHANGING DRUM';
+    case 'drumEmpty': return `DRUM EMPTY · ${g.spares} SPARE`;
+    case 'empty': return 'NO DRUMS LEFT';
+    case 'jammed': return 'JAMMED';
+    case 'clearing': return 'CLEARING';
+    default: return `DRUM ${g.rounds}/${g.drum.capacity} · ${g.spares} SPARE`;
+  }
+}

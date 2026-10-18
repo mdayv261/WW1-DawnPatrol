@@ -11,7 +11,8 @@
 // in time.
 
 import { Simulation } from '../core/simulation.js';
-import { AIRCRAFT_LIST } from '../aircraft/index.js';
+import { AIRCRAFT } from '../aircraft/index.js';
+import { withLoadout } from '../weapons/mounts.js';
 import { destroyedReason } from '../physics/damage.js';
 import { quantiseInput, captureState, compactOf, encodeSnapshot, gunsOf } from './binary.js';
 import { spawnPoint, spawnAircraft } from './spawn.js';
@@ -20,7 +21,9 @@ import { controlsFor } from './pilotRules.js';
 import { TICK_HZ, TICK_MS, SNAPSHOT_EVERY, MAX_TICKS_PER_CALLBACK, INPUT_AHEAD_MAX, HANDS_OFF_TICKS, EMPTY_TEAM_S, END_CHECK_TICKS, TEAM_IDS } from './netConfig.js';
 
 const DT = 1 / TICK_HZ;
-const aircraftById = (id) => AIRCRAFT_LIST.find((a) => a.id === id) ?? AIRCRAFT_LIST[0];
+// The aircraft a player flies: their type (either era) with their loadout. The room only lets
+// through types on offer, so the Camel fallback is a last safety net.
+const aircraftById = (id, loadout) => withLoadout(AIRCRAFT[id] ?? AIRCRAFT.camel, loadout);
 
 export class MatchSim {
   // settings: the host's match settings; world: createWorld(); solidAt(x, y, z): trees and
@@ -47,7 +50,7 @@ export class MatchSim {
     if (this.players.has(p.id)) return;
     const sim = new Simulation();
     sim.solidAt = this.solidAt;
-    const pilot = { ...p, ac: aircraftById(p.aircraft), sim, inputs: new Map(), last: null, view: 0, heard: 0, spawn: 0, respawnAt: null, lead: 0 };
+    const pilot = { ...p, ac: aircraftById(p.aircraft, p.loadout), sim, inputs: new Map(), last: null, view: 0, heard: 0, spawn: 0, respawnAt: null, lead: 0 };
     this.players.set(p.id, pilot);
     this.roster.set(p.id, { id: p.id, name: p.name, team: p.team, aircraft: p.aircraft });
     this.combat.addPilot(pilot, this.tallies.get(p.id));
@@ -159,8 +162,8 @@ export class MatchSim {
         input = got.input;
         p.view = got.view;
         p.heard = t;
-      } else if (t - p.heard > HANDS_OFF_TICKS) input = { ...p.last, pull: 0, roll: 0, yaw: 0, fire: false, clearJam: false };
-      else input = { ...p.last, clearJam: false };
+      } else if (t - p.heard > HANDS_OFF_TICKS) input = { ...p.last, pull: 0, roll: 0, yaw: 0, fire: false, clearJam: false, changeDrum: false };
+      else input = { ...p.last, clearJam: false, changeDrum: false }; // one-shot commands are never repeated
       p.inputs.delete(t);
       p.last = input;
       if (p.down && t >= p.respawnAt) this.spawn(p); // back in the air 10 s after going down

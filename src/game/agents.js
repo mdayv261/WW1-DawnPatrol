@@ -8,9 +8,9 @@
 
 import { Quaternion, Vector3 } from 'three';
 import { Simulation } from '../core/simulation.js';
-import { AIRCRAFT_LIST } from '../aircraft/index.js';
+import { ALL_AIRCRAFT } from '../aircraft/index.js';
 import { TARGETS } from '../aircraft/weapons.js';
-import { SKILLS, PATROL } from '../aircraft/aiData.js';
+import { SKILLS, PATROL, STEERING_FOR } from '../aircraft/aiData.js';
 import { attitude } from '../dev/flightScenarios.js';
 import { applyHit, destroyedReason } from '../physics/damage.js';
 import { GunBank } from '../weapons/guns.js';
@@ -58,6 +58,8 @@ export class DroneBrain {
     this.integral = clamp(this.integral - 0.02 * vy * dt, -0.4, 0.4);
     input.roll = clamp(2.5 * (this.bankTarget() - a.bank) - 0.8 * p);
     input.pull = clamp(this.integral - 0.03 * vy - 0.002 * (sim.state.position.y - this.altitude), -0.5, 0.5);
+    const pitchDamping = STEERING_FOR[self.aircraft.id]?.dronePitchDamping; // the E.IV only (aiData.js)
+    if (pitchDamping) input.pull = clamp(input.pull - pitchDamping * sim.state.angularVelocity.z, -0.5, 0.5);
     if (nearStall) input.pull = Math.min(input.pull, -0.2); // never pull into a stall: let the nose drop and keep flying
     input.yaw = clamp(3 * (sim.diag ? sim.diag.beta : 0));
     input.throttle = clamp(this.throttle + 0.15 * (this.speed - speed), 0, 1); // hold its speed through turns
@@ -198,7 +200,7 @@ export class Agent {
   }
 }
 
-// The aircraft types the player fights: the other side's.
+// The aircraft types the player fights: the other side's, of the same era.
 export function enemiesOf(playerAircraft) {
-  return AIRCRAFT_LIST.filter((a) => a.side !== playerAircraft.side);
+  return ALL_AIRCRAFT.filter((a) => a.side !== playerAircraft.side && a.era === playerAircraft.era);
 }

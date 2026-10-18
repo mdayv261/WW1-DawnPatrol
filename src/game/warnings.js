@@ -6,9 +6,10 @@
 import { WARNINGS as W } from '../aircraft/assists.js';
 import { DAMAGE } from '../aircraft/damageModel.js';
 import { wingConstants } from '../physics/aero.js';
+import { structureLimits } from '../physics/damage.js';
 
 // The load factor at which the wings start to be damaged (the ultimate load over the safety factor).
-export const limitLoad = (ac) => ac.structure.ultimateLoad / DAMAGE.safetyFactor;
+export const limitLoad = (ac) => structureLimits(ac).ultimateLoad / DAMAGE.safetyFactor;
 
 // Which warnings are on now. diag: the flight model's diagnostics; on: { stall, g } (the
 // options); structure: structural damage switched on. Returns
@@ -25,7 +26,7 @@ export function warnings(ac, common, diag, on, structure = true) {
     const limit = limitLoad(ac);
     out.load = load > limit ? 'over' : load >= W.loadCaution * limit ? 'caution' : null;
     const v = diag.speed * Math.sqrt(diag.density); // equivalent airspeed, as the structure feels it
-    const vne = ac.structure.neverExceedSpeed;
+    const vne = structureLimits(ac).neverExceedSpeed; // the weakest part's (a Nieuport's lower wing)
     out.speed = v > vne ? 'over' : v >= W.speedCaution * vne ? 'caution' : null;
   }
   return out;

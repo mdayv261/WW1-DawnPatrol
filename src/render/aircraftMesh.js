@@ -7,14 +7,16 @@ import { createCamel } from './models/camelModel.js';
 import { createSpad } from './models/spadModel.js';
 import { createDr1 } from './models/dr1Model.js';
 import { createAlbatros } from './models/albatrosModel.js';
+import { createPlaceholder } from './models/placeholderModel.js';
+import { createE4 } from './models/fokkerE4Model.js';
+import { createN11 } from './models/nieuport11Model.js';
 
-const BUILDERS = { camel: createCamel, spad13: createSpad, dr1: createDr1, albatros: createAlbatros };
+const BUILDERS = { camel: createCamel, spad13: createSpad, dr1: createDr1, albatros: createAlbatros, e4: createE4, n11: createN11 };
 
 // Returns { group, prop, hideInCockpit, showInCockpit }: prop is the spinning propeller group;
 // hideInCockpit lists the parts to hide in the cockpit view, showInCockpit those shown only there.
 export function createAircraftMesh(ac) {
-  const build = BUILDERS[ac.id];
-  if (!build) throw new Error(`No 3D model for aircraft "${ac.id}"`);
+  const build = BUILDERS[ac.id] ?? createPlaceholder; // a plain stand-in for any aircraft without its own model
   const model = build(ac);
   const hideInCockpit = [];
   const showInCockpit = [];
@@ -33,6 +35,13 @@ export function setUpperWingChord(model, factor) {
   if (!w || w.scale.x === factor) return;
   w.scale.x = factor;
   w.position.x = w.userData.trailingX * (1 - factor);
+}
+
+// The Lewis gun's drum (the Nieuport 11) is off the gun while it is being changed.
+// gunBank: that aircraft's GunBank (or none).
+export function showDrum(model, gunBank) {
+  if (!model.drum) return;
+  model.drum.visible = !gunBank?.guns.some((g) => g.state === 'changing');
 }
 
 // Move the model's control surfaces to the positions the physics has them at.

@@ -37,6 +37,7 @@ const PRESS = {
   readout: (h) => h.onReadout?.(),
   quality: (h) => h.onQuality?.(),
   clearJam: (h) => h.onClearJam?.(),
+  changeDrum: (h) => h.onChangeDrum?.(),
   practice: (h) => h.onPractice?.(),
   mute: (h) => h.onMute?.(),
   hud: (h) => h.onHud?.(),

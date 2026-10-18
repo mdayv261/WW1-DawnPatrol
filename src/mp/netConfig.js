@@ -6,7 +6,7 @@ import { STARTS, TIMES } from '../game/flow.js';
 
 // Raised whenever a message changes shape, so an old cached page and a new server (or the
 // other way round) refuse each other with "please reload" instead of misunderstanding.
-export const PROTOCOL_VERSION = 3; // 2: M3 (guns in the snapshots); 3: M4 (the results phase)
+export const PROTOCOL_VERSION = 4; // 2: M3 (guns in the snapshots); 3: M4 (the results phase); 4: E5 (eras, loadouts, drums, gun count, lower wing)
 
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 4;
@@ -76,8 +76,10 @@ export const SETTING_CHOICES = {
   timeLimit: [5, 10, 15, 20], // minutes
   friendlyFire: [false, true],
   structuralDamage: [true, false],
+  era: ['late', 'early'], // the aircraft on offer (src/aircraft/eras.js)
+  mixedEras: [false, true], // both eras' aircraft on offer at once
 };
-export const DEFAULT_SETTINGS = { start: '2000', timeOfDay: 'day', scoreLimit: 5, timeLimit: 10, friendlyFire: false, structuralDamage: true };
+export const DEFAULT_SETTINGS = { start: '2000', timeOfDay: 'day', scoreLimit: 5, timeLimit: 10, friendlyFire: false, structuralDamage: true, era: 'late', mixedEras: false };
 
 // Settings from anything (a message, a saved copy): each value must be one of its choices,
 // otherwise it falls back to `base` (the current settings).

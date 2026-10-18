@@ -838,3 +838,107 @@ The propeller's turning angle is followed from the engine speed the flight model
 - **The Cloudflare test copy stays up** for trying new versions with family before publishing. It and the server can be removed from the Cloudflare dashboard at any time.
 - **Undo:** a revert of the merge commit restores the single-player-only site. Single-player itself was never changed by the multiplayer work, apart from small, guarded hooks (the session's `s.net`, the flow's multiplayer states, one help line).
 
+
+## D72. Early War add-on: plan (Stage 1)
+- **Two eras, one registry.** Each aircraft gets an `era` field ('early' or 'late'). The single-player setup, AI enemy choice, multiplayer lobby and room server all filter by it through one shared function, so they cannot disagree. Mixed-era matches are an optional host setting, off by default.
+- **New flight-model features are optional per-aircraft keys.** When a key is absent, the code uses today's shared value from `common.js`. The Camel, SPAD, Dr.I and Albatros therefore compute exactly the same numbers. A saved `npm run validate` baseline proves it after every phase.
+- **Wing warping is modelled physically, not as a speed table:** lower roll power, a slower roll response, extra drag and adverse yaw while warped, and a pilot force limit that reduces the warp available as airspeed rises (Weyl: "considerable force" in steep turns). No source gives numbers, so every value is an estimate, tuned by flying.
+- **Calibration points:**
+  - E.IV: 160 km/h, taken as sea level because three books give it with no altitude (the rule used for the Albatros).
+  - Nieuport 11: 162 km/h at 2,000 m (Davilla and Soltan), the only speed with a stated altitude from the same table as the climb times. The two sea-level speeds (167 and 156 km/h) disagree with each other, so they remain independent checks.
+- **Product owner's choices (18 Oct 2026):**
+  - The Lewis drum holds 97 rounds (Davilla and Soltan; 47 is recorded as the alternative).
+  - The U.III's unreliability is modelled only through its sourced loss of revs at altitude, with no random failures, so matches stay fair.
+- **Multiplayer protocol version 4**, because the snapshot gains a gun count and drum state and the inputs gain a drum-change bit. The game and the room server must be published together.
+
+## D73. Early War add-on, phase E1: data, validation and flight-model features
+- **Per-aircraft control values through `commonFor()`** (`src/physics/aircraftCommon.js`). An aircraft with a `controls` block gets a cached copy of the shared parameters with its own values on top; any other aircraft gets the very same shared object. It is applied inside `evaluate()` and `advance()`, so no caller changes, and the Late War aircraft run identical code on identical numbers (proved by the frozen-baseline test).
+- **Every new feature is an optional key that means "off" when absent:** `controls.*` (wing warping, all-moving tail), `engine.altitudeRpmLoss`, `structure.lowerWing` and `visual.wingHeight`. Where a new code path could change floating-point results, it is skipped entirely unless the key is present (for example the lower-wing lift loss), rather than multiplying by 1.
+- **Wing warping:**
+  - lower roll effectiveness and a slower roll travel;
+  - a pilot force limit: the warp available falls in proportion to the dynamic pressure above `warpForceSpeed`;
+  - extra drag per radian of warp, and doubled adverse yaw.
+  - The force limit makes the E.IV's roll heavy at speed from physics rather than from a speed table.
+- **U.III loss of revs** (Weyl): power falls in proportion to the revs lost, the loss growing with the fall in air density from none at sea level. Sea level is untouched, so the calibration is unaffected and the climb checks stay independent.
+- **Weak lower wing (Nieuport 11):** its own, lower speed and load limits using the existing overstress formula; it can break away and take a third of that side's lift (from "half the upper wing's area"). Separate `lower` and `lowerFailed` fields leave the existing damage state and its tests untouched. The multiplayer snapshot does not carry them yet (phase E5).
+- **Registry:** `ALL_AIRCRAFT` (six) for physics, validation and test flights; `AIRCRAFT_LIST` stays the Late War four (menus, lobby, guns, cockpits and model tests) until era selection (E4, E5).
+- **Stop-gaps until later phases:** the Nieuport flies unarmed until E2 (`GunBank` accepts an aircraft without guns). Both aircraft use a stand-in model and borrow a Late War cockpit (`cockpitId()`) until E3.
+- **Product owner decisions (18 Oct 2026):**
+  - The E.IV keeps its sourced 160 hp. Its seven failing climb and ceiling checks are documented known deviations, though about 120 hp would match them all.
+  - Thetford's slower Nieuport figures are a source conflict.
+- **Estimate corrected while testing:** the E.IV's weathercock stability was set to the Dr.I's 0.08 (both have a rudder and no fixed fin) after the first estimate of 0.05 left it unable to recover from a stall.
+- **Warping lightened after the product owner's test flight (18 Oct 2026).** The first set gave about 26 degrees a second of roll at cruise, which felt too heavy. The new set:
+  - roll effectiveness 0.2, the same as the ailerons (was 0.13);
+  - warp travel 3 per second (was 2);
+  - full warp held up to 42 m/s (was 40).
+  - Result: about 46 degrees a second, still well below the aileron aircraft (72-88), and only about 15% quicker in a fast dive.
+- **E.IV stall recovery: ease off the forward stick.** With these values, holding the stick forward through a stall recovery bunts the E.IV over into an inverted stall (strong all-moving elevator, near-neutral stability). Eased back to trim once the wing flies, it recovers. The stall test uses that technique for the E.IV only (an `easeOff` option in the test helper), and a separate test checks the bunt-over. The data were not changed to hide it.
+
+## D74. Early War add-on, phase E2: weapons
+- **The Late War gun data is left exactly as it was; the mounts are worked out in code.** `gunMounts()` (`src/weapons/mounts.js`) gives the usual mirrored pair from each `guns` block. With `count: 1` it gives a single centre-line gun (the Nieuport), and it adds any guns a loadout brings. No Late War row or number changed. Their guns are built in the same order with the same positions, so their tests and the multiplayer snapshot (still two guns) are unaffected.
+- **A drum-fed gun is any gun whose block has `spareDrums`.** For such a gun, `rounds` means rounds per drum. The gun tracks the rounds in the fitted drum, the spare drums and a change timer. Its states are changing, drum empty, and out of drums (the old "empty").
+- **Drum changes:**
+  - Any time, by key or button: the remaining rounds in the old drum are lost, a simple rule.
+  - Not while jammed or clearing.
+  - The gun cannot fire during the change.
+  - The AI uses the same rule it uses for clearing a jam: it changes when the drum is empty and it is not firing.
+  - The AI's "out of ammunition" judgement counts the spare drums. For belt-fed aircraft it computes exactly the old figure.
+- **`synchronised: false`** skips the blade check, so the over-wing Lewis fires at its full rate at any engine speed. A test checks its line of fire clears the propeller tips.
+- **Loadouts are separate aircraft objects** (`withLoadout()`), not a parameter passed everywhere. The three-gun E.IV is the E.IV with an extra mount and 25 kg more, through the existing `withConditions()`, which also scales the inertias. Its id stays `e4`, so its model and cockpit are the E.IV's. The object is cached, so the flight model's per-aircraft caches are kept.
+- **Estimates, with no acceptable source:**
+  - Nieuport: 3 spare drums and a 6 s drum change;
+  - three-gun E.IV: the third gun's position, and the 25 kg it adds.
+  - Each is a row in `AIRCRAFT_DATA.md` and listed under research gaps.
+- **The key help shows the drum-empty state without a key name** (`DRUM EMPTY · 3 SPARE`). The on-screen notice names the bound key. This keeps the gun code free of the key bindings.
+- **Not yet in multiplayer:** the drum change is ignored in a match until E5 teaches the server (protocol version 4).
+
+## D75. Early War add-on, phase E3: models, liveries and cockpits
+- **Liveries chosen by the product owner (18 Oct 2026):**
+  - Fokker E.IV: **Boelcke's 123/15**. Linen, 1915-style crosses on white squares, red, white and black wheel covers, "OB" on the cowling (Herris and Scott).
+  - Nieuport 11: **Navarre's N.576 of N.67**. Clear-doped or pale yellow, bare-metal cowling and cheek panels, six roundels with the upper-wing white left out (Bruce).
+  - Bruce's surface outlines and the Nieuport's fuselage and wheel decoration are not described closely enough to draw, so they are left out.
+- **One builder per type, as for the Late War models** (`fokkerE4Model.js`, `nieuport11Model.js`). Two new shared helpers: `crossPattee()` (the flared 1915 cross) and `sectors()` (painted wheel covers) in `livery.js`, and `wire()` (bracing wires) in `parts.js`.
+- **The E.IV's elevators are drawn whole-moving.** Only a small root stub is fixed, to match the all-moving tail. There are no ailerons.
+- **The Nieuport's Lewis gun is part of the aircraft model, not the cockpit,** because it sits over the upper wing.
+  - From the seat the wing hides it, so the drum change is seen from outside.
+  - `showDrum()` takes the drum off while it is being changed, on the player's aircraft and on AI aircraft.
+  - The E2 stand-in gun drawn in the cockpit is removed.
+- **Cockpit instruments:**
+  - The E.IV's fuel gauge (between the guns), altimeter (port side) and airspeed dial (port wing root) are placed where Herris and Scott describe them. Its rev counter sits on a small board and is an estimate.
+  - Nothing describes the Nieuport's instruments: a French rev counter, a Hatot altimeter and a fuel gauge are estimates.
+- **The E.IV's gun breeches sit forward on the decking** (`breechX` -0.25). At the first setting they filled the pilot's view, because the guns are nearly at eye height.
+- **Data corrections found while building:**
+  - The E.IV's wing height was 1.75 m, which put the wing at mid-fuselage; it is now 2.05 m, on the top longerons.
+  - The Nieuport's tailplane depth is 0.45 m, sourced from Davilla and Soltan; it was an estimate of 0.6 m. The same passage confirms the 3.25 m span.
+  - Both affect only the drawing, the hit boxes and the crash points, not the flight model or validation.
+- **Every aircraft now has its own cockpit.** `BORROWED_COCKPIT` is empty but kept; the stand-in model stays as a fallback for any future aircraft without one.
+- **The hangar page shows every aircraft**, spaced and framed for however many there are.
+
+## D76. Early War add-on, phase E4: era selection and AI on the new aircraft
+- **Era is a mission setting** (`era`, default `late`, so saved settings are unchanged), with the aircraft list from `aircraftOfEra()` (`src/aircraft/eras.js`). Enemies are the other side of the same era. `AIRCRAFT_LIST` stays the Late War four for multiplayer until E5. A `loadout` setting offers the E.IV's three guns.
+- **`structureLimits()`** gives the weakest part's limits (the Nieuport's lower wing) to the AI and the warnings. It returns exactly the old figures for the other five.
+- **AI fixes found by running the AI tests on all six:**
+  - When the wanted direction was exactly behind, the AI pulled straight up. The Nieuport stalled doing this, so it now makes a climbing turn to the right. This is shared code, but it acts only in that exact case, and all Late War AI tests still pass.
+  - The E.IV rocked in pitch under the shared AI and drone controllers. `STEERING_FOR.e4` (in `aiData.js`) gives it twice the AI pitch damping and drone pitch damping 0.8. This is measured, not sourced, and the other aircraft are unchanged.
+- **Measured limits recorded in the tests, not hidden:**
+  - The E.IV and Nieuport do not try the Immelmann; the AI's own speed-margin check rules it out.
+  - The E.IV loses up to 200 m in a reversal.
+  - The E.IV brushes its g limit in a split-S.
+  - The Nieuport dives more gently, because of its lower wing.
+  - The scripted test pilot in `engagement.test.js` cannot fly the Nieuport, so that case is skipped. The new AI fight test (`earlyWarFight.test.js`) covers the Nieuport instead.
+
+## D77. Early War add-on, phase E5: eras in multiplayer
+- **Era and mixed eras are host settings,** off and Late War by default, so a room behaves as before unless the host changes them. `aircraftOfTeam(team, settings)` is the one rule, shared by the room server and the lobby screen.
+- **Changing the era moves players, rather than refusing the change.** Anyone on an aircraft no longer offered is put in their team's first aircraft of the new era, with the standard guns, un-readied, and told why. `canStart` also refuses a disallowed aircraft.
+- **A loadout travels with the aircraft choice,** in the existing `setAircraft` message (an optional field). The room checks it against the aircraft's own data.
+- **Protocol version 4:**
+  - a drum-change bit in the inputs;
+  - a variable gun count (1 to 3) with drum states and spare drums in your own snapshot;
+  - the lower wing in your own full state, so a Nieuport's prediction matches the server.
+  - Others' compact records are unchanged, because the lower wing is not drawn.
+  - A snapshot of four aircraft grew from about 440 to 477 bytes.
+- **The browser starts a drum change at once and also sends it,** as it does for clearing a jam; the server's gun state wins.
+- **Found in testing:**
+  - The room server's gun jams use a real random number, so a scripted test pilot whose gun jams fires far fewer rounds. This is why the existing Late War four-player test failed now and then. The new Early War network test has its pilots clear jams.
+  - The settings module must not import the aircraft registry: doing so changed the module load order and with it a test's outcome. The era names are written out there instead.
+

@@ -5,15 +5,16 @@
 // physics steps and supplies the other players' aircraft; everything else is the same.
 
 import { Vector3 } from 'three';
-import { createAircraftMesh, setControlSurfaces, setUpperWingChord } from '../render/aircraftMesh.js';
-import { COCKPITS } from '../aircraft/cockpits.js';
+import { createAircraftMesh, setControlSurfaces, setUpperWingChord, showDrum } from '../render/aircraftMesh.js';
+import { COCKPITS, cockpitId } from '../aircraft/cockpits.js';
 import { createCockpit } from '../render/cockpit.js';
 import { createInstrumentPanel } from '../ui/instrumentPanel.js';
 import { readoutText } from '../ui/instrumentMath.js';
 import { attitude, startScenario, SCENARIOS } from '../dev/flightScenarios.js';
 import { FixedStepLoop } from '../core/fixedStepLoop.js';
 import { Simulation } from '../core/simulation.js';
-import { AIRCRAFT_LIST, common } from '../aircraft/index.js';
+import { common } from '../aircraft/index.js';
+import { DEV_FLIGHTS } from './devFlights.js';
 import { mixJoystick } from '../input/mouse.js';
 import { debugLines, airfieldLine } from '../ui/debugText.js';
 import { deflections } from '../physics/controls.js';
@@ -24,7 +25,7 @@ import { combatText, combatLines } from '../ui/combatHud.js';
 import { damagedDeflections, damageLines, pilotDead, engineSeized, fuelOut } from '../physics/damage.js';
 import { showDamage } from '../render/damageView.js';
 import { perfLines } from '../ui/perfStats.js';
-import { startMission } from './mission.js';
+import { startMission, missionAircraft } from './mission.js';
 import { enemyLabel } from '../ui/hudMath.js';
 import { applyTimeOfDay, skyFor } from '../render/sky.js';
 import { skyEnvironment } from '../render/cockpit/environment.js';
@@ -123,7 +124,7 @@ export function createSession(ctx) {
     offline();
     s.config = config;
     s.runner = null;
-    const ac = AIRCRAFT_LIST.find((a) => a.id === config.aircraft) ?? AIRCRAFT_LIST[0];
+    const ac = missionAircraft(config); // the chosen type with its loadout
     buildAircraft(ac);
     const { input, watcher } = startMission(config, { sim, combat, world });
     s.watcher = watch ? watcher : null;
@@ -139,7 +140,7 @@ export function createSession(ctx) {
   // Development only: the old quick starts (number keys, the F4 test panel's scenarios).
   s.startDev = (index, airStart, scenario = null) => {
     offline();
-    const ac = AIRCRAFT_LIST[index];
+    const ac = DEV_FLIGHTS[index]; // 5-7: the Early War aircraft (test flights only until phase E4)
     s.config = null;
     s.watcher = null;
     buildAircraft(ac);
@@ -298,6 +299,7 @@ export function createSession(ctx) {
     model.group.quaternion.copy(quaternion);
     setControlSurfaces(model, damagedDeflections(sim.damage, deflections(common, sim.surfaces), common)); // a cut cable leaves one stuck
     showDamage(model, sim.damage); // a broken wing disappears
+    showDrum(model, combat.gunBank); // the Lewis drum is off while it is changed
     const d = sim.diag;
     if (d && !paused) model.prop.rotation.x += (d.rpm / 60) * Math.PI * 2 * realDt * 0.15; // slowed so it reads on screen
 
@@ -312,7 +314,7 @@ export function createSession(ctx) {
     s.cockpit.group.visible = inCockpit;
     for (const part of model.hideInCockpit) part.visible = !inCockpit;
     for (const part of model.showInCockpit) part.visible = inCockpit;
-    setUpperWingChord(model, inCockpit ? (COCKPITS[sim.aircraft.id].upperWingChord ?? 1) : 1);
+    setUpperWingChord(model, inCockpit ? (COCKPITS[cockpitId(sim.aircraft)].upperWingChord ?? 1) : 1);
     if (inCockpit) s.cockpit.animate(sim.surfaces, s.panel.values);
     cockpitShadows(inCockpit, position);
     rig.update(sim.aircraft, position, quaternion, realDt);
@@ -326,6 +328,9 @@ export function createSession(ctx) {
     const jammed = Boolean(combat.gunBank?.guns.some((g) => g.jammed));
     if (jammed && !s.wasJammed) notice(`Gun jammed: press ${ctx.keyHint('clearJam')} to clear it`, 3500);
     s.wasJammed = jammed;
+    const drumEmpty = Boolean(combat.gunBank?.guns.some((g) => g.state === 'drumEmpty'));
+    if (drumEmpty && !s.wasDrumEmpty) notice(`Drum empty: press ${ctx.keyHint('changeDrum')} to change it`, 3500);
+    s.wasDrumEmpty = drumEmpty;
     camera.updateMatrixWorld();
     // The stall, G and overspeed warnings (Options), on screen and as a sound.
     const o = ctx.options?.() ?? {};
