@@ -942,3 +942,9 @@ The propeller's turning angle is followed from the engine speed the flight model
   - The room server's gun jams use a real random number, so a scripted test pilot whose gun jams fires far fewer rounds. This is why the existing Late War four-player test failed now and then. The new Early War network test has its pilots clear jams.
   - The settings module must not import the aircraft registry: doing so changed the module load order and with it a test's outcome. The era names are written out there instead.
 
+## D78. Early War add-on, phase E6: publishing
+- **Network tests seeded:** the test harness gives the room server's guns seeded random numbers, so a jam cannot make a test fail by chance. A failing test stops the GitHub publication.
+- **Publish order: the room server first, then the push.** Both must be on protocol version 4. In between, an old page is told to reload rather than misbehave.
+- **The server timing limit in the performance test is 100 ms,** not 50 ms. GitHub's shared machine, running every test at once, measured 52 ms; the code itself is no slower. A wall-clock limit must leave room for a slow, busy test machine.
+- **Undo:** revert the merge commit (072dcfc) and roll the Cloudflare server back to its previous version. Both are needed, because the protocol versions must match.
+

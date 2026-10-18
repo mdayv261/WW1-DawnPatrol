@@ -2,9 +2,31 @@
 
 Read this at the start of every session.
 
-## Current status: Phases 0-7, the Pilot Roll Call and the multiplayer add-on (M1-M6) are done. Multiplayer is merged into main and published with the game at https://mdayv261.github.io/WW1-DawnPatrol/ (deployed automatically on each push to main after the tests pass). The room server runs on Cloudflare (https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev, free plan), which also serves a test copy of the game. Pushing to GitHub and deploying to Cloudflare need the product owner's permission each time.
+## Current status: Phases 0-7, the Pilot Roll Call, the multiplayer add-on (M1-M6) and the Early War add-on (E1-E6) are done and published at https://mdayv261.github.io/WW1-DawnPatrol/ (deployed automatically on each push to main after the tests pass). The room server runs on Cloudflare (https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev, free plan, protocol version 4), which also serves a test copy of the game. Pushing to GitHub and deploying to Cloudflare need the product owner's permission each time.
 
-**In progress: the Early War add-on (E1-E6)** on the branch `early-war`. Stage 1 is approved and committed. E1 is approved and committed. E2 (weapons) is approved and committed. E3 is approved and committed. E4 is approved and committed. E5 (eras in the multiplayer lobby) is approved and committed. Next: plan E6 (full test pass, merge and publish, with permission).
+**Early War add-on (E1-E6): published 18 Oct 2026.**
+
+## Early War E6: published (D78)
+
+**Done (product owner's go, 18 Oct 2026):**
+- **Network tests made repeatable:** the room server's gun jams in the tests now use seeded random numbers. The suite passed three times running.
+- **Full pass on `early-war`:** 1,463 tests, the Late War tables identical to the baseline, the build, `mp:smoke` against a local server, and a local Early War mission through the menus.
+- **Merged into `main`** with a merge commit (072dcfc).
+- **Room server deployed to Cloudflare:** `mp:testcopy`, then `mp:deploy`, version 48192b4b.
+- **Pushed `main`.**
+  - The first GitHub Actions run, 39121443737, **failed one timing test**: the server's computing time measured 52 ms against a 50 ms limit, on GitHub's shared machine with every test running at once. Nothing was published.
+  - The code is not slower: about 11 ms alone, against 17 ms for the old code on the same machine. With the product owner's permission the limit was raised to 100 ms (b11609b) and pushed.
+  - **Run 39121655651: build (with all tests) and deploy succeeded.**
+  - Between the server deployment and this publication (about 5 minutes), live multiplayer asked players to reload.
+
+**Checked on the live site:**
+- **Room server:** `/health` reports version 4, and `npm run mp:smoke` against it passed every check.
+- **Published game:** the page loads the new build (`main-TDqliFGd.js`, the same as the local build), which contains the Early War code.
+- **Not yet checked in a browser:** the built-in browser could not read pages at the time ("policy check temporarily unavailable"). Still to try on the live site: single-player in both eras, and a two-tab match in each era.
+
+**Known issues:**
+- The live in-browser check above is still to do.
+- GitHub warns that its standard actions move from Node.js 20 to 24, and that ubuntu-latest moves to Ubuntu 26 from 19 Oct 2026. These are notices, not failures.
 
 ## Early War E5: eras in multiplayer (D77)
 
