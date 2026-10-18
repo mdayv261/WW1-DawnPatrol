@@ -4,7 +4,46 @@ Read this at the start of every session.
 
 ## Current status: Phases 0-7, the Pilot Roll Call and the multiplayer add-on (M1-M6) are done. Multiplayer is merged into main and published with the game at https://mdayv261.github.io/WW1-DawnPatrol/ (deployed automatically on each push to main after the tests pass). The room server runs on Cloudflare (https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev, free plan), which also serves a test copy of the game. Pushing to GitHub and deploying to Cloudflare need the product owner's permission each time.
 
-**In progress: the Early War add-on (E1-E6)** on the branch `early-war`. Stage 1 is approved and committed. E1 is approved and committed. Next: plan E2 (weapons).
+**In progress: the Early War add-on (E1-E6)** on the branch `early-war`. Stage 1 is approved and committed. E1 is approved and committed. E2 (weapons) is approved and committed. Next: plan E3 (models, colour schemes and cockpits).
+
+## Early War E2: weapons (D74)
+
+**Done:**
+- **Nieuport 11: the over-wing Lewis gun.**
+  - It fires .303 rounds at 550 a minute and is not synchronised, so it fires at its full rate whatever the engine speed.
+  - Drums of 97 rounds, with 3 spares. A drum change takes 6 s and the gun cannot fire meanwhile; both figures are estimates.
+- **Drum change:**
+  - key F (rebindable on the Controls screen), or joystick button 10;
+  - an unlatch and a clunk, made in code;
+  - status line `DRUM 63/97 · 2 SPARE`, `CHANGING DRUM`, `DRUM EMPTY · 3 SPARE` and `NO DRUMS LEFT`, plus a "Drum empty: press F" notice;
+  - AI pilots change their own drums, and count the spares when deciding whether to break off.
+- **Fokker E.IV: the optional Immelmann three-gun loadout.** It carries a third LMG 08/15 with 475 rounds and 25 kg more (both estimates), so it climbs a little worse. Test flight: key 7. Choosing it in mission setup comes in E4.
+- **The Late War aircraft's guns are unchanged:** same data, same positions, same tests. Their validation tables are still identical to the baseline.
+- **Checked in the browser:**
+  - Nieuport: emptied a drum, pressed F, saw CHANGING DRUM, then a full drum with 2 spares.
+  - Three-gun E.IV: shows three guns of 475 rounds.
+  - No console errors.
+- **Tests:** 1,351 pass, 25 expected failures, 1 skipped.
+
+**How to test it (browser):**
+1. `npm run dev` in the project folder, open the address it prints, and click the page.
+2. **Shift+6 (Nieuport).**
+   - Hold Space: one gun fires steadily, with no pauses for the propeller.
+   - After 97 rounds: `DRUM EMPTY` and a notice.
+   - Press F: you hear the change and see `CHANGING DRUM` for 6 s, then a full drum.
+   - After the third spare: `NO DRUMS LEFT`.
+   - Try F halfway through a drum: the rest of that drum is lost.
+3. **Shift+5 (E.IV):** two guns as before.
+4. **Shift+7 (E.IV with three guns):** `475 | 475 | 475`, and it climbs a little slower.
+5. **Shift+1 to Shift+4:** guns exactly as before.
+6. **N spawns an enemy, for the AI:** the AI Nieuports appear only once era selection (E4) puts them into missions; their drum changes are covered by the tests.
+
+**Left:**
+- E3: models, cockpits, and the over-wing Lewis drawn properly. It is a stand-in for now, drawn ahead of the pilot.
+- E4: loadout and era choice in mission setup.
+- E5: drum changes and gun counts in multiplayer.
+
+**Known issues:** none new. The drum-change time (6 s) and the number of spare drums (3) are estimates you may want to tune after flying.
 
 ## Early War E1: aircraft data, validation and flight-model features (D73)
 

@@ -39,6 +39,9 @@ const GUN_LEVEL = (ENGINE_SOUND.level * GUNS_OVER_ENGINE) / CLIP_PEAK;
 export const CLIPS = {
   vickers: { length: 0.16, crack: 3600, crackDecay: 32, thump: 170, thumpDecay: 22, thumpShare: 0.35, drive: 4, level: GUN_LEVEL }, // a fuller, longer report; pitch raised (product owner)
   lmg0815: { length: 0.15, crack: 4300, crackDecay: 38, thump: 200, thumpDecay: 25, thumpShare: 0.3, drive: 4, level: GUN_LEVEL },
+  lewis: { length: 0.13, crack: 4000, crackDecay: 40, thump: 190, thumpDecay: 26, thumpShare: 0.28, drive: 4, level: GUN_LEVEL }, // lighter and drier than the Vickers: an air-cooled gun out on the wing
+  drumOff: { length: 0.09, crack: 2400, crackDecay: 70, thump: 380, thumpDecay: 45, thumpShare: 0.3, level: 0.45 }, // the latch and the empty drum coming off
+  drumOn: { length: 0.14, crack: 1500, crackDecay: 45, thump: 240, thumpDecay: 30, thumpShare: 0.5, level: 0.55 }, // the full drum clunking home
   hit: { length: 0.22, crack: 900, crackDecay: 28, thump: 70, thumpDecay: 18, thumpShare: 0.6, level: 0.55 }, // a bullet into wood and fabric
   crack: { length: 0.05, crack: 4200, crackDecay: 140, thump: 0, thumpDecay: 1, thumpShare: 0, level: 0.38 }, // a bullet passing close (its shock wave)
   crash: { length: 1.2, crack: 600, crackDecay: 3.5, thump: 45, thumpDecay: 4, thumpShare: 0.5, level: 0.7 },

@@ -65,6 +65,8 @@ describe('Weapons section of AIRCRAFT_DATA.md', () => {
     for (const [k, v] of Object.entries(GUN_TYPES.vickers)) if (typeof v === 'number') expect(documented.has(`GUN_TYPES.vickers.${k}`), k).toBe(true);
     expect(documented.has('GUN_TYPES.lmg0815.cyclicRate')).toBe(true);
     for (const k of ['jamPerRound', 'clearTime', 'clearSuccess']) expect(GUN_TYPES.lmg0815[k]).toBe(GUN_TYPES.vickers[k]);
+    expect(documented.has('GUN_TYPES.lewis.cyclicRate')).toBe(true);
+    for (const k of ['jamPerRound', 'clearTime', 'clearSuccess']) expect(GUN_TYPES.lewis[k]).toBe(GUN_TYPES.vickers[k]);
     expect(documented.has('SYNC.bladeMargin')).toBe(true);
     expect(documented.has('BULLETS.tracerEvery')).toBe(true);
   });
@@ -78,6 +80,7 @@ describe('Weapons section of AIRCRAFT_DATA.md', () => {
   it('the cartridges and guns are consistent with each other', () => {
     expect(GUN_TYPES.vickers.cartridge in CARTRIDGES).toBe(true);
     expect(GUN_TYPES.lmg0815.cartridge in CARTRIDGES).toBe(true);
+    expect(GUN_TYPES.lewis.cartridge in CARTRIDGES).toBe(true);
     expect(CARTRIDGES.smk.muzzleVelocity).toBeGreaterThan(CARTRIDGES.mk7.muzzleVelocity); // the German round is the faster
     expect(CARTRIDGES.smk.mass).toBeLessThan(CARTRIDGES.mk7.mass);
   });

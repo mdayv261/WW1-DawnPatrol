@@ -7,8 +7,8 @@ import { PANELS } from '../src/aircraft/panels.js';
 import { GunBank } from '../src/weapons/guns.js';
 import { gearGeometry } from '../src/physics/ground.js';
 
-// Phase E1 lets the Early War aircraft be test-flown before their guns (E2), models and
-// cockpits (E3) exist: an unarmed Nieuport, a plain stand-in model, and borrowed cockpits.
+// The Early War aircraft can be test-flown before their own models and cockpits (E3) exist:
+// a plain stand-in model and borrowed cockpits. An unarmed aircraft is still handled.
 
 describe('Early War aircraft before their own models and cockpits (phase E1)', () => {
   for (const id of ['e4', 'n11']) {
@@ -46,11 +46,12 @@ describe('Early War aircraft before their own models and cockpits (phase E1)', (
     expect(bank.roundsLeft).toEqual([475, 475]);
   });
 
-  it('the Nieuport 11 flies unarmed until phase E2: no guns, no shots, "none" on the screen', () => {
-    const bank = new GunBank(AIRCRAFT.n11, () => 1);
+  it('an aircraft without guns has none, fires nothing, and shows "none"', () => {
+    const bank = new GunBank({ ...AIRCRAFT.n11, guns: undefined }, () => 1);
     expect(bank.guns).toHaveLength(0);
     expect(bank.update(1 / 120, true, 1200)).toEqual([]);
     expect(bank.statusText()).toBe('none');
     bank.clearJam(); // harmless
+    expect(bank.changeDrum()).toBe(false);
   });
 });

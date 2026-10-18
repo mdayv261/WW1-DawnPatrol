@@ -77,6 +77,16 @@ export class Combat {
     this.gunBank?.clearJam();
   }
 
+  // Change the drum of a drum-fed gun. Returns true if a change began.
+  changeDrum() {
+    return Boolean(this.gunBank?.changeDrum());
+  }
+
+  // A drum being changed (or seated) makes a sound; only the player's own are heard.
+  drumSounds(bank, player) {
+    for (const kind of bank.events.splice(0)) if (player) this.sound({ kind, player: true });
+  }
+
   // Put a new agent in the fight (up to TARGETS.maxAlive) at `skill` (default: the current one).
   // A Drone appears ahead of the player; an AI pilot on a patrol circuit round where the player is.
   // Returns it, or null.
@@ -125,12 +135,14 @@ export class Combat {
       this.spawn(player, shot, victims, this.playerVictim);
       this.sound({ kind: 'shot', gun: this.aircraft.guns.type, player: true, ...xyz(player.state.position) });
     }
+    this.drumSounds(this.gunBank, true);
     for (const a of this.agents) {
       if (a.crashed) continue;
       for (const shot of a.gunBank.update(dt, a.fire, a.sim.diag ? a.sim.diag.rpm : 0)) {
         this.spawn(a.sim, shot, victims, a);
         this.sound({ kind: 'shot', gun: a.aircraft.guns.type, player: false, ...xyz(a.state.position) });
       }
+      this.drumSounds(a.gunBank, false);
     }
     this.moveBullets(dt, victims);
     this.tidyAgents(player);

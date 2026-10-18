@@ -72,7 +72,18 @@ export const nieuport11 = {
     staticMargin: 0.05, // fraction of chord (E)
     cnBeta: 0.08, // per rad (E)
   },
-  // No guns until phase E2 (the over-wing Lewis gun with drum changes).
+  // One Lewis gun on a mount over the upper wing, firing above the propeller: no synchroniser
+  // (M). Drum-fed: a full drum, spares and a timed change in flight. Position (E).
+  guns: {
+    type: 'lewis',
+    count: 1, // a single gun on the centre line
+    synchronised: false, // fires over the propeller, so it never waits for a blade
+    rounds: 97, // rounds per drum (M) Davilla and Soltan, Gentilli; Bruce gives 47 on RNAS aircraft
+    spareDrums: 3, // (E) "only a small number of additional rounds" (Davilla)
+    drumChangeTime: 6, // s (E) pull the gun down on its hinged mount, swap the drum, push it back
+    muzzleX: 1.4, // m ahead of the centre of gravity: just ahead of the upper wing (E)
+    muzzleY: 1.3, // m above the centre of gravity: on its mount over the wing, clear of the 1.2 m propeller tip (E)
+  },
   fuel: { capacity: 48 }, // kg (E) 2.5 hours at this model's cruise fuel use (Davilla and Soltan: endurance 2.5 h)
   structure: {
     ultimateLoad: 6.0, // g (E)

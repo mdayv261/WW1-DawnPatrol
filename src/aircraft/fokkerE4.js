@@ -92,6 +92,15 @@ export const fokkerE4 = {
     muzzleY: 0.66, // m above the centre of gravity: on top of the cowling (E)
     muzzleZ: 0.15, // m each side of the centre line (E)
   },
+  // Optional loadouts beside the standard two guns. Immelmann flew a three-gun E.IV (M); the
+  // third gun's position and the added weight are estimates (E).
+  loadouts: {
+    immelmann: {
+      label: 'Three guns (Immelmann)',
+      extraGuns: [{ x: 2.25, y: 0.72, z: 0 }], // m, body axes: between and a little above the other two (E)
+      extraMass: 25, // kg (E) the gun, its ammunition and mounting
+    },
+  },
   fuel: { capacity: 57 }, // kg (E) 1.5 hours at this model's cruise fuel use (Weyl: fuel for 1.5 h)
   structure: {
     ultimateLoad: 6.0, // g (E)

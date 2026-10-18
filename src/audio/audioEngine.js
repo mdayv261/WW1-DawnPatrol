@@ -271,6 +271,7 @@ export function createAudio() {
           play(e.gun, { gain: distanceGain(d), cutoff: distanceCutoff(d), delay: soundDelay(d), pan: stereoPan(L.position, L.right, e) });
         } else if (e.kind === 'nearMiss') play('crack', { gain: Math.min(1, 4 / Math.max(1, e.distance)), pan: stereoPan(L.position, L.right, e) });
         else if (e.kind === 'hitPlayer') play('hit', { rate: 0.9 + Math.random() * 0.2 });
+        else if (e.kind === 'drumOff' || e.kind === 'drumOn') play(e.kind); // changing the Lewis gun's drum
       }
       if (s.sounds) s.sounds.length = 0;
       if (s.crashed) play('crash');

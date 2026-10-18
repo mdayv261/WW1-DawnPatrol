@@ -4,6 +4,7 @@
 
 import { Group, Mesh, Shape, ShapeGeometry, CapsuleGeometry } from 'three';
 import { COCKPITS, cockpitId } from '../../aircraft/cockpits.js';
+import { gunMounts } from '../../weapons/mounts.js';
 import { wingPlan, cockpitSpan } from '../models/layout.js';
 import { fuselageAt } from '../models/parts.js';
 import { cockpitMaterials } from './materials.js';
@@ -103,12 +104,15 @@ export function buildCockpit(aircraft, eye, stations, panel, strut = null) {
     group.add(pad);
   }
 
-  // The guns, from the aircraft's own gun data, on posts where the cockpit has them.
-  const { muzzleX, muzzleY, muzzleZ } = aircraft.guns ?? {};
-  if (aircraft.guns) for (const s of [-1, 1]) group.add(gun(aircraft.guns.type, c.breechX, muzzleX, muzzleY, s * muzzleZ, m));
-  if (c.gunPosts && aircraft.guns) group.add(named('gunPosts', gunPosts(c.gunPosts, muzzleY, muzzleZ, german ? 0.12 : 0.11, m.paintedSteel)));
+  // The guns, from the aircraft's own gun data (one per mount: two, three with the E.IV's
+  // loadout, or the Nieuport's single over-wing Lewis), on posts where the cockpit has them.
+  const { muzzleY, muzzleZ } = aircraft.guns ?? {};
+  const overWing = aircraft.guns?.count === 1; // up on the wing: drawn ahead of the pilot (a stand-in until phase E3)
+  for (const mount of gunMounts(aircraft)) group.add(gun(aircraft.guns.type, overWing ? mount.x - 1.0 : c.breechX, mount.x, mount.y, mount.z, m));
+  const pair = aircraft.guns && !overWing; // the cockpit fittings below belong to a pair of guns on the decking
+  if (c.gunPosts && pair) group.add(named('gunPosts', gunPosts(c.gunPosts, muzzleY, muzzleZ, german ? 0.12 : 0.11, m.paintedSteel)));
   if (c.crossBar) group.add(named('crossBar', rod([c.crossBar.x, c.crossBar.y, -c.crossBar.halfWidth], [c.crossBar.x, c.crossBar.y, c.crossBar.halfWidth], 0.012, m.paintedSteel, 10)));
-  if (c.gunPads && aircraft.guns) for (const s of [-1, 1]) group.add(named('gunPad', gunPad(c.breechX, muzzleY, s * muzzleZ, m.leather)));
+  if (c.gunPads && pair) for (const s of [-1, 1]) group.add(named('gunPad', gunPad(c.breechX, muzzleY, s * muzzleZ, m.leather)));
   const deckAt = (x, z = 0) => deckHeight(stations, x, z, c.decking.hump);
   if (c.sight.kind === 'gunRings') {
     const sight = named('sight', new Group());

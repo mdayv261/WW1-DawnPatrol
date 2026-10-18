@@ -40,6 +40,7 @@ export const DEFAULT_MAPPING = {
     pause: 6,
     restart: 7,
     clearJam: 8, // button 9 on the stick
+    changeDrum: 9, // button 10 on the stick
     look: null,
     hud: null,
     mute: null,
@@ -63,6 +64,7 @@ export const BUTTON_LABELS = {
   pause: 'Pause',
   restart: 'Restart',
   clearJam: 'Clear gun jam',
+  changeDrum: 'Change drum',
   look: 'Look around',
   hud: 'Modern HUD',
   mute: 'Sound on / off',

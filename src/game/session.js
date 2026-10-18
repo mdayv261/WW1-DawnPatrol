@@ -13,7 +13,8 @@ import { readoutText } from '../ui/instrumentMath.js';
 import { attitude, startScenario, SCENARIOS } from '../dev/flightScenarios.js';
 import { FixedStepLoop } from '../core/fixedStepLoop.js';
 import { Simulation } from '../core/simulation.js';
-import { AIRCRAFT_LIST, ALL_AIRCRAFT, common } from '../aircraft/index.js';
+import { AIRCRAFT_LIST, common } from '../aircraft/index.js';
+import { DEV_FLIGHTS } from './devFlights.js';
 import { mixJoystick } from '../input/mouse.js';
 import { debugLines, airfieldLine } from '../ui/debugText.js';
 import { deflections } from '../physics/controls.js';
@@ -139,7 +140,7 @@ export function createSession(ctx) {
   // Development only: the old quick starts (number keys, the F4 test panel's scenarios).
   s.startDev = (index, airStart, scenario = null) => {
     offline();
-    const ac = ALL_AIRCRAFT[index]; // 5 and 6: the Early War aircraft (test flights only until phase E4)
+    const ac = DEV_FLIGHTS[index]; // 5-7: the Early War aircraft (test flights only until phase E4)
     s.config = null;
     s.watcher = null;
     buildAircraft(ac);
@@ -326,6 +327,9 @@ export function createSession(ctx) {
     const jammed = Boolean(combat.gunBank?.guns.some((g) => g.jammed));
     if (jammed && !s.wasJammed) notice(`Gun jammed: press ${ctx.keyHint('clearJam')} to clear it`, 3500);
     s.wasJammed = jammed;
+    const drumEmpty = Boolean(combat.gunBank?.guns.some((g) => g.state === 'drumEmpty'));
+    if (drumEmpty && !s.wasDrumEmpty) notice(`Drum empty: press ${ctx.keyHint('changeDrum')} to change it`, 3500);
+    s.wasDrumEmpty = drumEmpty;
     camera.updateMatrixWorld();
     // The stall, G and overspeed warnings (Options), on screen and as a sound.
     const o = ctx.options?.() ?? {};

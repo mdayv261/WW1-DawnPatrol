@@ -1,4 +1,4 @@
-// Weapon data shared by the four aircraft: the two cartridges, the two gun
+// Weapon data shared by the aircraft: the two cartridges, the three gun
 // types, and the settings of the synchroniser, bullets and tracers.
 // Every value is a row in docs/AIRCRAFT_DATA.md (section "Weapons").
 // confidence: H = high, M = medium, E = estimate (the reason is in that file).
@@ -38,6 +38,16 @@ export const GUN_TYPES = {
     cartridge: 'smk',
     cyclicRate: 450, // rounds per minute (M) 450 (S43); 400 to 500 quoted for synchronised use (S42)
     jamPerRound: 0.0025, // (E) same reasoning as the Vickers
+    clearTime: 3, // (E)
+    clearSuccess: 0.7, // (E)
+  },
+  // Drum-fed, over the Nieuport 11's upper wing (Early War). Rounds per drum, spare drums and
+  // the drum change time are in the aircraft's own guns block.
+  lewis: {
+    name: 'Lewis .303 in Mk I',
+    cartridge: 'mk7',
+    cyclicRate: 550, // rounds per minute (M) 500 to 600 quoted (S63); 550 is the middle
+    jamPerRound: 0.0025, // (E) as the Vickers
     clearTime: 3, // (E)
     clearSuccess: 0.7, // (E)
   },

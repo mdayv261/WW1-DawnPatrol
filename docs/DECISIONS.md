@@ -873,3 +873,22 @@ The propeller's turning angle is followed from the engine speed the flight model
   - full warp held up to 42 m/s (was 40).
   - Result: about 46 degrees a second, still well below the aileron aircraft (72-88), and only about 15% quicker in a fast dive.
 - **E.IV stall recovery: ease off the forward stick.** With these values, holding the stick forward through a stall recovery bunts the E.IV over into an inverted stall (strong all-moving elevator, near-neutral stability). Eased back to trim once the wing flies, it recovers. The stall test uses that technique for the E.IV only (an `easeOff` option in the test helper), and a separate test checks the bunt-over. The data were not changed to hide it.
+
+## D74. Early War add-on, phase E2: weapons
+- **The Late War gun data is left exactly as it was; the mounts are worked out in code.** `gunMounts()` (`src/weapons/mounts.js`) gives the usual mirrored pair from each `guns` block. With `count: 1` it gives a single centre-line gun (the Nieuport), and it adds any guns a loadout brings. No Late War row or number changed. Their guns are built in the same order with the same positions, so their tests and the multiplayer snapshot (still two guns) are unaffected.
+- **A drum-fed gun is any gun whose block has `spareDrums`.** For such a gun, `rounds` means rounds per drum. The gun tracks the rounds in the fitted drum, the spare drums and a change timer. Its states are changing, drum empty, and out of drums (the old "empty").
+- **Drum changes:**
+  - Any time, by key or button: the remaining rounds in the old drum are lost, a simple rule.
+  - Not while jammed or clearing.
+  - The gun cannot fire during the change.
+  - The AI uses the same rule it uses for clearing a jam: it changes when the drum is empty and it is not firing.
+  - The AI's "out of ammunition" judgement counts the spare drums. For belt-fed aircraft it computes exactly the old figure.
+- **`synchronised: false`** skips the blade check, so the over-wing Lewis fires at its full rate at any engine speed. A test checks its line of fire clears the propeller tips.
+- **Loadouts are separate aircraft objects** (`withLoadout()`), not a parameter passed everywhere. The three-gun E.IV is the E.IV with an extra mount and 25 kg more, through the existing `withConditions()`, which also scales the inertias. Its id stays `e4`, so its model and cockpit are the E.IV's. The object is cached, so the flight model's per-aircraft caches are kept.
+- **Estimates, with no acceptable source:**
+  - Nieuport: 3 spare drums and a 6 s drum change;
+  - three-gun E.IV: the third gun's position, and the 25 kg it adds.
+  - Each is a row in `AIRCRAFT_DATA.md` and listed under research gaps.
+- **The key help shows the drum-empty state without a key name** (`DRUM EMPTY · 3 SPARE`). The on-screen notice names the bound key. This keeps the gun code free of the key bindings.
+- **Not yet in multiplayer:** the drum change is ignored in a match until E5 teaches the server (protocol version 4).
+

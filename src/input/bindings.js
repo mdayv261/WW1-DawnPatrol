@@ -31,6 +31,7 @@ export const ACTIONS = [
   { id: 'sensitivityUp', label: 'Mouse sensitivity up', group: 'Flying', keys: ['Period'] },
   { id: 'fire', label: 'Fire (hold)', group: 'Guns', held: true, keys: ['Space'] },
   { id: 'clearJam', label: 'Clear a gun jam', group: 'Guns', keys: ['KeyB'] },
+  { id: 'changeDrum', label: 'Change the drum (Lewis gun)', group: 'Guns', keys: ['KeyF'] },
   { id: 'camera', label: 'Camera (cockpit / chase / free)', group: 'View', keys: ['KeyC'] },
   { id: 'look', label: 'Look around', group: 'View', keys: ['KeyV'] },
   { id: 'hud', label: 'Modern HUD', group: 'View', keys: ['KeyU'] },
@@ -147,7 +148,7 @@ export function helpText(bindings, joystick = null, buttonLabels = {}) {
   const k = (id) => keysText(bindings, id);
   const pair = (a, b, text) => `  ${`${k(a)} / ${k(b)}`.padEnd(24)} ${text}`;
   const singles = [
-    ['fire', 'fire (hold)'], ['clearJam', 'clear a gun jam'], ['camera', 'camera'], ['look', 'look around (or right mouse)'],
+    ['fire', 'fire (hold)'], ['clearJam', 'clear a gun jam'], ['changeDrum', 'change the drum (Lewis)'], ['camera', 'camera'], ['look', 'look around (or right mouse)'],
     ['hud', 'modern HUD'], ['readout', 'instrument readout'], ['pause', 'pause (or Esc)'], ['restart', 'restart'],
     ['mute', 'sound on/off'], ['practice', 'practice mode'], ['quality', 'graphics quality'], ['invertPitch', 'invert pitch'],
     ['recentre', 'centre mouse stick'], ['help', 'hide this'],

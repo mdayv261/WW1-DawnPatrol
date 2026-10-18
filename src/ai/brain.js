@@ -110,8 +110,7 @@ export class AiBrain {
 
   // Should it break off the fight now?
   shouldFlee(self) {
-    const left = self.gunBank.roundsLeft;
-    const ammo = (left[0] + left[1]) / (2 * self.aircraft.guns.rounds);
+    const ammo = self.gunBank.ammoFraction; // spare drums included
     const d = self.sim.damage;
     return ammo < COMBAT.fleeAmmo || d.fuel < COMBAT.fleeLowFuel || damageScore(d) >= this.skill.fleeDamage;
   }
@@ -222,6 +221,8 @@ export class AiBrain {
     this.lastInput.fire = this.firing;
     // A stoppage: the pilot hammers it clear while he is not firing.
     if (!this.firing && self.gunBank.guns.some((g) => g.jammed)) self.gunBank.clearJam();
+    // An empty drum (the Lewis gun): he changes it while he is not firing.
+    if (!this.firing && self.gunBank.guns.some((g) => g.state === 'drumEmpty')) self.gunBank.changeDrum();
     return this.lastInput;
   }
 
