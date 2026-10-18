@@ -838,3 +838,15 @@ The propeller's turning angle is followed from the engine speed the flight model
 - **The Cloudflare test copy stays up** for trying new versions with family before publishing. It and the server can be removed from the Cloudflare dashboard at any time.
 - **Undo:** a revert of the merge commit restores the single-player-only site. Single-player itself was never changed by the multiplayer work, apart from small, guarded hooks (the session's `s.net`, the flow's multiplayer states, one help line).
 
+
+## D72. Early War add-on: plan (Stage 1)
+- **Two eras, one registry.** Each aircraft gets an `era` field ('early' or 'late'). The single-player setup, AI enemy choice, multiplayer lobby and room server all filter by it through one shared function, so they cannot disagree. Mixed-era matches are an optional host setting, off by default.
+- **New flight-model features are optional per-aircraft keys.** When a key is absent, the code uses today's shared value from `common.js`. The Camel, SPAD, Dr.I and Albatros therefore compute exactly the same numbers. A saved `npm run validate` baseline proves it after every phase.
+- **Wing warping is modelled physically, not as a speed table:** lower roll power, a slower roll response, extra drag and adverse yaw while warped, and a pilot force limit that reduces the warp available as airspeed rises (Weyl: "considerable force" in steep turns). No source gives numbers, so every value is an estimate, tuned by flying.
+- **Calibration points:**
+  - E.IV: 160 km/h, taken as sea level because three books give it with no altitude (the rule used for the Albatros).
+  - Nieuport 11: 162 km/h at 2,000 m (Davilla and Soltan), the only speed with a stated altitude from the same table as the climb times. The two sea-level speeds (167 and 156 km/h) disagree with each other, so they remain independent checks.
+- **Product owner's choices (18 Oct 2026):**
+  - The Lewis drum holds 97 rounds (Davilla and Soltan; 47 is recorded as the alternative).
+  - The U.III's unreliability is modelled only through its sourced loss of revs at altitude, with no random failures, so matches stay fair.
+- **Multiplayer protocol version 4**, because the snapshot gains a gun count and drum state and the inputs gain a drum-change bit. The game and the room server must be published together.

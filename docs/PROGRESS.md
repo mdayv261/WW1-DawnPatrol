@@ -4,6 +4,57 @@ Read this at the start of every session.
 
 ## Current status: Phases 0-7, the Pilot Roll Call and the multiplayer add-on (M1-M6) are done. Multiplayer is merged into main and published with the game at https://mdayv261.github.io/WW1-DawnPatrol/ (deployed automatically on each push to main after the tests pass). The room server runs on Cloudflare (https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev, free plan), which also serves a test copy of the game. Pushing to GitHub and deploying to Cloudflare need the product owner's permission each time.
 
+**In progress: the Early War add-on (E1-E6)** on the branch `early-war`. Stage 1 (research and plan) is approved; E1 has not started.
+
+## Early War add-on: Fokker E.IV and Nieuport 11 (D72)
+
+**Brief (product owner, 18 Oct 2026):** add a balanced "Early War" era (Nieuport 11, Allied, against Fokker E.IV, Central) beside the existing "Late War" era (Camel, SPAD, Dr.I, Albatros), in single-player and multiplayer. The behaviour and validation results of the existing four aircraft must not change.
+
+**Decided by the product owner (18 Oct 2026):**
+- Nieuport 11 Lewis drum: **97 rounds** (Davilla and Soltan). Bruce's 47 rounds (RNAS) is recorded as the alternative.
+- Oberursel U.III unreliability: **only sourced effects** are modelled (the extra loss of revs at altitude, from Weyl). No random engine failures.
+
+**Research findings (Stage 1).** The full tables go into `AIRCRAFT_DATA.md` in E1. The new sources are S54-S63.
+- **Fokker E.IV**
+  - Dimensions and weights: span 9.75-10.05 m, wing area 16-16.3 m², loaded 724 kg (three books agree).
+  - Engine: U.III 14-cylinder two-row rotary, 160 hp at 1,200 rpm, 193 kg (Deutsches Museum).
+  - Performance: top speed 160 km/h at an unstated altitude. Climb times from Herris and Scott, and from Weyl's account of the Parschau test. Ceiling 4,115-4,500 m.
+  - Confirmed: wing warping (Weyl: "considerable force" needed in steep turns), and all-moving elevators and rudder with no fixed fin or tailplane (Thetford and Gray).
+  - Three-gun version: sourced (Immelmann; Herris and Scott; Green and Swanborough). It becomes an optional loadout.
+- **Nieuport 11**
+  - Dimensions and weights: upper span 7.52 m, chords 1.20 m (upper) and 0.70 m (lower), area 13.3 m², loaded 480 kg.
+  - Engine: Le Rhône 9C, 80 hp at 1,200 rpm (Smithsonian, Australian War Memorial).
+  - Top speed: the sources disagree by 7%. Davilla and Soltan give 162 km/h at 2,000 m, Green and Swanborough 167 km/h at sea level, and Thetford 97 mph at sea level.
+  - Gun: an over-wing Lewis with no synchroniser.
+  - Lower wing: sourced as weak; it tended to twist and break (Green and Swanborough; Davilla and Soltan).
+- **Not found (will be estimates with reasons):**
+  - the Nieuport's lower-wing span and wing gap;
+  - the number of spare drums;
+  - the drum-change time;
+  - any roll rate or stick force for wing warping (no NACA comparison of warping and ailerons was found);
+  - period cockpit instruments for either type (to be searched again in E3).
+
+**Validation plan:**
+- One calibration point per aircraft:
+  - E.IV: 160 km/h at 724 kg, taken as sea level because no altitude is given (the rule used for the Albatros).
+  - Nieuport 11: 162 km/h at 2,000 m (Davilla and Soltan).
+- Every other figure is an independent check. The tolerances are unchanged.
+- Before any code changes, the `npm run validate` output for the existing four aircraft is saved as a baseline. After every phase it must be identical.
+
+**Phase plan.** Each phase works the same way:
+- I plan it, build it and run `npm test`.
+- I give you browser test steps.
+- I stop until you approve and ask me to commit.
+
+| Phase | Content |
+|---|---|
+| E1 | Aircraft data, validation cases and tests. New shared flight-model features, each optional so the existing four are unchanged: per-aircraft control values, wing warping (slower, heavier roll with a pilot force limit, extra drag and adverse yaw), all-moving tail, monoplane wing position, U.III altitude rev loss, and the Nieuport's weak lower wing. The new aircraft fly with placeholder models. `FLIGHT_VALIDATION.md` updated. |
+| E2 | Weapons: guns become a list of mounts. Twin LMG 08/15 on the E.IV, plus an optional three-gun loadout. Over-wing Lewis with 97-round drums. Drum change: key F, joystick button, sound, HUD indicator, and the AI changes drums too. |
+| E3 | Low-polygon models, period colour schemes, cockpits and instruments; the hangar page shows six aircraft. |
+| E4 | Era choice in single-player mission setup; the AI flies both new types under the same physics. |
+| E5 | Era and mixed-era host settings in the multiplayer lobby. Protocol version 3 to 4, because of the gun count, the drum state and the drum-change input. Test 2 v 2 Early War. |
+| E6 | Full test pass. Merge to main and publish the game and the room server, together and only after you confirm. Check the live site in both eras and both modes. |
+
 ## Multiplayer M6: published (D71)
 
 **Brief:** merge to main only after the product owner confirms, then confirm that the live GitHub Pages version works for both modes. The product owner said "go" and approved the M6 plan (confirmation, and permission for the publishing push and one push of these notes).
@@ -924,4 +975,5 @@ Still open:
 - **Phase 5: AI opponents.** Done and signed off. AI pilots on the player's flight model and controls, with patrol, engage, attack, evade and disengage; the six manoeuvres of the spec; Novice, Regular and Ace skill levels plus the Drone. Acceptance: see "Phase 5 checkpoint 3 and acceptance test" above.
 - **Phase 6: Game loop, HUD and audio.** Done and signed off. Start menu, mission setup, pause and results; period cockpit instruments and an optional modern HUD; engine, gun, wind and hit sounds. Acceptance: a full mission runs from menu to result screen and back without reloading the page.
 - **Phase 7: Controls screen and assists.** Done and signed off. Rebinding of keyboard and joystick controls; options for auto-rudder, stall warning, G warning and structural damage. Proposed acceptance: a key and a joystick button rebound on the Controls screen work in flight and survive a reload, and each of the four options visibly changes the flight when switched on.
+- **Early War add-on (E1-E6):** in progress on the branch `early-war`; see "Early War add-on" at the top.
 - Later phases: not yet defined. Candidates: other gamepads (per the spec); an engine overspeed warning, with engine speed rising in dives and documented rpm limits (product owner, Phase 7: "I will add later").
