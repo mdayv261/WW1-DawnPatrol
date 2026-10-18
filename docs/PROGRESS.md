@@ -22,10 +22,9 @@ Read this at the start of every session.
 **Checked on the live site:**
 - **Room server:** `/health` reports version 4, and `npm run mp:smoke` against it passed every check.
 - **Published game:** the page loads the new build (`main-TDqliFGd.js`, the same as the local build), which contains the Early War code.
-- **Not yet checked in a browser:** the built-in browser could not read pages at the time ("policy check temporarily unavailable"). Still to try on the live site: single-player in both eras, and a two-tab match in each era.
+- **The product owner checked the live site (18 Oct 2026):** single-player and multiplayer, in both eras, all working. The built-in browser could not read pages at the time ("policy check temporarily unavailable"), so this hands-on check was the product owner's.
 
 **Known issues:**
-- The live in-browser check above is still to do.
 - GitHub warns that its standard actions move from Node.js 20 to 24, and that ubuntu-latest moves to Ubuntu 26 from 19 Oct 2026. These are notices, not failures.
 
 ## Early War E5: eras in multiplayer (D77)
