@@ -5,7 +5,7 @@
 // physics steps and supplies the other players' aircraft; everything else is the same.
 
 import { Vector3 } from 'three';
-import { createAircraftMesh, setControlSurfaces, setUpperWingChord } from '../render/aircraftMesh.js';
+import { createAircraftMesh, setControlSurfaces, setUpperWingChord, showDrum } from '../render/aircraftMesh.js';
 import { COCKPITS, cockpitId } from '../aircraft/cockpits.js';
 import { createCockpit } from '../render/cockpit.js';
 import { createInstrumentPanel } from '../ui/instrumentPanel.js';
@@ -299,6 +299,7 @@ export function createSession(ctx) {
     model.group.quaternion.copy(quaternion);
     setControlSurfaces(model, damagedDeflections(sim.damage, deflections(common, sim.surfaces), common)); // a cut cable leaves one stuck
     showDamage(model, sim.damage); // a broken wing disappears
+    showDrum(model, combat.gunBank); // the Lewis drum is off while it is changed
     const d = sim.diag;
     if (d && !paused) model.prop.rotation.x += (d.rpm / 60) * Math.PI * 2 * realDt * 0.15; // slowed so it reads on screen
 

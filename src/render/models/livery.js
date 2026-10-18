@@ -40,6 +40,39 @@ export function cross(size, fill, border = null) {
   return g;
 }
 
+// The 1915-1916 German cross (Eisernes Kreuz, a cross pattee: arms flaring out to the
+// ends) in `fill` on a square field of `field` colour (white on the early Fokkers). `size`
+// is the cross's width; the field is a little larger.
+export function crossPattee(size, fill, field = 0xf2f2f2) {
+  const g = new Group();
+  if (field !== null) g.add(new Mesh(new PlaneGeometry(size * 1.2, size * 1.2), flat(field)));
+  const s = size / 2;
+  const inner = size * 0.09; // half the arm's width at the centre
+  const outer = size * 0.22; // half its width at the end
+  const shape = new Shape();
+  const points = [];
+  for (let k = 0; k < 4; k++) {
+    const a = (-k * Math.PI) / 2; // each arm in turn, a quarter turn clockwise, so the outline runs round
+    const rot = ([x, y]) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
+    points.push(rot([-inner, inner]), rot([-outer, s]), rot([outer, s]), rot([inner, inner]));
+  }
+  points.forEach(([x, y], i) => (i === 0 ? shape.moveTo(x, y) : shape.lineTo(x, y)));
+  const cross = new Mesh(new ShapeGeometry(shape), flat(fill));
+  cross.position.z = 0.0015;
+  g.add(cross);
+  return g;
+}
+
+// A wheel cover painted in equal sectors (e.g. red, white and black thirds), radius r.
+export function sectors(radius, colours) {
+  const g = new Group();
+  const n = colours.length;
+  colours.forEach((colour, i) => {
+    g.add(new Mesh(new CircleGeometry(radius, 8, (i * 2 * Math.PI) / n + Math.PI / 2, (2 * Math.PI) / n), flat(colour)));
+  });
+  return g;
+}
+
 export function star(radius, colour) {
   const shape = new Shape();
   for (let i = 0; i < 10; i++) {

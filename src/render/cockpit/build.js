@@ -104,11 +104,12 @@ export function buildCockpit(aircraft, eye, stations, panel, strut = null) {
     group.add(pad);
   }
 
-  // The guns, from the aircraft's own gun data (one per mount: two, three with the E.IV's
-  // loadout, or the Nieuport's single over-wing Lewis), on posts where the cockpit has them.
+  // The guns on the decking, from the aircraft's own gun data (one per mount: two, or three with
+  // the E.IV's loadout), on posts where the cockpit has them. An over-wing gun (the Nieuport's
+  // Lewis) is up on the wing, drawn with the aircraft's model, not here.
   const { muzzleY, muzzleZ } = aircraft.guns ?? {};
-  const overWing = aircraft.guns?.count === 1; // up on the wing: drawn ahead of the pilot (a stand-in until phase E3)
-  for (const mount of gunMounts(aircraft)) group.add(gun(aircraft.guns.type, overWing ? mount.x - 1.0 : c.breechX, mount.x, mount.y, mount.z, m));
+  const overWing = aircraft.guns?.count === 1;
+  if (!overWing) for (const mount of gunMounts(aircraft)) group.add(gun(aircraft.guns.type, c.breechX, mount.x, mount.y, mount.z, m));
   const pair = aircraft.guns && !overWing; // the cockpit fittings below belong to a pair of guns on the decking
   if (c.gunPosts && pair) group.add(named('gunPosts', gunPosts(c.gunPosts, muzzleY, muzzleZ, german ? 0.12 : 0.11, m.paintedSteel)));
   if (c.crossBar) group.add(named('crossBar', rod([c.crossBar.x, c.crossBar.y, -c.crossBar.halfWidth], [c.crossBar.x, c.crossBar.y, c.crossBar.halfWidth], 0.012, m.paintedSteel, 10)));

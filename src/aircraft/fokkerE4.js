@@ -55,7 +55,7 @@ export const fokkerE4 = {
   visual: {
     chord: 1.81, // wing chord (M) Herris and Scott
     stagger: 0, // a monoplane has none
-    wingHeight: 1.75, // m, wing root above the wheels' contact (E): a shoulder wing on top of the fuselage, below the pylon
+    wingHeight: 2.05, // m, wing root above the wheels' contact (E): a shoulder wing on the top longerons (the fuselage top is 0.45 m above the CG), below the pylon
     tailSpan: 3.0, // all-moving elevator span (E)
     tailChord: 0.8, // (E)
     finHeight: 1.0, // all-moving comma rudder; there is no fixed fin (E)

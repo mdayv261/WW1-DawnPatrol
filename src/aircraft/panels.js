@@ -66,6 +66,29 @@ export const PANELS = {
       { kind: 'tachometer', x: 0.944, y: 0.66, r: 0.2 }, // Morell (S49, S50); small, placed as on the Dr.I (E)
     ],
   },
+  // Fokker E.IV: Herris and Scott (S54) place a fuel gauge between the guns (Boelcke's 123/15), an
+  // altimeter on the port side of the cockpit, and an airspeed vane on the port wing (Parschau's
+  // 122/15). A rev counter on a small board is an estimate. Old-style German dials.
+  e4: {
+    style: 'german',
+    size: [0.24, 0.12], // (E) a small board for the rev counter
+    instruments: [
+      { kind: 'tachometer', x: 0.5, y: 0.5, r: 0.4 }, // (E) not described, but every rotary-engined fighter had one
+      { kind: 'fuelGauge', mount: 'free', at: [-0.3, 0.6, 0], radius: 0.045 }, // between the guns (S54)
+      { kind: 'altimeter', mount: 'free', at: [-0.95, 0.32, -0.27], radius: 0.05, turn: 5000 }, // port side of the cockpit (S54)
+      { kind: 'airspeed', mount: 'free', at: [-0.25, 0.26, -0.75], radius: 0.06 }, // on the port wing root (S54)
+    ],
+  },
+  // Nieuport 11: no source describes its instruments. French dials as on the SPAD (estimates).
+  n11: {
+    style: 'french',
+    size: [0.34, 0.15], // (E)
+    instruments: [
+      { kind: 'tachometer', x: 0.3, y: 0.5, r: 0.36 }, // (E) TOURS
+      { kind: 'altimeter', x: 0.72, y: 0.5, r: 0.3, face: 'hatot', range: 5000 }, // (E) the French Hatot type (S51)
+      { kind: 'fuelGauge', x: 0.92, y: 0.75, r: 0.14 }, // (E)
+    ],
+  },
 };
 
 // Instruments the aircraft did NOT have, said here so it is clear they are left out on purpose.

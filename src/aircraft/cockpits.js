@@ -107,10 +107,48 @@ export const COCKPITS = {
       bezel: 0x7d7d78, plywood: [0xc06a2c, 0x8a4418], // the Dr.I's varnished panel (product owner)
     },
   },
+  // Fokker E.IV (Early War). Herris and Scott (S54): the guns side by side on the decking with the fuel
+  // gauge in a housing between them, the altimeter on the port side of the cockpit, a dark interior; a
+  // turtle-deck behind (Weyl, S56). Positions are estimates fitted to the model.
+  e4: {
+    opening: { back: -1.42, front: -0.6, halfWidth: 0.3, rimY: 0.47, rimFrontY: 0.5, rimRadius: 0.018 },
+    floorY: -0.25,
+    decking: { to: 1.9, halfWidth: 0.37, hump: { height: 0.04, halfWidth: 0.24 } },
+    panel: { x: -0.6, topY: 0.52, tilt: 0.05 },
+    crashPad: false,
+    breechX: -0.25, // the guns lie forward on the decking, ahead of the windscreen
+    windscreen: { kind: 'small', x: -0.42, halfWidth: 0.13, baseY: 0.6, height: 0.09 },
+    sight: { kind: 'gunRings', x: 1.6, ringRadius: 0.0385 }, // a ring sight on the guns (S54: sights varied, one had a ring on its gun)
+    stick: { x: -0.78 },
+    throttle: { x: -0.98, z: -0.24, y: 0.32 },
+    style: {
+      leather: 0x5a3a22, walls: 'linen', wallColour: 0x9e9070, frame: 'tube', frameColour: 0x5c6266, // dark inside (S54)
+      decking: 0x9ca1a6, deckingPattern: 'paint', // aluminium decking ahead, as the cowling
+      bezel: 0x7d7d78, plywood: [0xa8743e, 0x6e4626],
+    },
+  },
+  // Nieuport 11 (Early War). Nothing is on the decking ahead: the Lewis gun is up on the wing above
+  // (drawn with the aircraft's model). No source describes the cockpit; positions and colours are
+  // estimates in the style of the SPAD's French cockpit.
+  n11: {
+    opening: { back: -1.05, front: -0.27, halfWidth: 0.26, rimY: 0.37, rimFrontY: 0.41, rimRadius: 0.018 },
+    floorY: -0.2,
+    decking: { to: 1.3, halfWidth: 0.31, hump: null },
+    panel: { x: -0.27, topY: 0.43, tilt: 0.1 },
+    crashPad: false,
+    breechX: -0.2,
+    windscreen: { kind: 'small', x: -0.02, halfWidth: 0.12, baseY: 0.43, height: 0.09 },
+    sight: { ringX: 0.2, beadX: 1.2 }, // ring and bead at eye height, set to the gun at the sight range
+    stick: { x: -0.42 },
+    throttle: { x: -0.62, z: -0.225, y: 0.27 },
+    style: {
+      leather: 0x6e4428, walls: 'linen', wallColour: 0xcbb98e, frame: 'wood', decking: 0xb4b9be, deckingPattern: 'paint', // bare-metal decking, as the cowling (S60)
+      bezel: 0xb4b4b0, plywood: [0xa8743e, 0x6e4626],
+    },
+  },
 };
 
-// Until phase E3 builds their own, the Early War aircraft borrow a Late War cockpit and
-// instrument panel (the E.IV the Dr.I's, the Nieuport 11 the SPAD's). Look cockpits and
-// panels up through cockpitId().
-export const BORROWED_COCKPIT = { e4: 'dr1', n11: 'spad13' };
+// An aircraft without its own cockpit may borrow another's (and its instrument panel), as the
+// Early War aircraft did until phase E3. Look cockpits and panels up through cockpitId().
+export const BORROWED_COCKPIT = {}; // none at present: every aircraft has its own
 export const cockpitId = (ac) => (COCKPITS[ac.id] ? ac.id : BORROWED_COCKPIT[ac.id]);

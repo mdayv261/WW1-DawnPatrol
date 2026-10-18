@@ -59,7 +59,7 @@ export const nieuport11 = {
     stagger: 0.6, // upper wing ahead of the lower (M)
     lowerDihedral: 0.1047, // rad, 6 degrees; the upper wing is flat (M)
     tailSpan: 3.25, // tailplane span (M) Davilla and Soltan
-    tailChord: 0.6, // (E)
+    tailChord: 0.45, // tailplane depth (M) Davilla and Soltan: 0.45 m deep, 3.25 m across
     finHeight: 0.8, // balanced rudder; no fixed fin (E)
     fuselageDepth: 0.8, // (E)
     fuselageWidth: 0.62, // (E)

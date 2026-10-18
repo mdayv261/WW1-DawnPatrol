@@ -4,7 +4,50 @@ Read this at the start of every session.
 
 ## Current status: Phases 0-7, the Pilot Roll Call and the multiplayer add-on (M1-M6) are done. Multiplayer is merged into main and published with the game at https://mdayv261.github.io/WW1-DawnPatrol/ (deployed automatically on each push to main after the tests pass). The room server runs on Cloudflare (https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev, free plan), which also serves a test copy of the game. Pushing to GitHub and deploying to Cloudflare need the product owner's permission each time.
 
-**In progress: the Early War add-on (E1-E6)** on the branch `early-war`. Stage 1 is approved and committed. E1 is approved and committed. E2 (weapons) is approved and committed. Next: plan E3 (models, colour schemes and cockpits).
+**In progress: the Early War add-on (E1-E6)** on the branch `early-war`. Stage 1 is approved and committed. E1 is approved and committed. E2 (weapons) is approved and committed. E3 (models, colour schemes and cockpits) is approved and committed. Next: plan E4 (era selection in single-player, AI flying both new types).
+
+## Early War E3: models, colour schemes and cockpits (D75)
+
+**Done:**
+- **Fokker E.IV model, as Boelcke's 123/15.**
+  - Shape: a slim fuselage with a turtle-deck, and a horseshoe cowling open underneath.
+  - Wing and bracing: a shoulder wing with no ailerons; a pylon over the cockpit and one under the fuselage, with 16 bracing wires.
+  - Tail: an all-moving comma rudder and elevators.
+  - Guns: twin barrels, three with Immelmann's loadout.
+  - Markings: 1915-style black crosses on white squares, red, white and black wheel covers, "OB" on the cowling.
+- **Nieuport 11 model, as Navarre's N.576.**
+  - Nose: a horseshoe cowling and cheek panels in bare metal.
+  - Wings: the large upper wing over the narrow lower wing on V-struts, with cabane struts and wires.
+  - Tail: the wide tailplane and a horn-balanced rudder with no fin.
+  - Gun: the Lewis on its mount over the wing. Its drum disappears while it is changed.
+  - Finish: pale doped finish with six French roundels.
+- **Own cockpits:**
+  - E.IV: aluminium decking, guns forward with the fuel gauge between them, an altimeter on the port side, an airspeed dial on the port wing root, a rev counter, and ring sights on the guns.
+  - Nieuport: bare-metal decking, the upper wing overhead, a ring-and-bead sight, French rev counter, Hatot altimeter and fuel gauge.
+  - Neither borrows a Late War cockpit any more.
+- **Hangar page (`/hangar.html`):** all six aircraft side by side.
+- **Corrections:**
+  - The E.IV's wing now sits on the top of the fuselage, at 2.05 m (it was at mid-fuselage).
+  - The Nieuport's tailplane is 0.45 m deep, sourced from Davilla and Soltan; its 3.25 m span is confirmed by the same book.
+- **Checked in the browser:** the hangar with six aircraft, both models close up, both cockpits in flight, no console errors.
+- **Tests:** 1,390 pass, 25 expected failures, 2 skipped (the Nieuport nose-over; the aileron-position check, which the E.IV has no ailerons for). The model, cockpit and panel checks now run on all six aircraft, and new tests cover the markings, the third gun and the drum. Late War tables still identical.
+
+**How to test it (browser):**
+1. `npm run dev`, then open `/hangar.html` (the address it prints, plus `hangar.html`).
+   - **All:** six aircraft in a row.
+   - **Fokker E.IV** and **Nieuport 11:** orbit round each and check the markings.
+   - **Silhouette:** each type should be recognisable in outline.
+   - **Roll and Pull buttons:** the E.IV has no ailerons to move; its elevators and rudder swing whole.
+2. In the game, **Shift+5** and **Shift+6**, press C until **Camera: cockpit**.
+   - E.IV: the pylon and wires ahead, the guns on the decking with the fuel gauge between, the rev counter below.
+   - Nieuport: the upper wing overhead, the ring sight, the French dials.
+3. **Shift+6, C for the chase view:** fire off a drum, press F, and watch the drum leave the gun for 6 seconds.
+4. **Shift+7, cockpit:** three guns.
+
+**Known issues:**
+- **The Nieuport's Lewis gun is hidden by the upper wing from the seat,** so the drum change is seen only from outside. Real Nieuports varied here; no source describes the view.
+- **The E.IV's rev counter sits low,** at the bottom of the cockpit view. It can be raised if you prefer.
+- **Both cockpits' layouts and colours are mostly estimates,** to tune by eye.
 
 ## Early War E2: weapons (D74)
 
@@ -88,7 +131,7 @@ Read this at the start of every session.
 - **E.IV stall recovery:** holding the stick forward bunts it over into an inverted stall; ease it back once the wing flies.
 - **E.IV left spin:** recovery takes up to 40 s, three times longer than the other aircraft.
 - **Nieuport at full power from a standstill:** with full forward stick it does not nose over as the others do; the torque rolls it onto a wingtip first. This depends on undercarriage estimates; the nose-over test skips the Nieuport.
-- **Nieuport tailplane:** the sourced 3.25 m span looks too wide on the model. To check against drawings in E3.
+- **Nieuport tailplane:** resolved in E3. Davilla and Soltan confirm the 3.25 m span and give the depth, 0.45 m.
 
 ## Early War add-on: Fokker E.IV and Nieuport 11 (D72)
 

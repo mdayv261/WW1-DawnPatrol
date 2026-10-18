@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Box3, Vector3 } from 'three';
-import { AIRCRAFT_LIST, AIRCRAFT, common } from '../src/aircraft/index.js';
+import { ALL_AIRCRAFT as AIRCRAFT_LIST, AIRCRAFT, common } from '../src/aircraft/index.js'; // every aircraft
 import { createAircraftMesh, setControlSurfaces } from '../src/render/aircraftMesh.js';
 import { wingPlan } from '../src/render/models/layout.js';
 import { triangleCount } from '../src/render/models/parts.js';
@@ -118,10 +118,23 @@ describe('aircraft models', () => {
     expect(bays(AIRCRAFT.spad13)).toEqual({ count: 8, positions: 2 });
     expect(bays(AIRCRAFT.camel)).toEqual({ count: 4, positions: 1 });
   });
+
+  it('the Fokker E.IV is a monoplane braced by wires to pylons above and below the wing', () => {
+    const { group } = build(AIRCRAFT.e4);
+    expect(parts(group, 'wing')).toHaveLength(1);
+    expect(parts(group, 'wire')).toHaveLength(16); // four to each wing panel from each pylon (S55)
+  });
+
+  it('the Nieuport 11 is a sesquiplane: a shorter lower wing of under 70% of the upper wing chord', () => {
+    const { group } = build(AIRCRAFT.n11);
+    const wings = parts(group, 'wing').sort((p, q) => boxOf(q).max.y - boxOf(p).max.y);
+    expect(wings[1].userData.chord / wings[0].userData.chord).toBeLessThan(0.7);
+    expect(wings[1].userData.span).toBeLessThan(wings[0].userData.span);
+  });
 });
 
 describe('control surfaces', () => {
-  const expectedAilerons = { camel: 4, spad13: 2, dr1: 2, albatros: 2 }; // the Camel had them on both wings
+  const expectedAilerons = { camel: 4, spad13: 2, dr1: 2, albatros: 2, e4: 0, n11: 2 }; // the Camel had them on both wings; the E.IV warps its wing
   const box = (o) => { o.updateMatrixWorld(true); return new Box3().setFromObject(o); };
   const REST = { pull: 0, roll: 0, yaw: 0 };
 
@@ -134,7 +147,7 @@ describe('control surfaces', () => {
         expect(controls.rudder).toBeTruthy();
       });
 
-      it('ailerons sit on the trailing edge of the wing, hinged at their leading edge', () => {
+      it.skipIf(expectedAilerons[ac.id] === 0)('ailerons sit on the trailing edge of the wing, hinged at their leading edge', () => {
         const m = build(ac);
         const [upper] = wingPlan(ac);
         const topAilerons = m.controls.ailerons.filter((a) => Math.abs(a.position.y - upper.y) < 0.05 + Math.abs(a.position.z) * 0.1);

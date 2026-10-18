@@ -892,3 +892,25 @@ The propeller's turning angle is followed from the engine speed the flight model
 - **The key help shows the drum-empty state without a key name** (`DRUM EMPTY · 3 SPARE`). The on-screen notice names the bound key. This keeps the gun code free of the key bindings.
 - **Not yet in multiplayer:** the drum change is ignored in a match until E5 teaches the server (protocol version 4).
 
+## D75. Early War add-on, phase E3: models, liveries and cockpits
+- **Liveries chosen by the product owner (18 Oct 2026):**
+  - Fokker E.IV: **Boelcke's 123/15**. Linen, 1915-style crosses on white squares, red, white and black wheel covers, "OB" on the cowling (Herris and Scott).
+  - Nieuport 11: **Navarre's N.576 of N.67**. Clear-doped or pale yellow, bare-metal cowling and cheek panels, six roundels with the upper-wing white left out (Bruce).
+  - Bruce's surface outlines and the Nieuport's fuselage and wheel decoration are not described closely enough to draw, so they are left out.
+- **One builder per type, as for the Late War models** (`fokkerE4Model.js`, `nieuport11Model.js`). Two new shared helpers: `crossPattee()` (the flared 1915 cross) and `sectors()` (painted wheel covers) in `livery.js`, and `wire()` (bracing wires) in `parts.js`.
+- **The E.IV's elevators are drawn whole-moving.** Only a small root stub is fixed, to match the all-moving tail. There are no ailerons.
+- **The Nieuport's Lewis gun is part of the aircraft model, not the cockpit,** because it sits over the upper wing.
+  - From the seat the wing hides it, so the drum change is seen from outside.
+  - `showDrum()` takes the drum off while it is being changed, on the player's aircraft and on AI aircraft.
+  - The E2 stand-in gun drawn in the cockpit is removed.
+- **Cockpit instruments:**
+  - The E.IV's fuel gauge (between the guns), altimeter (port side) and airspeed dial (port wing root) are placed where Herris and Scott describe them. Its rev counter sits on a small board and is an estimate.
+  - Nothing describes the Nieuport's instruments: a French rev counter, a Hatot altimeter and a fuel gauge are estimates.
+- **The E.IV's gun breeches sit forward on the decking** (`breechX` -0.25). At the first setting they filled the pilot's view, because the guns are nearly at eye height.
+- **Data corrections found while building:**
+  - The E.IV's wing height was 1.75 m, which put the wing at mid-fuselage; it is now 2.05 m, on the top longerons.
+  - The Nieuport's tailplane depth is 0.45 m, sourced from Davilla and Soltan; it was an estimate of 0.6 m. The same passage confirms the 3.25 m span.
+  - Both affect only the drawing, the hit boxes and the crash points, not the flight model or validation.
+- **Every aircraft now has its own cockpit.** `BORROWED_COCKPIT` is empty but kept; the stand-in model stays as a fallback for any future aircraft without one.
+- **The hangar page shows every aircraft**, spaced and framed for however many there are.
+

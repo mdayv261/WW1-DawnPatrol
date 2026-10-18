@@ -399,7 +399,7 @@ Early War (phase E1, 18 Oct 2026). No E.IV survives, and no museum record of the
 | Pilot's eye behind the CG (`cockpit.eyeBehind`) | 1.0 | m | — | ASSUMPTION | estimate | Not found. The cockpit sits behind the wing's trailing edge; camera and cockpit only. |
 | Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.75 | m | — | ASSUMPTION | estimate | Not found. A little above the guns, so the pilot sights along them; camera and cockpit only. |
 | Wing chord (`visual.chord`) | 1.81 | m | 1.81 m | S54 | medium | Herris and Scott. |
-| Wing height (`visual.wingHeight`) | 1.75 | m | — | ASSUMPTION | estimate | Not found. A shoulder wing on top of the fuselage, below the pylon over the cockpit, so lower than the 2.77 m overall height. Places the wing for the model, the bullet hit boxes and the crash points. |
+| Wing height (`visual.wingHeight`) | 2.05 | m | — | ASSUMPTION | estimate | Not found. A shoulder wing on the top longerons: the top of the fuselage is 0.45 m above the CG, and the CG 1.60 m above the wheels' contact. Below the pylon over the cockpit, so lower than the 2.77 m overall height. Places the wing for the model, the bullet hit boxes and the crash points. Was 1.75 m in E1, which put the wing at mid-fuselage (found when the model was built in E3). |
 | Tailplane span (`visual.tailSpan`) | 3.0 | m | — | ASSUMPTION | estimate | Not found. The all-moving elevators, about 30% of the span; model and hit boxes only. |
 | Tailplane chord (`visual.tailChord`) | 0.8 | m | — | ASSUMPTION | estimate | Not found. The elevators' trapezoidal outline (S55) has a deep root; model only. |
 | Fin and rudder height (`visual.finHeight`) | 1.0 | m | — | ASSUMPTION | estimate | Not found. The comma rudder, with no fixed fin (S55); model only. |
@@ -477,8 +477,8 @@ Early War (phase E1, 18 Oct 2026). The figures come from reference books read th
 | Lower wing chord (`visual.lowerChord`) | 0.7 | m | 0.70 m | S58 | medium | Sheps gives 0.6 m. |
 | Wing stagger (`visual.stagger`) | 0.6 | m | 0.60 m | S58 | medium | Upper wing ahead of the lower. |
 | Lower wing dihedral (`visual.lowerDihedral`) | 0.1047 | rad | 6 degrees | S58 | medium | Adjustable on the ground; the upper wing is flat. |
-| Tailplane span (`visual.tailSpan`) | 3.25 | m | 3.25 m | S58 | medium | Davilla and Soltan. It looks large beside the 7.52 m span; to be checked against drawings in phase E3. Model and hit boxes only. |
-| Tailplane chord (`visual.tailChord`) | 0.6 | m | — | ASSUMPTION | estimate | Not found. Half the upper wing's chord, a usual proportion; model and hit boxes only. |
+| Tailplane span (`visual.tailSpan`) | 3.25 | m | 3.25 m | S58 | medium | Davilla and Soltan: the stabilisers' maximum span, 3.25 m, 0.45 m deep, attached to the fuselage sides. Large beside the 7.52 m span, but confirmed in a second passage of the same book (E3). Model and hit boxes only. |
+| Tailplane chord (`visual.tailChord`) | 0.45 | m | 0.45 m deep | S58 | medium | Davilla and Soltan: the horizontal stabilisers were 0.45 m deep, 3.25 m in span. Was an estimate of 0.6 m until E3. Model and hit boxes only. |
 | Fin and rudder height (`visual.finHeight`) | 0.8 | m | — | ASSUMPTION | estimate | Not found. A balanced rudder with no fixed fin; model only. |
 | Greatest fuselage depth (`visual.fuselageDepth`) | 0.8 | m | — | ASSUMPTION | estimate | Not found. A small fuselage, sized from the engine and a seated pilot; camera and looks only. |
 | Greatest fuselage width (`visual.fuselageWidth`) | 0.62 | m | — | ASSUMPTION | estimate | Not found. Wide enough for a pilot's shoulders, as for the Camel and SPAD. |
@@ -509,6 +509,13 @@ Schemes chosen by the product owner on 11 Oct 2026 from the sourced candidates. 
 | Albatros D.Va (7161/17, Jasta 46) | Colours | Natural wood fuselage; green nose and spinner; green fin with a yellow band | S3 | medium | Smithsonian: green nose, natural wood fuselage, tail with green and yellow stripes (the caption mentioning a "yellow body" conflicts). The exact stripe layout is an estimate. |
 | Albatros D.Va | Wings and tailplane | One blended mauve-green lozenge colour on top, pale underneath | S3, S25 | estimate | S3: multicolour lozenge camouflage; S25: mauve and dark green. The pattern is not drawn; the colour is a blend. |
 | Albatros D.Va | Crosses and name | Black crosses on the wings (and, as an estimate, the fuselage sides), "Stropp" in black on the fuselage | S3 | medium | Smithsonian: black crosses appear on the wings; personal marking "Stropp" in black lettering. The fuselage crosses are assumed. |
+| Fokker E.IV (Boelcke's 123/15) | Finish | Unbleached linen overall, aluminium cowling | S54 | medium | Herris and Scott: "the most common descriptions are of a straw, beige, or yellow finish"; not all left the factory in plain linen. Not stated for 123/15 itself. Chosen by the product owner on 18 Oct 2026. |
+| Fokker E.IV | Crosses | 1915-style black crosses pattee on white squares: fuselage sides, wing top and underside, rudder | S54 | medium | Herris and Scott: early E.IVs carried 1915-style crosses. Their exact positions on 123/15 are estimates in the usual places. |
+| Fokker E.IV | Wheel covers | Painted in thirds, red, white and black | S54 | medium | Herris and Scott, caption on Boelcke's 123/15. |
+| Fokker E.IV | Cowling lettering | "OB" on each side of the cowling | S54 | medium | Herris and Scott: "OB" on 123/15's cowling. Drawn with the in-game lettering, which needs a browser canvas. |
+| Nieuport 11 (Navarre's N.576, Escadrille N.67, 1916) | Finish | Clear-doped or pale yellow overall | S60 | medium | Bruce: "clear-doped fabric or pale yellow overall". Bruce also says every surface was outlined in an undefined colour; the outlines are left out. Chosen by the product owner on 18 Oct 2026. |
+| Nieuport 11 | Cowling and cheek panels | Bare metal | S60 | medium | Bruce: natural metal cowling and cheek fairings. |
+| Nieuport 11 | Roundels | French roundels in six places: the fuselage sides, the upper wing top (white left out, the linen showing) and under the lower wing | S60 | medium | Bruce: roundels in six positions, the white areas of the upper-wing markings apparently omitted. Which six is not stated: the fuselage and the usual wing positions are assumed. Bruce's "fuselage and wheel decor" is not described closely enough to draw. |
 
 ## Common flight-model parameters
 
@@ -740,7 +747,7 @@ Shared by the four aircraft. The code is `src/aircraft/damageModel.js` and `src/
 
 ## Cockpit panels (Phase 6)
 
-Which instruments each aircraft's panel has and roughly where. The code is `src/aircraft/panels.js`; `tests/panels.test.js` checks every instrument there has a row here. Positions are fractions of the panel drawing (across from the left, down from the top) and were read off photographs where a source has one; they are approximate either way. Panel sizes in metres are estimates for all four (chosen to fill the space between the cockpit sides).
+Which instruments each aircraft's panel has and roughly where. The code is `src/aircraft/panels.js`; `tests/panels.test.js` checks every instrument there has a row here. Positions are fractions of the panel drawing (across from the left, down from the top) and were read off photographs where a source has one; they are approximate either way. Panel sizes in metres are estimates for all six (chosen to fill the space between the cockpit sides). The E.IV's fuel gauge, altimeter and airspeed dial are placed at points in the cockpit (`mount: 'free'`), as the sources describe, not on its small board.
 
 | Aircraft | Instrument | Where | Units | Source | Confidence | Notes |
 |---|---|---|---|---|---|---|
@@ -769,6 +776,13 @@ Which instruments each aircraft's panel has and roughly where. The code is `src/
 | albatros | airspeed | panel, right of centre (large) | km/h | ASSUMPTION | estimate | Product owner's choice, to match the Dr.I. The period instrument was an anemometer-type indicator on the right-hand wing strut (S49). |
 | albatros | slip | panel, centred between and below the altimeter and airspeed | — | ASSUMPTION | estimate | Product owner's choice, to match the Dr.I. Not found in S49 or S50. |
 | albatros | tachometer | panel, right (small) | U/min | S49, S50 | high | Morell tachometer. Placed as on the Dr.I. (The oil and tank-pressure gauges and the clock of S49 and S50 were left out to match the Dr.I's panel.) |
+| e4 | tachometer | a small board ahead of the pilot | rpm | ASSUMPTION | estimate | Not described for the E.IV, but every rotary-engined fighter carried a rev counter; the pilot set the mixture and blipped the engine by it. Old-style German dial, as on the Dr.I. |
+| e4 | fuelGauge | between the guns, in a small housing | share of tank | S54 | medium | Herris and Scott: on Boelcke's 123/15 the fuel gauge sat in a streamlined housing beside the centre gun; on 122/15 between the guns. |
+| e4 | altimeter | on the port side of the cockpit | metres | S54 | medium | Herris and Scott: an altimeter fitted to the port side of the cockpit on a late-production E.IV. |
+| e4 | airspeed | on the port wing root | km/h | S54 | medium | Herris and Scott: an anemometer on the port wing of Parschau's 122/15. Drawn as a dial on the wing root where the pilot can see it. |
+| n11 | tachometer | panel, left | tours/min | ASSUMPTION | estimate | No source describes the Nieuport 11's instruments. A rev counter was standard with a rotary engine; French dial as on the SPAD. |
+| n11 | altimeter | panel, right | metres | ASSUMPTION | estimate | Not described. A French Hatot altimeter (S51 describes the type, about 1917), as on the SPAD. |
+| n11 | fuelGauge | panel, lower right | share of tank | ASSUMPTION | estimate | Not described. A small fuel gauge, typical of the period. |
 
 Not fitted: nothing at present. (The Albatros had no altimeter, as on the AWM aircraft (S50), and the Dr.I none by analogy, until the product owner chose the same panel of period instruments for both in Phase 6.) The modern HUD shows the height for any aircraft.
 
