@@ -28,7 +28,8 @@ const world = createWorld();
 // place(server): optional, to set up the aircraft before the match runs (tests).
 export function createHarness({ players, net = { ping: 0, jitter: 0, loss: 0 }, settings = DEFAULT_SETTINGS, seed = 5, place = null, combat = null }) {
   let now = 0; // ms of simulated time
-  const server = new MatchSim({ settings, world, now: 0 });
+  // The server's guns get seeded random numbers too (their jams), so every run is the same.
+  const server = new MatchSim({ settings, world, now: 0, combat: { rng: seeded(seed + 1) } });
   const truth = new Map(); // slot -> Map(tick -> position) on the server
   const serverNotices = []; // every message the server gave out ({ to, text })
   const rng = seeded(seed);
