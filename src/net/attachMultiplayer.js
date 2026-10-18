@@ -12,14 +12,15 @@ import { createMultiplayerScreen } from '../ui/screens/multiplayer.js';
 import { createLobby, createMpEsc } from '../ui/screens/lobby.js';
 import { createMpResults } from '../ui/screens/mpResults.js';
 import { createScoreLine, scoreLineText } from '../ui/scoreLine.js';
-import { AIRCRAFT_LIST } from '../aircraft/index.js';
+import { AIRCRAFT } from '../aircraft/index.js';
+import { withLoadout } from '../weapons/mounts.js';
 import { WorldSolids } from '../mp/worldSolids.js';
 import { createWorld } from '../world/layout.js';
 import { RESULTS_S, TICK_HZ } from '../mp/netConfig.js';
 
 const NETSIM_KEY = 'dawnPatrol.netsim';
 const ROOM_SCREENS = ['lobby', 'mpFlying', 'mpEsc', 'mpResults'];
-const aircraftById = (id) => AIRCRAFT_LIST.find((a) => a.id === id) ?? null;
+const aircraftById = (id, loadout) => (AIRCRAFT[id] ? withLoadout(AIRCRAFT[id], loadout) : null); // with the player's guns
 
 const tabStorage = () => {
   try {
@@ -74,14 +75,14 @@ export function attachMultiplayer({ flow, screens, session, idle, notice, pilot 
   // A player in the match by the slot the server gives them (their join order).
   const lookup = (slot) => {
     const p = client.state.lobby?.players.find((q) => q.id === `p${slot}`);
-    return p ? { name: p.name, team: p.team, aircraft: aircraftById(p.aircraft) } : null;
+    return p ? { name: p.name, team: p.team, aircraft: aircraftById(p.aircraft, p.loadout) } : null;
   };
 
   // The match has started (or we joined one): fly it.
   function startFlight(match) {
     stopFlight(false);
     const me = match.players.find((p) => p.id === client.state.you) ?? client.me;
-    const ac = aircraftById(me?.aircraft);
+    const ac = aircraftById(me?.aircraft, me?.loadout);
     if (!ac) return;
     if (!solids) solids = new WorldSolids(createWorld());
     const net = new NetFlight({

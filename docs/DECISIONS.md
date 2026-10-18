@@ -927,3 +927,18 @@ The propeller's turning angle is followed from the engine speed the flight model
   - The Nieuport dives more gently, because of its lower wing.
   - The scripted test pilot in `engagement.test.js` cannot fly the Nieuport, so that case is skipped. The new AI fight test (`earlyWarFight.test.js`) covers the Nieuport instead.
 
+## D77. Early War add-on, phase E5: eras in multiplayer
+- **Era and mixed eras are host settings,** off and Late War by default, so a room behaves as before unless the host changes them. `aircraftOfTeam(team, settings)` is the one rule, shared by the room server and the lobby screen.
+- **Changing the era moves players, rather than refusing the change.** Anyone on an aircraft no longer offered is put in their team's first aircraft of the new era, with the standard guns, un-readied, and told why. `canStart` also refuses a disallowed aircraft.
+- **A loadout travels with the aircraft choice,** in the existing `setAircraft` message (an optional field). The room checks it against the aircraft's own data.
+- **Protocol version 4:**
+  - a drum-change bit in the inputs;
+  - a variable gun count (1 to 3) with drum states and spare drums in your own snapshot;
+  - the lower wing in your own full state, so a Nieuport's prediction matches the server.
+  - Others' compact records are unchanged, because the lower wing is not drawn.
+  - A snapshot of four aircraft grew from about 440 to 477 bytes.
+- **The browser starts a drum change at once and also sends it,** as it does for clearing a jam; the server's gun state wins.
+- **Found in testing:**
+  - The room server's gun jams use a real random number, so a scripted test pilot whose gun jams fires far fewer rounds. This is why the existing Late War four-player test failed now and then. The new Early War network test has its pilots clear jams.
+  - The settings module must not import the aircraft registry: doing so changed the module load order and with it a test's outcome. The era names are written out there instead.
+

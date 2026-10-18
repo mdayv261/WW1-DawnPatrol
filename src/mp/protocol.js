@@ -3,7 +3,7 @@
 //
 // Browser -> server:
 //   hello { v, name, token, team? }   the first message: join the room (or rejoin with the token)
-//   setTeam { team }  setAircraft { aircraft }  setReady { ready }
+//   setTeam { team }  setAircraft { aircraft, loadout? }  setReady { ready }
 //   setSettings { settings }  start {}  toLobby {}   (host only)
 //   ping { t }  leave {}
 // Server -> browser:
@@ -27,7 +27,11 @@ const CLIENT = {
     return { type: 'hello', v: m.v, name: m.name, token: m.token, team: m.team ?? null };
   },
   setTeam: (m) => (TEAM_IDS.includes(m.team) ? { type: 'setTeam', team: m.team } : null),
-  setAircraft: (m) => (typeof m.aircraft === 'string' && m.aircraft.length <= 20 ? { type: 'setAircraft', aircraft: m.aircraft } : null),
+  setAircraft: (m) => {
+    if (typeof m.aircraft !== 'string' || m.aircraft.length > 20) return null;
+    if (m.loadout !== undefined && (typeof m.loadout !== 'string' || m.loadout.length > 20)) return null;
+    return { type: 'setAircraft', aircraft: m.aircraft, loadout: m.loadout ?? 'standard' };
+  },
   setReady: (m) => (typeof m.ready === 'boolean' ? { type: 'setReady', ready: m.ready } : null),
   setSettings: (m) => (isObject(m.settings) ? { type: 'setSettings', settings: m.settings } : null),
   start: () => ({ type: 'start' }),

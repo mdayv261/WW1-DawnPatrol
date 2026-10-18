@@ -196,11 +196,13 @@ function clearJam() {
   if (jammed) showNotice('Clearing the jam...', 1500);
 }
 
-// A drum-fed gun (the Nieuport 11's Lewis): fit a full drum. Not yet in a multiplayer match
-// (phase E5 teaches the server).
+// A drum-fed gun (the Nieuport 11's Lewis): fit a full drum. In a match the server changes it
+// too (and its state wins); this window starts the change at once so it shows straight away.
 function changeDrum() {
-  if (!session.combat.gunBank?.drumFed || session.net) return;
-  if (session.combat.changeDrum()) showNotice('Changing the drum...', 1500);
+  if (!session.combat.gunBank?.drumFed) return;
+  const started = session.combat.changeDrum();
+  session.net?.changeDrum();
+  if (started) showNotice('Changing the drum...', 1500);
 }
 
 // ---- pilots --------------------------------------------------------------------------------

@@ -20,8 +20,11 @@ a six-letter room code.
    code to the others (by text message, email, or phone). Letters and numbers only, never I, O,
    0 or 1.
 3. **Everyone else joins:** type your name and the code, and press **Join**.
-4. **In the room:** choose your team and aircraft, and press **I am ready**. The person who created
-   the room (the host) chooses:
+4. **In the room:** choose your team and aircraft (and, for the Fokker E.IV, two or three guns),
+   and press **I am ready**. The person who created the room (the host) chooses:
+   - the era: **Late War** (Camel, SPAD against Dr.I, Albatros) or **Early War** (Nieuport 11
+     against Fokker E.IV), or **Mixed eras** to allow both. Changing the era moves anyone in an
+     aircraft of the other era into one of this era, and they must press I am ready again;
    - where you start (on an airfield, or in the air at 1,000, 2,000 or 3,000 m);
    - dawn, day or dusk;
    - the score to win and the time limit;
@@ -33,7 +36,8 @@ a six-letter room code.
      the other aircraft with names and distances. **C** changes the camera (chase, free look,
      cockpit).
    - **Space** (or the joystick trigger) fires. Aim with the gun sight: the guns point a little up.
-     **B** clears a jammed gun.
+     **B** clears a jammed gun. In the Nieuport 11, **F** changes the Lewis gun's drum (6 seconds,
+     three spares), and the gun is silent until it is done.
    - **Esc** opens the match menu. The match does *not* pause: your aircraft flies on.
    - If you are shot down or crash, you are back in the air 10 seconds later.
 6. **The end:** the first team to the score wins, or the higher score when time is up. Everyone

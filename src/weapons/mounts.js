@@ -35,7 +35,8 @@ export function withLoadout(ac, name) {
   let flown = byName.get(name);
   if (!flown) {
     const heavier = withConditions(ac, { mass: ac.mass.loaded + lo.extraMass });
-    flown = { ...heavier, name: `${ac.name} (${lo.label})`, loadout: name, guns: { ...ac.guns, extraGuns: lo.extraGuns } };
+    // Named, for example, "Fokker E.IV, three guns (Immelmann)".
+    flown = { ...heavier, name: `${ac.name}, ${lo.label.charAt(0).toLowerCase()}${lo.label.slice(1)}`, loadout: name, guns: { ...ac.guns, extraGuns: lo.extraGuns } };
     byName.set(name, flown);
   }
   return flown;

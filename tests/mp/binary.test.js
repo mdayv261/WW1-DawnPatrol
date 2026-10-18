@@ -59,7 +59,7 @@ describe('snapshots', () => {
     const me = flying();
     const other = flying();
     other.state.position.set(-18000, 1500, 15000); // far out: rounding is largest there
-    const guns = [{ rounds: 249, state: 'jammed' }, { rounds: 0, state: 'empty' }];
+    const guns = [{ rounds: 249, state: 'jammed', spares: 0 }, { rounds: 0, state: 'empty', spares: 0 }];
     const snap = decodeSnapshot(encodeSnapshot({ tick: 12345, lead: -3, you: { slot: 2, spawn: 3, state: captureState(me), guns }, others: [compactOf(1, 4, other, true, 7)] }));
     expect(snap.you.guns).toEqual(guns);
     expect(snap.others[0]).toMatchObject({ down: true, shots: 7 });
@@ -87,10 +87,10 @@ describe('snapshots', () => {
     expect(d.cables).toEqual({ aileron: null, elevator: null, rudder: null });
   });
 
-  it('a snapshot of four aircraft is small (about 450 bytes)', () => {
+  it('a snapshot of four aircraft is small (under 490 bytes)', () => {
     const sims = [flying(), flying(), flying(), flying()];
     const buf = encodeSnapshot({ tick: 1, lead: 2, you: { slot: 1, spawn: 1, state: captureState(sims[0]) }, others: sims.slice(1).map((s, i) => compactOf(i + 2, 1, s)) });
-    expect(buf.byteLength).toBeLessThan(460);
+    expect(buf.byteLength).toBeLessThan(490); // 477 since protocol 4 (the lower wing, the gun count and spare drums)
     expect(decodeSnapshot(buf.slice(0, 20))).toBe(null);
   });
 });

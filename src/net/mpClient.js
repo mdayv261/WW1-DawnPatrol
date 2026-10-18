@@ -180,7 +180,7 @@ export function createMpClient(options) {
     },
 
     setTeam: (team) => send({ type: 'setTeam', team }),
-    setAircraft: (aircraft) => send({ type: 'setAircraft', aircraft }),
+    setAircraft: (aircraft, loadout = 'standard') => send({ type: 'setAircraft', aircraft, loadout }),
     setReady: (ready) => send({ type: 'setReady', ready }),
     setSettings: (settings) => send({ type: 'setSettings', settings }),
     startMatch: () => send({ type: 'start' }),

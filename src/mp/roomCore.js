@@ -9,13 +9,19 @@
 // Every call puts the messages to send in `outbox` ([{ to: playerId | 'all', msg }]); the
 // server empties it and sends them.
 
-import { AIRCRAFT_LIST } from '../aircraft/index.js';
+import { ALL_AIRCRAFT, AIRCRAFT } from '../aircraft/index.js';
+import { aircraftOfEra } from '../aircraft/eras.js';
 import { checkName, tidyName, NAME_MAX } from '../game/pilots.js';
 import { PROTOCOL_VERSION, MIN_PLAYERS, MAX_PLAYERS, REJOIN_GRACE_S, TEAMS, TEAM_IDS, DEFAULT_SETTINGS, cleanSettings } from './netConfig.js';
 import { welcome, lobbyMessage, matchStart, matchEnd, notice, pong, errorMessage } from './protocol.js';
 
-// The aircraft a team may fly (by the `side` in each aircraft's data).
-export const aircraftOfTeam = (team) => AIRCRAFT_LIST.filter((a) => a.side === TEAMS[team]);
+// The aircraft a team may fly: its side's (the `side` in each aircraft's data), of the era the
+// host chose, or of both eras with mixed eras on. With no settings, the default (Late War).
+export const aircraftOfTeam = (team, settings = DEFAULT_SETTINGS) =>
+  (settings.mixedEras ? ALL_AIRCRAFT : aircraftOfEra(settings.era ?? DEFAULT_SETTINGS.era)).filter((a) => a.side === TEAMS[team]);
+
+// Can this aircraft fly with this loadout? ('standard' always; the others from its own data.)
+export const loadoutAllowed = (aircraftId, loadout) => loadout === 'standard' || Boolean(AIRCRAFT[aircraftId]?.loadouts?.[loadout]);
 
 export class RoomCore {
   constructor(code) {
@@ -60,7 +66,7 @@ export class RoomCore {
     const order = this.nextOrder++;
     const p = {
       id: `p${order}`, token: hello.token, name: this.uniqueName(tidyName(hello.name)), team,
-      aircraft: aircraftOfTeam(team)[0].id, ready: false, connected: true, order, leftAt: null,
+      aircraft: aircraftOfTeam(team, this.settings)[0].id, loadout: 'standard', ready: false, connected: true, order, leftAt: null,
     };
     this.players.set(p.id, p);
     this.electHost();
@@ -81,17 +87,20 @@ export class RoomCore {
     if (lobbyOnly.includes(msg.type) && this.phase !== 'lobby') return this.send(id, errorMessage('notInLobby'));
     switch (msg.type) {
       case 'setTeam':
-        if (p.team !== msg.team) Object.assign(p, { team: msg.team, aircraft: aircraftOfTeam(msg.team)[0].id, ready: false });
+        if (p.team !== msg.team) Object.assign(p, { team: msg.team, aircraft: aircraftOfTeam(msg.team, this.settings)[0].id, loadout: 'standard', ready: false });
         break;
       case 'setAircraft':
-        if (!aircraftOfTeam(p.team).some((a) => a.id === msg.aircraft)) return this.send(id, errorMessage('badMessage', 'That aircraft belongs to the other side.'));
-        if (p.aircraft !== msg.aircraft) Object.assign(p, { aircraft: msg.aircraft, ready: false });
+        if (!aircraftOfTeam(p.team, this.settings).some((a) => a.id === msg.aircraft)) return this.send(id, errorMessage('badMessage', 'That aircraft belongs to the other side, or is not on offer in this era.'));
+        const loadout = msg.loadout ?? 'standard';
+        if (!loadoutAllowed(msg.aircraft, loadout)) return this.send(id, errorMessage('badMessage', 'That aircraft cannot carry those guns.'));
+        if (p.aircraft !== msg.aircraft || p.loadout !== loadout) Object.assign(p, { aircraft: msg.aircraft, loadout, ready: false });
         break;
       case 'setReady':
         p.ready = msg.ready;
         break;
       case 'setSettings':
         this.settings = cleanSettings(msg.settings, this.settings);
+        this.fitAircraft();
         break;
       case 'start': {
         const can = this.canStart();
@@ -178,6 +187,16 @@ export class RoomCore {
     if (hadHost) this.send('all', notice(`${next.name} is now the host`));
   }
 
+  // After the host changes the era: anyone whose aircraft is no longer on offer is moved to
+  // their team's first one, with the standard guns, and must say they are ready again.
+  fitAircraft() {
+    for (const q of this.players.values()) {
+      if (aircraftOfTeam(q.team, this.settings).some((a) => a.id === q.aircraft)) continue;
+      Object.assign(q, { aircraft: aircraftOfTeam(q.team, this.settings)[0].id, loadout: 'standard', ready: false });
+      this.send(q.id, notice(`The host changed the era: you now fly the ${AIRCRAFT[q.aircraft].name}`));
+    }
+  }
+
   // Can the host start? { ok, reason }.
   canStart() {
     if (this.phase === 'results') return { ok: false, reason: 'Showing the last match\'s results' };
@@ -185,6 +204,8 @@ export class RoomCore {
     const here = this.connected;
     if (here.length < MIN_PLAYERS) return { ok: false, reason: `Waiting for at least ${MIN_PLAYERS} players` };
     if (!TEAM_IDS.every((t) => here.some((p) => p.team === t))) return { ok: false, reason: 'Each team needs at least one pilot' };
+    const wrong = here.find((p) => !aircraftOfTeam(p.team, this.settings).some((a) => a.id === p.aircraft));
+    if (wrong) return { ok: false, reason: `${wrong.name}'s aircraft is not on offer in this era` };
     const waiting = here.filter((p) => !p.ready);
     if (waiting.length) return { ok: false, reason: `Waiting for ${waiting.map((p) => p.name).join(', ')} to be ready` };
     return { ok: true, reason: '' };
@@ -209,7 +230,7 @@ export class RoomCore {
 
   playerList() {
     return [...this.players.values()].sort((a, b) => a.order - b.order)
-      .map(({ id, name, team, aircraft, ready, connected }) => ({ id, name, team, aircraft, ready, connected }));
+      .map(({ id, name, team, aircraft, loadout, ready, connected }) => ({ id, name, team, aircraft, loadout, ready, connected }));
   }
 
   // What everyone sees in the lobby.

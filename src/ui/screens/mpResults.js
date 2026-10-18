@@ -3,10 +3,10 @@
 // RESULTS_S, or the host's button). Multiplayer results never touch the Roll Call.
 
 import { makeScreen, heading, buttons, paragraph, el } from './style.js';
-import { AIRCRAFT_LIST } from '../../aircraft/index.js';
+import { AIRCRAFT } from '../../aircraft/index.js';
 import { TEAM_LABELS } from '../../mp/netConfig.js';
 
-const aircraftName = (id) => AIRCRAFT_LIST.find((a) => a.id === id)?.name ?? id;
+const aircraftName = (id) => AIRCRAFT[id]?.name ?? id;
 const TEAM_NAME = { allied: 'Allied', central: 'Central' };
 
 // { title, detail } for a result.

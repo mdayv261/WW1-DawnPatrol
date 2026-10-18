@@ -4,7 +4,46 @@ Read this at the start of every session.
 
 ## Current status: Phases 0-7, the Pilot Roll Call and the multiplayer add-on (M1-M6) are done. Multiplayer is merged into main and published with the game at https://mdayv261.github.io/WW1-DawnPatrol/ (deployed automatically on each push to main after the tests pass). The room server runs on Cloudflare (https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev, free plan), which also serves a test copy of the game. Pushing to GitHub and deploying to Cloudflare need the product owner's permission each time.
 
-**In progress: the Early War add-on (E1-E6)** on the branch `early-war`. Stage 1 is approved and committed. E1 is approved and committed. E2 (weapons) is approved and committed. E3 is approved and committed. E4 (era selection in single-player, AI on the new types) is approved and committed. Next: plan E5 (era in the multiplayer lobby).
+**In progress: the Early War add-on (E1-E6)** on the branch `early-war`. Stage 1 is approved and committed. E1 is approved and committed. E2 (weapons) is approved and committed. E3 is approved and committed. E4 is approved and committed. E5 (eras in the multiplayer lobby) is approved and committed. Next: plan E6 (full test pass, merge and publish, with permission).
+
+## Early War E5: eras in multiplayer (D77)
+
+**Done:**
+- **Lobby:**
+  - the host chooses Era (Late or Early War) and Mixed eras (off by default);
+  - teams see only that era's aircraft;
+  - the E.IV pilot can choose three guns;
+  - changing the era moves and un-readies anyone in the wrong era's aircraft.
+- **Through the room server:**
+  - the Nieuport's drum change (key F);
+  - one to three guns with their drum states and spares;
+  - the Nieuport's lower wing in the player's own state.
+  - Protocol version 4, so an old page is asked to reload.
+- **Tests:**
+  - New: room, message and server tests (`tests/mp/earlyWarRoom.test.js`), and a 2 v 2 Early War match through the simulated network, plus a two-player drum test (`tests/mp/earlyWar.test.js`).
+  - 1,463 pass, 25 expected failures, 3 skipped. Late War tables unchanged.
+- **Checked locally in two browser tabs** against the local room server (`npm run mp:server`; nothing deployed):
+  - Host and second player joined room F4KDLU.
+  - Era: Early War moved the host to the Nieuport, with a notice.
+  - The second player chose the three-gun E.IV.
+  - The match started.
+  - The Nieuport's F gave CHANGING DRUM, then DRUM 97/97 · 2 SPARE, through the server.
+  - The E.IV's window showed 475 | 475 | 475.
+  - No console errors.
+
+**How to test it (four tabs, local, nothing deployed):**
+1. In one terminal run `npm run mp:server`, and in another `npm run dev`.
+2. Open the game in four tabs. In each, choose Multiplayer.
+3. One tab creates a room; the other three join with its code.
+4. As host, set Era to Early War. Two players fly the Nieuport (Allied) and two the E.IV (Central), one with three guns.
+5. Everyone presses I am ready, and the host starts.
+6. Fire off a Nieuport's drum, press F, and watch CHANGING DRUM, then a full drum.
+
+**Left:** E6 (full test pass, merge to main, publish the game and the room server together, with your permission).
+
+**Known issues:**
+- **The Late War four-player network test fails now and then.** The server's jams are random and its scripted pilots do not clear them. This was already so before E5.
+- **A jammed Lewis gun cannot have its drum changed;** clear the jam first (B).
 
 ## Early War E4: era selection and AI (D76)
 
