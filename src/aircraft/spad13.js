@@ -6,6 +6,7 @@ export const spad13 = {
   id: 'spad13',
   name: 'SPAD S.XIII',
   side: 'Allied',
+  era: 'late', // 1917-1918 (Late War)
   instruments: { speed: 'kmh', altitude: 'm' }, // French instruments
   wings: 2,
   geometry: {

@@ -18,11 +18,14 @@ function moveToward(current, target, maxStep) {
   return Math.abs(d) <= maxStep ? target : current + Math.sign(d) * maxStep;
 }
 
-// Move the surfaces toward the commanded input, limited by the travel rate.
+// Move the surfaces toward the commanded input, limited by the travel rate. An aircraft
+// may have a slower roll control (`rollRate`, e.g. wing warping); otherwise all three
+// axes move at the shared `surfaceRate`.
 export function updateSurfaces(surfaces, input, common, dt) {
   const step = common.surfaceRate * dt;
+  const rollStep = common.rollRate ? common.rollRate * dt : step;
   surfaces.pull = moveToward(surfaces.pull, clamp(input.pull, -1, 1), step);
-  surfaces.roll = moveToward(surfaces.roll, clamp(input.roll, -1, 1), step);
+  surfaces.roll = moveToward(surfaces.roll, clamp(input.roll, -1, 1), rollStep);
   surfaces.yaw = moveToward(surfaces.yaw, clamp(input.yaw, -1, 1), step);
   surfaces.throttle = clamp(input.throttle, 0, 1);
   surfaces.trim = clamp(input.trim, -1, 1);

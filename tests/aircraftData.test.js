@@ -8,7 +8,9 @@ import { readFileSync } from 'node:fs';
 const FILE = new URL('../docs/AIRCRAFT_DATA.md', import.meta.url);
 const text = readFileSync(FILE, 'utf8');
 
-const AIRCRAFT = ['Sopwith Camel F.1', 'SPAD S.XIII', 'Fokker Dr.I', 'Albatros D.V'];
+const AIRCRAFT = ['Sopwith Camel F.1', 'SPAD S.XIII', 'Fokker Dr.I', 'Albatros D.V', 'Fokker E.IV', 'Nieuport 11'];
+// Signed by convention (a yaw against the roll), so allowed to be negative.
+const SIGNED = ['`controls.cnDeltaRoll`'];
 const CONFIDENCE = ['high', 'medium', 'estimate'];
 const COLUMNS = ['Parameter', 'Value', 'Unit', 'Original figure', 'Source', 'Confidence', 'Notes'];
 
@@ -59,7 +61,7 @@ describe('AIRCRAFT_DATA.md', () => {
     expect(sourceIds.size).toBeGreaterThanOrEqual(10);
   });
 
-  it('has a section for each of the four aircraft', () => {
+  it('has a section for each aircraft', () => {
     for (const name of AIRCRAFT) {
       const key = Object.keys(secs).find((h) => h.startsWith(name));
       expect(key, `missing section for ${name}`).toBeTruthy();
@@ -113,6 +115,7 @@ describe('AIRCRAFT_DATA.md', () => {
 
       it('has no zero or negative numbers', () => {
         for (const r of rows) {
+          if (SIGNED.some((k) => r[0].includes(k))) continue;
           const first = r[1].replace(/,/g, '').split(/\s/)[0];
           const n = Number(first);
           if (!Number.isNaN(n)) expect(n, `"${r[0]}" must be positive`).toBeGreaterThan(0);

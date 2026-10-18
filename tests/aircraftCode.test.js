@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { AIRCRAFT_LIST, common } from '../src/aircraft/index.js';
+import { ALL_AIRCRAFT, common } from '../src/aircraft/index.js';
 import * as constants from '../src/core/constants.js';
 import { VALIDATION_CASES } from '../src/aircraft/validationCases.js';
 import { checkKey } from '../src/physics/validation.js';
@@ -68,6 +68,8 @@ const SECTION = {
   spad13: 'SPAD S.XIII',
   dr1: 'Fokker Dr.I',
   albatros: 'Albatros D.V',
+  e4: 'Fokker E.IV',
+  n11: 'Nieuport 11',
 };
 
 // Which code path (and unit scale) a document row describes, if any.
@@ -79,7 +81,7 @@ function rowPath(row) {
 }
 
 describe('aircraft data files match docs/AIRCRAFT_DATA.md', () => {
-  for (const ac of AIRCRAFT_LIST) {
+  for (const ac of ALL_AIRCRAFT) {
     describe(ac.name, () => {
       const rows = sectionRows(SECTION[ac.id]);
 

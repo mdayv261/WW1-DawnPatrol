@@ -6,6 +6,7 @@ export const camel = {
   id: 'camel',
   name: 'Sopwith Camel F.1',
   side: 'Allied',
+  era: 'late', // 1917-1918 (Late War)
   instruments: { speed: 'mph', altitude: 'ft' }, // British instruments
   wings: 2,
   geometry: {

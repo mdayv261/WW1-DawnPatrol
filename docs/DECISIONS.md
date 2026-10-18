@@ -850,3 +850,26 @@ The propeller's turning angle is followed from the engine speed the flight model
   - The Lewis drum holds 97 rounds (Davilla and Soltan; 47 is recorded as the alternative).
   - The U.III's unreliability is modelled only through its sourced loss of revs at altitude, with no random failures, so matches stay fair.
 - **Multiplayer protocol version 4**, because the snapshot gains a gun count and drum state and the inputs gain a drum-change bit. The game and the room server must be published together.
+
+## D73. Early War add-on, phase E1: data, validation and flight-model features
+- **Per-aircraft control values through `commonFor()`** (`src/physics/aircraftCommon.js`). An aircraft with a `controls` block gets a cached copy of the shared parameters with its own values on top; any other aircraft gets the very same shared object. It is applied inside `evaluate()` and `advance()`, so no caller changes, and the Late War aircraft run identical code on identical numbers (proved by the frozen-baseline test).
+- **Every new feature is an optional key that means "off" when absent:** `controls.*` (wing warping, all-moving tail), `engine.altitudeRpmLoss`, `structure.lowerWing` and `visual.wingHeight`. Where a new code path could change floating-point results, it is skipped entirely unless the key is present (for example the lower-wing lift loss), rather than multiplying by 1.
+- **Wing warping:**
+  - lower roll effectiveness and a slower roll travel;
+  - a pilot force limit: the warp available falls in proportion to the dynamic pressure above `warpForceSpeed`;
+  - extra drag per radian of warp, and doubled adverse yaw.
+  - The force limit makes the E.IV's roll heavy at speed from physics rather than from a speed table.
+- **U.III loss of revs** (Weyl): power falls in proportion to the revs lost, the loss growing with the fall in air density from none at sea level. Sea level is untouched, so the calibration is unaffected and the climb checks stay independent.
+- **Weak lower wing (Nieuport 11):** its own, lower speed and load limits using the existing overstress formula; it can break away and take a third of that side's lift (from "half the upper wing's area"). Separate `lower` and `lowerFailed` fields leave the existing damage state and its tests untouched. The multiplayer snapshot does not carry them yet (phase E5).
+- **Registry:** `ALL_AIRCRAFT` (six) for physics, validation and test flights; `AIRCRAFT_LIST` stays the Late War four (menus, lobby, guns, cockpits and model tests) until era selection (E4, E5).
+- **Stop-gaps until later phases:** the Nieuport flies unarmed until E2 (`GunBank` accepts an aircraft without guns). Both aircraft use a stand-in model and borrow a Late War cockpit (`cockpitId()`) until E3.
+- **Product owner decisions (18 Oct 2026):**
+  - The E.IV keeps its sourced 160 hp. Its seven failing climb and ceiling checks are documented known deviations, though about 120 hp would match them all.
+  - Thetford's slower Nieuport figures are a source conflict.
+- **Estimate corrected while testing:** the E.IV's weathercock stability was set to the Dr.I's 0.08 (both have a rudder and no fixed fin) after the first estimate of 0.05 left it unable to recover from a stall.
+- **Warping lightened after the product owner's test flight (18 Oct 2026).** The first set gave about 26 degrees a second of roll at cruise, which felt too heavy. The new set:
+  - roll effectiveness 0.2, the same as the ailerons (was 0.13);
+  - warp travel 3 per second (was 2);
+  - full warp held up to 42 m/s (was 40).
+  - Result: about 46 degrees a second, still well below the aileron aircraft (72-88), and only about 15% quicker in a fast dive.
+- **E.IV stall recovery: ease off the forward stick.** With these values, holding the stick forward through a stall recovery bunts the E.IV over into an inverted stall (strong all-moving elevator, near-neutral stability). Eased back to trim once the wing flies, it recovers. The stall test uses that technique for the E.IV only (an `easeOff` option in the test helper), and a separate test checks the bunt-over. The data were not changed to hide it.

@@ -348,6 +348,138 @@ Dimensions and weights come from the Smithsonian's original D.Va (D.7161/17), wh
 | Greatest fuselage width (`visual.fuselageWidth`) | 0.7 | m | — | ASSUMPTION | estimate | Not found. Assumed from the Mercedes D.IIIa engine width and the elliptical section (S25). |
 | Engine cowling diameter (`visual.cowlingDiameter`) | 0.78 | m | — | ASSUMPTION | estimate | Not found. A six-cylinder inline is a narrow engine; sized to the Mercedes block and the large spinner. |
 
+## Fokker E.IV (Oberursel U.III)
+
+Early War (phase E1, 18 Oct 2026). No E.IV survives, and no museum record of the aircraft was found. Its figures come from reference books quoting Fokker and German records, read through transcriptions (S54-S57), so most are medium. The engine figures come from the Deutsches Museum's U III (S61).
+
+| Parameter | Value | Unit | Original figure | Source | Confidence | Notes |
+|---|---|---|---|---|---|---|
+| Wingspan | 10.0 | m | 10.00 m (32 ft 9.5 in) | S55, S54 | medium | Green and Swanborough 10.00 m; Herris and Scott 10.05 m; Thetford and Gray and Kondratyev 9.75 m. The middle figure is used. |
+| Length | 7.5 | m | 7.50 m | S55, S54 | medium | Thetford and Gray 7.46 m. |
+| Height | 2.77 | m | 2.77 m (9 ft 1 in) | S55, S54 | medium | Herris and Scott 2.75 m. Thetford and Gray print 2.89 m beside 9 ft 1 in, which is 2.77 m, so 2.89 looks like a slip. |
+| Wing area | 16.0 | m² | 16 m² | S54 | medium | Green and Swanborough and Kondratyev give 16.3 m². Herris and Scott's figure is used because their weights and climbs are also used. |
+| Wing span, wing stack (`wingStack.0.span`) | 10.0 | m | 10.00 m | S55, S54 | medium | A single wing: the Prandtl multiplane factor is 1 (no interference between wings). |
+| Empty weight | 466 | kg | 466 kg | S54, S55 | high | Green and Swanborough 460 kg; Thetford and Gray 465 kg. |
+| Loaded weight | 724 | kg | 724 kg | S54, S55 | high | Thetford and Gray 722.6 kg (1,593 lb); Kondratyev 723 kg. |
+| Engine | Oberursel U.III 14-cylinder two-row rotary | — | 160 hp Oberursel U.III | S61, S13, S54 | high | A licensed copy of a Gnome double rotary. Kondratyev's "eighteen cylinders" is not used; three books and the museum give 14. |
+| Cylinders (`engine.cylinders`) | 14 | — | two rows of seven | S61, S54, S55 | high | Sets the engine sound's firing rate. |
+| Engine rated power | 119.3 | kW | 160 hp (118 kW) | S61, S13 | high | The museum gives 118 kW; 160 hp is 119.3 kW. The books say the engine gave less than this in service (S55, S56), but no figure is given; see FLIGHT_VALIDATION.md. |
+| Engine rated speed | 1,200 | rpm | 1,200 rpm | S61 | medium | One museum record. |
+| Engine bore x stroke | 124 x 140 | mm | 124 x 140 mm | S61 | medium | One museum record. |
+| Engine displacement | 23.7 | L | 23.7 L | S61, S13 | high | AEHS gives 23.670 L. |
+| Engine mass | 193 | kg | 193 kg | S61 | medium | One museum record. Used for the rotating inertia below. |
+| Engine rotation, viewed from the cockpit | clockwise | — | — | ASSUMPTION | estimate | Not found. Assumed the same as the other rotaries in the game; the U.III copied a French Gnome design (S61). |
+| Rotating engine inertia | 23.6 | kg m² | — | ASSUMPTION | estimate | 193 kg x (0.7 x 0.50 m)². The radius, 0.50 m, is scaled from the Clerget 9B (S11) by cylinder size (1.69 L against 1.81 L); both rows turn round the same shaft. Drives the gyroscopic effects the books describe (S54, S56, S57). |
+| Revs lost at altitude (`engine.altitudeRpmLoss.rpm`) | 45 | rpm | 40-50 rpm | S56 | medium | Weyl: a new engine lost 40-50 rpm at altitude, and 100 or more after use, because of its low compression and poor feed through the automatic inlet valves. The middle figure for a new engine. Power is taken to fall in proportion to the revs. |
+| Altitude of that loss (`engine.altitudeRpmLoss.altitude`) | 3,000 | m | "at altitude" | ASSUMPTION | estimate | Weyl does not give the height. Boelcke's report (S56) complained of the climb above 3,000 m, so that height is used. The loss grows with the fall in air density, from none at sea level. |
+| Propeller diameter | 2.7 | m | — | ASSUMPTION | estimate | Not found. A little larger than the 2.6 m estimate for the 110 hp Dr.I, for the greater power at the same revs. |
+| Propeller blades (`propeller.blades`) | 2 | — | two-bladed | ASSUMPTION | estimate | No source states it; the photographs in the books show two-bladed wooden propellers. |
+| Propeller blade chord at the guns (`propeller.chord`) | 0.17 | m | — | ASSUMPTION | estimate | Not found. As for the Late War aircraft; used by the synchroniser to know when a blade covers a gun. |
+| Maximum speed | 44.44 | m/s | 160 km/h | S54, S55, S57 | high | Three books give 160 km/h, and Thetford and Gray 100 mph, all with no altitude, so it is taken as sea level, as for the Albatros. The drag (CD0) is calibrated to it. Weyl (S56) reports 165-170 km/h measured in the 1915 test, at an unclear height. |
+| Service ceiling | 4,500 | m | 4,500 m (14,765 ft) | S55 | medium | Green and Swanborough. Thetford and Gray give 4,115 m (13,500 ft). |
+| Armament | 2 x LMG 08/15 7.92 mm, synchronised | — | two LMG 08/15 | S54, S55, S57 | medium | A three-gun version is sourced: Herris and Scott say the type was designed for three, and Immelmann flew one that performed poorly (S55). It becomes an optional loadout in phase E2. |
+| Rounds carried per gun (`guns.rounds`) | 475 | rounds | 950 for the two guns | S56 | medium | The load in Parschau's test of November 1915 (Weyl). |
+| Gun muzzle ahead of the CG (`guns.muzzleX`) | 2.25 | m | — | ASSUMPTION | estimate | Not found. About 0.30 of the length, just behind the propeller, as for the Late War aircraft. |
+| Gun muzzle above the CG (`guns.muzzleY`) | 0.66 | m | — | ASSUMPTION | estimate | Not found. On top of the 1.15 m cowling (radius 0.575 m), plus the barrel jacket. |
+| Gun muzzle each side of the centre line (`guns.muzzleZ`) | 0.15 | m | — | ASSUMPTION | estimate | Not found. Two guns side by side on top of the fuselage, inside the propeller disc so the synchroniser matters. |
+| Fuel carried (`fuel.capacity`) | 57 | kg | — | ASSUMPTION | estimate | Tank size not found. Weyl's test aircraft carried fuel for 1.5 hours; 57 kg is 1.5 hours at this model's cruise fuel use (80% of rated power at 0.40 kg per kWh, 38 kg an hour). |
+| Ultimate load factor (`structure.ultimateLoad`) | 6 | g | — | ASSUMPTION | estimate | No strength test found. The figure used for the Camel, a typical design value for a fighter of the period. |
+| Never-exceed speed (`structure.neverExceedSpeed`) | 60 | m/s | about 134 mph | ASSUMPTION | estimate | No diving limit found. 1.35 times the documented top speed, the rule used for the other aircraft. |
+| Roll inertia Ixx | 4,525 | kg m² | — | ASSUMPTION | estimate | 724 kg x (0.25 x 10.0 m)², the method used for the other aircraft. No measured WWI inertia data located. |
+| Pitch inertia Iyy | 3,665 | kg m² | — | ASSUMPTION | estimate | 724 kg x (0.30 x 7.5 m)², the method used for the other aircraft. |
+| Yaw inertia Izz | 8,190 | kg m² | — | ASSUMPTION | estimate | Ixx + Iyy (flat-body approximation), as for the other aircraft. |
+| Wheel track (`gear.track`) | 1.74 | m | — | ASSUMPTION | estimate | Not found. Scaled from the span with the Camel and SPAD's track/span ratio (0.174), as for the Dr.I. |
+| Wheel radius (`gear.wheelRadius`) | 0.33 | m | — | ASSUMPTION | estimate | Not found. Typical of the roughly 700 mm wheels of WWI fighters; only affects the drawn wheels. |
+| Main wheel contact ahead of the CG (`gear.mainAhead`) | 0.08 | fraction of length | — | ASSUMPTION | estimate | Not found. The usual tail-dragger layout, as for the other aircraft. |
+| Tailskid behind the CG (`gear.tailAt`) | 0.62 | fraction of length | — | ASSUMPTION | estimate | Not found. The skid near the tail post, as for the other aircraft. |
+| Three-point ground attitude (`gear.groundAngle`) | 0.192 | rad | about 11 degrees | ASSUMPTION | estimate | Not found. Typical nose-up angle of a WWI tail-dragger at rest, as for the other aircraft. |
+| Pilot's eye behind the CG (`cockpit.eyeBehind`) | 1.0 | m | — | ASSUMPTION | estimate | Not found. The cockpit sits behind the wing's trailing edge; camera and cockpit only. |
+| Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.75 | m | — | ASSUMPTION | estimate | Not found. A little above the guns, so the pilot sights along them; camera and cockpit only. |
+| Wing chord (`visual.chord`) | 1.81 | m | 1.81 m | S54 | medium | Herris and Scott. |
+| Wing height (`visual.wingHeight`) | 1.75 | m | — | ASSUMPTION | estimate | Not found. A shoulder wing on top of the fuselage, below the pylon over the cockpit, so lower than the 2.77 m overall height. Places the wing for the model, the bullet hit boxes and the crash points. |
+| Tailplane span (`visual.tailSpan`) | 3.0 | m | — | ASSUMPTION | estimate | Not found. The all-moving elevators, about 30% of the span; model and hit boxes only. |
+| Tailplane chord (`visual.tailChord`) | 0.8 | m | — | ASSUMPTION | estimate | Not found. The elevators' trapezoidal outline (S55) has a deep root; model only. |
+| Fin and rudder height (`visual.finHeight`) | 1.0 | m | — | ASSUMPTION | estimate | Not found. The comma rudder, with no fixed fin (S55); model only. |
+| Greatest fuselage depth (`visual.fuselageDepth`) | 0.9 | m | — | ASSUMPTION | estimate | Not found. Sized from the engine and a seated pilot; camera and looks only. |
+| Greatest fuselage width (`visual.fuselageWidth`) | 0.75 | m | — | ASSUMPTION | estimate | Not found. Wide enough for the engine's bearers and a pilot's shoulders. |
+| Engine cowling diameter (`visual.cowlingDiameter`) | 1.15 | m | — | ASSUMPTION | estimate | Not found. Round the two-row engine, which is a little wider than the Clerget (S11). |
+| Zero-lift drag coefficient CD0 | 0.0961 | — | — | ASSUMPTION | estimate | Fitted (`npm run calibrate`) so the model reaches 160 km/h at sea level, 724 kg and 160 hp. Drag area 1.54 m², above the Albatros's 1.26 m². CD0 absorbs any shortfall of the engine below its rating, which the books describe; see FLIGHT_VALIDATION.md. |
+| Oswald efficiency e | 0.8 | — | — | ASSUMPTION | estimate | No measured value located. A single wire-braced wing has no biplane interference; a typical monoplane value. |
+| Maximum lift coefficient CLmax | 1.3 | — | — | ASSUMPTION | estimate | No measured value located. Typical of a thin cambered wing section of the period, as for the biplanes. |
+| Static margin (`aero.staticMargin`) | 0.02 | fraction of chord | — | ASSUMPTION | estimate | No measured value located. Near neutral: Thetford and Gray (S55) say the all-moving tail surfaces "demanded continual vigilance from the pilot". A tuning choice. |
+| Weathercock stability Cnβ (`aero.cnBeta`) | 0.08 | per rad | — | ASSUMPTION | estimate | No measured value located. As for the Dr.I, which also had an all-moving rudder and no fixed fin: a rudder held central still acts as a fin. A first estimate of 0.05 (lower for having no fin) left the E.IV unable to recover from a stall, and its reasoning was inconsistent with the Dr.I. |
+| Warping roll effectiveness (`controls.clDeltaRoll`) | 0.2 | per rad | — | ASSUMPTION | estimate | The same as the shared aileron value: twisting the whole outer wing is taken to be as effective per degree as an aileron. Wing warping is confirmed (S55, S56); no measured roll power was found, and no NACA comparison of warping with ailerons. The E.IV's heaviness comes from the slower linkage and the force limit below. First set at 0.13, which with the other values gave about 26 degrees a second at cruise; lightened after the product owner's test flight (18 Oct 2026) to about 46, against 72-88 for the aileron aircraft. |
+| Warping control speed (`controls.rollRate`) | 3 | travel/s | — | ASSUMPTION | estimate | How fast the warp follows the stick: slower than the shared rate (4), for the heavy cable linkage twisting the whole wing. No source. First set at 2; lightened with the effectiveness above after the product owner's test flight. |
+| Warp force speed (`controls.warpForceSpeed`) | 42 | m/s | — | ASSUMPTION | estimate | Above this speed (at sea-level density) the pilot cannot hold full warp; the warp available falls in proportion to the dynamic pressure. Weyl (S56): steep turns needed "considerable force" on the warping. About 90% of full warp at the top speed, about half in a fast dive (60 m/s). First set at 40. |
+| Warp drag (`controls.cdWarp`) | 0.02 | per rad | — | ASSUMPTION | estimate | Extra drag coefficient per radian of warp: the twisted wing works away from its best shape. About +0.007 at full warp, a sixth of the zero-lift drag. No source; a modelling choice. |
+| Adverse yaw from warping (`controls.cnDeltaRoll`) | -0.04 | per rad | — | ASSUMPTION | estimate | Twice the shared aileron value (-0.02): the extra drag of the twisted wing acts near the tip. No source. Negative by the sign convention of the shared table (yaw against the roll). |
+| All-moving elevator effectiveness (`controls.cmDeltaPull`) | 1.8 | per rad | — | ASSUMPTION | estimate | Replaces the shared 1.2: the whole surface moves, with no fixed tailplane (S55), so each degree of stick does more. "Sensitive in pitch" in the brief; "continual vigilance" in Thetford and Gray. Tune by flying. |
+| All-moving rudder effectiveness (`controls.cnDeltaYaw`) | 0.1 | per rad | — | ASSUMPTION | estimate | Replaces the shared 0.08: an all-moving comma rudder with no fixed fin (S55). Tune by flying. |
+
+## Nieuport 11 (Le Rhône 9C)
+
+Early War (phase E1, 18 Oct 2026). The figures come from reference books read through transcriptions (S58-S60), so most are medium. The engine figures come from museum records of original engines (S62).
+
+| Parameter | Value | Unit | Original figure | Source | Confidence | Notes |
+|---|---|---|---|---|---|---|
+| Wingspan | 7.52 | m | 7.52 m (24 ft 8 in) | S58, S59 | high | Sheps also gives 7.52 m; Thetford 24 ft 9 in. |
+| Length | 5.64 | m | 5.64 m (18 ft 6 in) | S59 | medium | Davilla and Soltan 5.50 m; Sheps 5.90 m; Thetford 18 ft 8 in. |
+| Height | 2.4 | m | 2.40 m | S58, S59 | high | |
+| Wing area | 13.3 | m² | 13.3 m² | S58, S59 | high | Sheps also gives 13.3 m². |
+| Upper wing span, wing stack (`wingStack.0.span`) | 7.52 | m | 7.52 m | S58, S59 | high | |
+| Lower wing span, wing stack (`wingStack.1.span`) | 6.4 | m | — | ASSUMPTION | estimate | Not found in an acceptable source. Derived: Green and Swanborough (S59) say the lower wing has half the upper wing's area, and Davilla and Soltan (S58) give chords of 1.20 m and 0.70 m, so 7.52 x 1.20 / 2 / 0.70 = 6.45 m; sharing the 13.3 m² total in the same ratio gives 6.33 m. 6.4 m is used. |
+| Wing gap (`wingStack.0.height`) | 1.1 | m | — | ASSUMPTION | estimate | Not found. Estimated from the 2.40 m overall height less the undercarriage and fuselage, and from the type's proportions. With the 7.52 m span the gap/span ratio is 0.15, inside the range of Prandtl's theory (S29). |
+| Empty weight | 320 | kg | 320 kg (705 lb) | S58, S59 | high | Sheps 345 kg. |
+| Loaded weight | 480 | kg | 480 kg (1,058 lb) | S58, S59 | high | Sheps also 480 kg. Russian-built aircraft were about 30 kg heavier (S60). |
+| Engine | Le Rhône 9C 9-cylinder rotary | — | 80 hp Le Rhône | S62, S58, S59 | high | Some aircraft had other engines (S58, S60); the Le Rhône 9C was usual. |
+| Cylinders (`engine.cylinders`) | 9 | — | 9-cylinder rotary | S62 | high | Sets the engine sound's firing rate. |
+| Engine rated power | 59.66 | kW | 80 hp (60 kW) at 1,200 rpm | S62 | high | Two museums' records of original engines agree. |
+| Engine rated speed | 1,200 | rpm | 1,200 rpm | S62 | high | Both museums. |
+| Engine bore x stroke | 105 x 140 | mm | 4.13 x 5.51 in | S62 | medium | Smithsonian, read through a search-result summary. |
+| Engine displacement | 10.9 | L | 10.9 L | S62 | high | Smithsonian 10.9 L; Australian War Memorial 11 L. |
+| Engine mass | 109 | kg | 240 lb | S62 | medium | The Smithsonian's second 9C is listed at 115 kg. Used for the rotating inertia below. |
+| Engine diameter (rotating) | 0.94 | m | 940 mm | S62 | medium | Australian War Memorial. |
+| Engine rotation, viewed from the cockpit | clockwise | — | — | ASSUMPTION | estimate | Not found. Assumed the same as the other rotaries in the game, as for the Dr.I's Le Rhône-type engine. |
+| Rotating engine inertia | 11.8 | kg m² | — | ASSUMPTION | estimate | 109 kg x (0.7 x 0.47 m)², the method used for the Camel: the whole engine rotating with its mass at 70% of the radius. |
+| Propeller diameter | 2.4 | m | — | ASSUMPTION | estimate | Not found. Smaller than the Late War aircraft's for the 80 hp engine at the same revs. |
+| Propeller blades (`propeller.blades`) | 2 | — | two-bladed | ASSUMPTION | estimate | No source states it; the photographs show two-bladed wooden propellers. |
+| Propeller blade chord (`propeller.chord`) | 0.15 | m | — | ASSUMPTION | estimate | Not found. Drawn on the model only; the over-wing gun needs no synchroniser. |
+| Maximum speed | 45.0 | m/s | 162 km/h at 2,000 m | S58 | medium | Davilla and Soltan. The drag (CD0) is calibrated to it: the only speed with a stated altitude from the same table as the climbs. Green and Swanborough give 167 km/h and Thetford 97 mph, both at sea level; Sheps 152 km/h. |
+| Maximum speed altitude (`documented.maxSpeedAltitude`) | 2,000 | m | 2,000 m | S58 | medium | Altitude of the calibration speed. |
+| Service ceiling | 5,000 | m | 5,000 m | S58 | medium | Thetford 18,000 ft (5,486 m); Sheps 4,570 m. |
+| Armament | 1 x Lewis .303 in (or Hotchkiss) over the upper wing, not synchronised | — | one Lewis or Hotchkiss | S58, S59 | medium | Fires over the propeller. Drum of 97 rounds (S58, S60) or 47 (S60, Bruce on RNAS aircraft); the product owner chose 97. The gun comes in phase E2; the aircraft flies unarmed until then. |
+| Fuel carried (`fuel.capacity`) | 48 | kg | — | ASSUMPTION | estimate | Tank size not found. Davilla and Soltan give 2.5 hours' endurance; 48 kg is 2.5 hours at this model's cruise fuel use (80% of rated power at 0.40 kg per kWh). Shavrov (S60) gives 45 kg of fuel for the Russian-built version. |
+| Ultimate load factor (`structure.ultimateLoad`) | 6 | g | — | ASSUMPTION | estimate | No strength test found. The figure used for the Camel. |
+| Never-exceed speed (`structure.neverExceedSpeed`) | 61 | m/s | about 136 mph | ASSUMPTION | estimate | No diving limit found. 1.35 times the documented top speed, the rule used for the other aircraft. |
+| Lower wing never-exceed speed (`structure.lowerWing.neverExceedSpeed`) | 52 | m/s | about 116 mph | ASSUMPTION | estimate | The weak lower wing is sourced only in words: it "tended to twist and break under stress" (S59), fractures caused many deaths (S58), and pilots learned not to wrestle the controls at high speed (S60). No speed is given. 1.15 times the top speed, against 1.35 for the main structure. |
+| Lower wing ultimate load (`structure.lowerWing.ultimateLoad`) | 5.5 | g | — | ASSUMPTION | estimate | No load is given (see the row above). A little below the 6 g of the main structure, so hard manoeuvres hurt the lower wing first without every ordinary turn doing so. |
+| Lower wing share of the lift (`structure.lowerWing.liftShare`) | 0.333 | fraction | half the upper wing's area | S59 | medium | Green and Swanborough: the lower wing has half the upper wing's area, so a third of the total; its lift is taken in proportion to its area. A lower wing that breaks away takes this share of that side's lift. |
+| Roll inertia Ixx | 1,697 | kg m² | — | ASSUMPTION | estimate | 480 kg x (0.25 x 7.52 m)², the method used for the other aircraft. |
+| Pitch inertia Iyy | 1,374 | kg m² | — | ASSUMPTION | estimate | 480 kg x (0.30 x 5.64 m)², the method used for the other aircraft. |
+| Yaw inertia Izz | 3,071 | kg m² | — | ASSUMPTION | estimate | Ixx + Iyy (flat-body approximation), as for the other aircraft. |
+| Wheel track (`gear.track`) | 1.6 | m | 1.60 m | S58 | medium | Davilla and Soltan. |
+| Wheel radius (`gear.wheelRadius`) | 0.33 | m | — | ASSUMPTION | estimate | Not found. Typical of the roughly 700 mm wheels of WWI fighters; only affects the drawn wheels. |
+| Main wheel contact ahead of the CG (`gear.mainAhead`) | 0.08 | fraction of length | — | ASSUMPTION | estimate | Not found. The usual tail-dragger layout, as for the other aircraft. |
+| Tailskid behind the CG (`gear.tailAt`) | 0.62 | fraction of length | — | ASSUMPTION | estimate | Not found. The skid near the tail post, as for the other aircraft. |
+| Three-point ground attitude (`gear.groundAngle`) | 0.192 | rad | about 11 degrees | ASSUMPTION | estimate | Not found. Typical nose-up angle of a WWI tail-dragger at rest, as for the other aircraft. |
+| Pilot's eye behind the CG (`cockpit.eyeBehind`) | 0.65 | m | — | ASSUMPTION | estimate | Not found. Under the trailing edge of the upper wing; camera and cockpit only. |
+| Pilot's eye above the CG (`cockpit.eyeAbove`) | 0.65 | m | — | ASSUMPTION | estimate | Not found. A seated pilot's eye above the small fuselage; camera and cockpit only. |
+| Wing chord (`visual.chord`) | 1.2 | m | 1.20 m | S58 | medium | Upper wing. |
+| Lower wing chord (`visual.lowerChord`) | 0.7 | m | 0.70 m | S58 | medium | Sheps gives 0.6 m. |
+| Wing stagger (`visual.stagger`) | 0.6 | m | 0.60 m | S58 | medium | Upper wing ahead of the lower. |
+| Lower wing dihedral (`visual.lowerDihedral`) | 0.1047 | rad | 6 degrees | S58 | medium | Adjustable on the ground; the upper wing is flat. |
+| Tailplane span (`visual.tailSpan`) | 3.25 | m | 3.25 m | S58 | medium | Davilla and Soltan. It looks large beside the 7.52 m span; to be checked against drawings in phase E3. Model and hit boxes only. |
+| Tailplane chord (`visual.tailChord`) | 0.6 | m | — | ASSUMPTION | estimate | Not found. Half the upper wing's chord, a usual proportion; model and hit boxes only. |
+| Fin and rudder height (`visual.finHeight`) | 0.8 | m | — | ASSUMPTION | estimate | Not found. A balanced rudder with no fixed fin; model only. |
+| Greatest fuselage depth (`visual.fuselageDepth`) | 0.8 | m | — | ASSUMPTION | estimate | Not found. A small fuselage, sized from the engine and a seated pilot; camera and looks only. |
+| Greatest fuselage width (`visual.fuselageWidth`) | 0.62 | m | — | ASSUMPTION | estimate | Not found. Wide enough for a pilot's shoulders, as for the Camel and SPAD. |
+| Engine cowling diameter (`visual.cowlingDiameter`) | 1.0 | m | — | ASSUMPTION | estimate | The engine is 0.94 m across (S62); 1.0 m adds the cowling. |
+| Zero-lift drag coefficient CD0 | 0.0488 | — | — | ASSUMPTION | estimate | Fitted (`npm run calibrate`) so the model reaches 162 km/h at 2,000 m and 480 kg (S58). |
+| Oswald efficiency e | 0.75 | — | — | ASSUMPTION | estimate | No measured value located. The value used for the Late War biplanes. |
+| Maximum lift coefficient CLmax | 1.3 | — | — | ASSUMPTION | estimate | No measured value located. Typical of a thin cambered wing section of the period, as for the biplanes. |
+| Static margin (`aero.staticMargin`) | 0.05 | fraction of chord | — | ASSUMPTION | estimate | No measured value located. Between the Camel and the SPAD; a tuning choice. |
+| Weathercock stability Cnβ (`aero.cnBeta`) | 0.08 | per rad | — | ASSUMPTION | estimate | No measured value located. As for the Dr.I, which also had a rudder with no fixed fin. |
+
 ## Liveries (Phase 3)
 
 Schemes chosen by the product owner on 11 Oct 2026 from the sourced candidates. The model shows the parts the sources describe; anything they do not describe is marked as an estimate. Colours are drawn in code (no copyrighted artwork) and simplified: the Albatros lozenge fabric is one blended colour, and camouflage patterns are one colour per surface.
@@ -508,6 +640,33 @@ Sourced performance figures the model is tested against (`src/aircraft/validatio
 | albatros-dv-herris: time to climb to 3000 m (`validation.albatros-dv-herris.climbTime@3000`) | 870 | s | 14 min 30 s | S25 | medium | Independent check of the model. Herris: D.V, 160 hp Mercedes D.III, 915 kg. Speed altitude not stated (taken as sea level). |
 | albatros-dv-herris: time to climb to 4000 m (`validation.albatros-dv-herris.climbTime@4000`) | 1360 | s | 22 min 40 s | S25 | medium | Independent check of the model. Herris: D.V, 160 hp Mercedes D.III, 915 kg. Speed altitude not stated (taken as sea level). |
 | albatros-dv-herris: time to climb to 5000 m (`validation.albatros-dv-herris.climbTime@5000`) | 2100 | s | 35 min 00 s | S25 | medium | Independent check of the model. Herris: D.V, 160 hp Mercedes D.III, 915 kg. Speed altitude not stated (taken as sea level). |
+| e4-herris: mass (`validation.e4-herris.mass`) | 724 | kg | 724 kg | S54 | medium | Conditions of this source's figures. Herris and Scott, Fokker Aircraft of WWI vol. 2: Eindeckers (724 kg). Top speed altitude not given: taken as sea level. |
+| e4-herris: top speed at 0 m (`validation.e4-herris.topSpeed@0`) | 44.44 | m/s | 160 km/h / 99.4 mph | S54 | medium | Calibration point: the drag is fitted to it. Herris and Scott, Fokker Aircraft of WWI vol. 2: Eindeckers (724 kg). Top speed altitude not given: taken as sea level. |
+| e4-herris: time to climb to 1000 m (`validation.e4-herris.climbTime@1000`) | 180 | s | 3 min 00 s | S54 | medium | Independent check of the model. Herris and Scott, Fokker Aircraft of WWI vol. 2: Eindeckers (724 kg). Top speed altitude not given: taken as sea level. |
+| e4-herris: time to climb to 2000 m (`validation.e4-herris.climbTime@2000`) | 480 | s | 8 min 00 s | S54 | medium | Independent check of the model; a documented known deviation (FLIGHT_VALIDATION.md). Herris and Scott, Fokker Aircraft of WWI vol. 2: Eindeckers (724 kg). Top speed altitude not given: taken as sea level. |
+| e4-herris: time to climb to 3000 m (`validation.e4-herris.climbTime@3000`) | 900 | s | 15 min 00 s | S54 | medium | Independent check of the model; a documented known deviation (FLIGHT_VALIDATION.md). Herris and Scott, Fokker Aircraft of WWI vol. 2: Eindeckers (724 kg). Top speed altitude not given: taken as sea level. |
+| e4-herris: time to climb to 4000 m (`validation.e4-herris.climbTime@4000`) | 1500 | s | 25 min 00 s | S54 | medium | Independent check of the model; a documented known deviation (FLIGHT_VALIDATION.md). Herris and Scott, Fokker Aircraft of WWI vol. 2: Eindeckers (724 kg). Top speed altitude not given: taken as sea level. |
+| e4-weyl: mass (`validation.e4-weyl.mass`) | 724 | kg | 724 kg | S56 | medium | Conditions of this source's figures. Weyl, Fokker: The Creative Years: Parschau's test report of 13 Nov 1915 (two guns, 950 rounds, fuel for 1.5 h; weight not given, the loaded weight is used). |
+| e4-weyl: time to climb to 2000 m (`validation.e4-weyl.climbTime@2000`) | 420 | s | 7 min 00 s | S56 | medium | Independent check of the model. Weyl, Fokker: The Creative Years: Parschau's test report of 13 Nov 1915 (two guns, 950 rounds, fuel for 1.5 h; weight not given, the loaded weight is used). |
+| e4-weyl: time to climb to 3000 m (`validation.e4-weyl.climbTime@3000`) | 900 | s | 15 min 00 s | S56 | medium | Independent check of the model; a documented known deviation (FLIGHT_VALIDATION.md). Weyl, Fokker: The Creative Years: Parschau's test report of 13 Nov 1915 (two guns, 950 rounds, fuel for 1.5 h; weight not given, the loaded weight is used). |
+| e4-weyl: time to climb to 4000 m (`validation.e4-weyl.climbTime@4000`) | 1710 | s | 28 min 30 s | S56 | medium | Independent check of the model; a documented known deviation (FLIGHT_VALIDATION.md). Weyl, Fokker: The Creative Years: Parschau's test report of 13 Nov 1915 (two guns, 950 rounds, fuel for 1.5 h; weight not given, the loaded weight is used). |
+| e4-thetford: mass (`validation.e4-thetford.mass`) | 722.6 | kg | 722.6 kg | S55 | medium | Conditions of this source's figures. Thetford and Gray, German Aircraft of the First World War (1,593 lb). |
+| e4-thetford: service ceiling (`validation.e4-thetford.serviceCeiling`) | 4115 | m | 4115 m | S55 | medium | Independent check of the model; a documented known deviation (FLIGHT_VALIDATION.md). Thetford and Gray, German Aircraft of the First World War (1,593 lb). |
+| e4-green: mass (`validation.e4-green.mass`) | 724 | kg | 724 kg | S55 | medium | Conditions of this source's figures. Green and Swanborough, The Complete Book of Fighters (724 kg). |
+| e4-green: service ceiling (`validation.e4-green.serviceCeiling`) | 4500 | m | 4500 m | S55 | medium | Independent check of the model; a documented known deviation (FLIGHT_VALIDATION.md). Green and Swanborough, The Complete Book of Fighters (724 kg). |
+| n11-davilla: mass (`validation.n11-davilla.mass`) | 480 | kg | 480 kg | S58 | medium | Conditions of this source's figures. Davilla and Soltan, French Aircraft of the First World War (480 kg). |
+| n11-davilla: top speed at 2000 m (`validation.n11-davilla.topSpeed@2000`) | 45.00 | m/s | 162 km/h / 100.7 mph | S58 | medium | Calibration point: the drag is fitted to it. Davilla and Soltan, French Aircraft of the First World War (480 kg). |
+| n11-davilla: time to climb to 2000 m (`validation.n11-davilla.climbTime@2000`) | 510 | s | 8 min 30 s | S58 | medium | Independent check of the model. Davilla and Soltan, French Aircraft of the First World War (480 kg). |
+| n11-davilla: time to climb to 3000 m (`validation.n11-davilla.climbTime@3000`) | 900 | s | 15 min 00 s | S58 | medium | Independent check of the model. Davilla and Soltan, French Aircraft of the First World War (480 kg). |
+| n11-davilla: service ceiling (`validation.n11-davilla.serviceCeiling`) | 5000 | m | 5000 m | S58 | medium | Independent check of the model. Davilla and Soltan, French Aircraft of the First World War (480 kg). |
+| n11-green: mass (`validation.n11-green.mass`) | 480 | kg | 480 kg | S59 | medium | Conditions of this source's figures. Green and Swanborough, The Complete Book of Fighters (480 kg). |
+| n11-green: top speed at 0 m (`validation.n11-green.topSpeed@0`) | 46.39 | m/s | 167 km/h / 103.8 mph | S59 | medium | Independent check of the model. Green and Swanborough, The Complete Book of Fighters (480 kg). |
+| n11-green: time to climb to 3000 m (`validation.n11-green.climbTime@3000`) | 900 | s | 15 min 00 s | S59 | medium | Independent check of the model. Green and Swanborough, The Complete Book of Fighters (480 kg). |
+| n11-thetford: mass (`validation.n11-thetford.mass`) | 480 | kg | 480 kg | S59 | medium | Conditions of this source's figures. Thetford, British Naval Aircraft since 1912 (RNAS aircraft; weight not given, the loaded weight is used). |
+| n11-thetford: top speed at 0 m (`validation.n11-thetford.topSpeed@0`) | 43.36 | m/s | 156 km/h / 97.0 mph | S59 | medium | Independent check of the model; a documented known deviation (FLIGHT_VALIDATION.md). Thetford, British Naval Aircraft since 1912 (RNAS aircraft; weight not given, the loaded weight is used). |
+| n11-thetford: time to climb to 1000 m (`validation.n11-thetford.climbTime@1000`) | 300 | s | 5 min 00 s | S59 | medium | Independent check of the model; a documented known deviation (FLIGHT_VALIDATION.md). Thetford, British Naval Aircraft since 1912 (RNAS aircraft; weight not given, the loaded weight is used). |
+| n11-thetford: time to climb to 2987 m (`validation.n11-thetford.climbTime@2987`) | 1080 | s | 18 min 00 s | S59 | medium | Independent check of the model; a documented known deviation (FLIGHT_VALIDATION.md). Thetford, British Naval Aircraft since 1912 (RNAS aircraft; weight not given, the loaded weight is used). |
+| n11-thetford: service ceiling (`validation.n11-thetford.serviceCeiling`) | 5486 | m | 5486 m | S59 | medium | Independent check of the model. Thetford, British Naval Aircraft since 1912 (RNAS aircraft; weight not given, the loaded weight is used). |
 
 ---
 
@@ -617,6 +776,11 @@ Updated after the flight-model validation (see `docs/FLIGHT_VALIDATION.md`).
 | Engine power against altitude for these specific engines (rotaries, over-compressed Mercedes D.IIIa) | Altitude performance above about 4,000 m | Period engine test reports (RAE, McCook Field, Adlershof) |
 | Propeller pitch and mass for all four aircraft | Propeller efficiency curve placement; gyroscopic effect | Museum object records |
 | Engine mass for Oberursel UR.II and Mercedes D.IIIa | Centre of gravity | NASM engine records. A related Mercedes D.IIIav (supercharged) is listed at 288 kg, but that is a different engine. |
+| Nieuport 11 lower wing span and wing gap | Multiplane induced drag (currently a derivation and an estimate) | Davilla and Soltan or Bruce in print; factory drawings; the Musée de l'Air's original aircraft |
+| A measured output of the Oberursel U.III in service | Fokker E.IV climb validation (the model at the 160 hp rating climbs 25-45% too fast) | Allied test reports on captured Eindeckers; Oberursel bench data; Herris and Scott in print |
+| Roll rate, stick force or control travel for wing warping | The E.IV's warping values (all estimates) | NACA or RAE reports on lateral control; Fokker test reports |
+| Lewis drum change time in flight, and the number of spare drums carried on the Nieuport 11 | Phase E2 drum changes | Bruce, Nieuport Fighters, in print; RFC and RNAS armament manuals |
+| Period cockpit instruments of the Fokker E.IV and Nieuport 11 | Phase E3 cockpits | Science Museum (Fokker E.III 210/16); Musée de l'Air (Nieuport 11) |
 | Airfoil sections for each aircraft | Lift and drag curves | NACA and RAE reports on WWI sections |
 | Fuel tank capacities and consumption (only the Dr.I prototype's 75 litres was found) | Fuel leak and endurance (Phase 4) | Museum object records. S17 gives 83 kg fuel for the SPAD but the wording is ambiguous. The mass does not fall as fuel burns (a simplification). |
 | Strength: load factors and diving speeds of the production aircraft (only the Dr.I V.4 prototype's 7.92 was found) | Structural limits (Phase 4) | RAE and Air Board strength-test reports; Windsock Datafiles; Cross and Cockade articles |

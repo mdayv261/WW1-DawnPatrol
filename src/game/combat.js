@@ -268,6 +268,7 @@ export class Combat {
   sightPoint(player, out = new Vector3()) {
     const s = player.state;
     const g = player.aircraft.guns;
+    if (!g) return null; // unarmed: no sight
     _q.copy(s.quaternion);
     _p.set(g.muzzleX, g.muzzleY, 0).applyQuaternion(_q).add(s.position);
     _d.set(1, 0, 0).applyQuaternion(_q);

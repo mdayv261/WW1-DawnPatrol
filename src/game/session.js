@@ -6,14 +6,14 @@
 
 import { Vector3 } from 'three';
 import { createAircraftMesh, setControlSurfaces, setUpperWingChord } from '../render/aircraftMesh.js';
-import { COCKPITS } from '../aircraft/cockpits.js';
+import { COCKPITS, cockpitId } from '../aircraft/cockpits.js';
 import { createCockpit } from '../render/cockpit.js';
 import { createInstrumentPanel } from '../ui/instrumentPanel.js';
 import { readoutText } from '../ui/instrumentMath.js';
 import { attitude, startScenario, SCENARIOS } from '../dev/flightScenarios.js';
 import { FixedStepLoop } from '../core/fixedStepLoop.js';
 import { Simulation } from '../core/simulation.js';
-import { AIRCRAFT_LIST, common } from '../aircraft/index.js';
+import { AIRCRAFT_LIST, ALL_AIRCRAFT, common } from '../aircraft/index.js';
 import { mixJoystick } from '../input/mouse.js';
 import { debugLines, airfieldLine } from '../ui/debugText.js';
 import { deflections } from '../physics/controls.js';
@@ -139,7 +139,7 @@ export function createSession(ctx) {
   // Development only: the old quick starts (number keys, the F4 test panel's scenarios).
   s.startDev = (index, airStart, scenario = null) => {
     offline();
-    const ac = AIRCRAFT_LIST[index];
+    const ac = ALL_AIRCRAFT[index]; // 5 and 6: the Early War aircraft (test flights only until phase E4)
     s.config = null;
     s.watcher = null;
     buildAircraft(ac);
@@ -312,7 +312,7 @@ export function createSession(ctx) {
     s.cockpit.group.visible = inCockpit;
     for (const part of model.hideInCockpit) part.visible = !inCockpit;
     for (const part of model.showInCockpit) part.visible = inCockpit;
-    setUpperWingChord(model, inCockpit ? (COCKPITS[sim.aircraft.id].upperWingChord ?? 1) : 1);
+    setUpperWingChord(model, inCockpit ? (COCKPITS[cockpitId(sim.aircraft)].upperWingChord ?? 1) : 1);
     if (inCockpit) s.cockpit.animate(sim.surfaces, s.panel.values);
     cockpitShadows(inCockpit, position);
     rig.update(sim.aircraft, position, quaternion, realDt);

@@ -7,14 +7,14 @@ import { createCamel } from './models/camelModel.js';
 import { createSpad } from './models/spadModel.js';
 import { createDr1 } from './models/dr1Model.js';
 import { createAlbatros } from './models/albatrosModel.js';
+import { createPlaceholder } from './models/placeholderModel.js';
 
 const BUILDERS = { camel: createCamel, spad13: createSpad, dr1: createDr1, albatros: createAlbatros };
 
 // Returns { group, prop, hideInCockpit, showInCockpit }: prop is the spinning propeller group;
 // hideInCockpit lists the parts to hide in the cockpit view, showInCockpit those shown only there.
 export function createAircraftMesh(ac) {
-  const build = BUILDERS[ac.id];
-  if (!build) throw new Error(`No 3D model for aircraft "${ac.id}"`);
+  const build = BUILDERS[ac.id] ?? createPlaceholder; // the Early War aircraft until phase E3
   const model = build(ac);
   const hideInCockpit = [];
   const showInCockpit = [];

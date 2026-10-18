@@ -47,10 +47,10 @@ export class Gun {
 export class GunBank {
   constructor(aircraft, rng = Math.random) {
     this.aircraft = aircraft;
-    this.type = GUN_TYPES[aircraft.guns.type];
-    this.cartridge = CARTRIDGES[this.type.cartridge];
-    const g = aircraft.guns;
-    this.guns = [-1, 1].map((side, i) => new Gun(i, { x: g.muzzleX, y: g.muzzleY, z: side * g.muzzleZ }, g.rounds));
+    const g = aircraft.guns; // none on an aircraft whose guns are not modelled yet (the Nieuport 11 until phase E2)
+    this.type = g ? GUN_TYPES[g.type] : null;
+    this.cartridge = g ? CARTRIDGES[this.type.cartridge] : null;
+    this.guns = g ? [-1, 1].map((side, i) => new Gun(i, { x: g.muzzleX, y: g.muzzleY, z: side * g.muzzleZ }, g.rounds)) : [];
     this.rng = rng;
     this.propAngle = 0; // rad, where blade 0 points (0 = straight up)
     this.shots = 0; // rounds fired in all (for tracer spacing)
@@ -83,6 +83,7 @@ export class GunBank {
   // Returns the shots fired: { gun, muzzle (body axes), cartridge, tracer, age (s since it left) }.
   update(dt, trigger, rpm) {
     const shots = [];
+    if (this.guns.length === 0) return shots; // unarmed
     const omega = (rpm / 60) * TAU;
     const sub = dt / SUBSTEPS;
     const period = 60 / this.type.cyclicRate;
@@ -119,6 +120,7 @@ export class GunBank {
 
   // One line for the screen, e.g. "250 | 250" or "JAMMED | 248".
   statusText() {
+    if (this.guns.length === 0) return 'none';
     return this.guns.map((g) => (g.state === 'ready' ? String(g.rounds) : g.state === 'clearing' ? 'CLEARING' : g.state === 'jammed' ? 'JAMMED' : 'EMPTY')).join('  |  ');
   }
 }

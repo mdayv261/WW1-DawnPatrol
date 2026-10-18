@@ -162,6 +162,87 @@ export const VALIDATION_CASES = [
       { type: 'climbTime', altitude: 5000, value: mins(35) },
     ],
   },
+
+  // ---- Fokker E.IV, 160 hp Oberursel U.III (Early War). Fewer, weaker sources than the
+  // Late War aircraft: book transcriptions only, and no altitude for the top speed.
+  {
+    id: 'e4-herris', aircraft: 'e4', source: 'S54', conditions: { mass: 724 },
+    note: 'Herris and Scott, Fokker Aircraft of WWI vol. 2: Eindeckers (724 kg). Top speed altitude not given: taken as sea level.',
+    deviations: {
+      'climbTime@2000': 'The model, at the sourced 160 hp rating, climbs much faster than every source. The books say the U.III gave less than its rating (Weyl, Thetford and Gray) but none gives a figure; about 120 hp would match. Kept at 160 hp by product owner decision (18 Oct 2026).',
+      'climbTime@3000': 'Engine output below its rating, as for 2,000 m (see FLIGHT_VALIDATION.md).',
+      'climbTime@4000': 'Engine output below its rating, as for 2,000 m (see FLIGHT_VALIDATION.md).',
+    },
+    checks: [
+      { type: 'topSpeed', altitude: 0, value: kmh(160), calibration: true },
+      { type: 'climbTime', altitude: 1000, value: mins(3) },
+      { type: 'climbTime', altitude: 2000, value: mins(8) },
+      { type: 'climbTime', altitude: 3000, value: mins(15) },
+      { type: 'climbTime', altitude: 4000, value: mins(25) },
+    ],
+  },
+  {
+    id: 'e4-weyl', aircraft: 'e4', source: 'S56', conditions: { mass: 724 },
+    note: "Weyl, Fokker: The Creative Years: Parschau's test report of 13 Nov 1915 (two guns, 950 rounds, fuel for 1.5 h; weight not given, the loaded weight is used).",
+    deviations: {
+      'climbTime@3000': 'Engine output below its rating: the model at 160 hp climbs faster than this test (see e4-herris and FLIGHT_VALIDATION.md).',
+      'climbTime@4000': 'Engine output below its rating, as above; Weyl also reports the U.III losing revs at height.',
+    },
+    checks: [
+      { type: 'climbTime', altitude: 2000, value: mins(7) },
+      { type: 'climbTime', altitude: 3000, value: mins(15) },
+      { type: 'climbTime', altitude: 4000, value: mins(28, 30) },
+    ],
+  },
+  {
+    id: 'e4-thetford', aircraft: 'e4', source: 'S55', conditions: { mass: 722.6 },
+    note: 'Thetford and Gray, German Aircraft of the First World War (1,593 lb).',
+    deviations: { serviceCeiling: 'Engine output below its rating: at 160 hp the model ceiling is well above both books (see e4-herris).' },
+    checks: [{ type: 'serviceCeiling', value: ft(13500) }],
+  },
+  {
+    id: 'e4-green', aircraft: 'e4', source: 'S55', conditions: { mass: 724 },
+    note: 'Green and Swanborough, The Complete Book of Fighters (724 kg).',
+    deviations: { serviceCeiling: 'Engine output below its rating: at 160 hp the model ceiling is well above both books (see e4-herris).' },
+    checks: [{ type: 'serviceCeiling', value: 4500 }],
+  },
+
+  // ---- Nieuport 11, 80 hp Le Rhône 9C (Early War). The sources disagree on the top speed.
+  {
+    id: 'n11-davilla', aircraft: 'n11', source: 'S58', conditions: { mass: 480 },
+    note: 'Davilla and Soltan, French Aircraft of the First World War (480 kg).',
+    checks: [
+      { type: 'topSpeed', altitude: 2000, value: kmh(162), calibration: true },
+      { type: 'climbTime', altitude: 2000, value: mins(8, 30) },
+      { type: 'climbTime', altitude: 3000, value: mins(15) },
+      { type: 'serviceCeiling', value: 5000 },
+    ],
+  },
+  {
+    id: 'n11-green', aircraft: 'n11', source: 'S59', conditions: { mass: 480 },
+    note: 'Green and Swanborough, The Complete Book of Fighters (480 kg).',
+    checks: [
+      { type: 'topSpeed', altitude: 0, value: kmh(167) },
+      { type: 'climbTime', altitude: 3000, value: mins(15) },
+    ],
+  },
+  {
+    id: 'n11-thetford', aircraft: 'n11', source: 'S59', conditions: { mass: 480 },
+    note: 'Thetford, British Naval Aircraft since 1912 (RNAS aircraft; weight not given, the loaded weight is used).',
+    // Known deviations: Thetford's RNAS figures are slower than both other books. The model
+    // matches Davilla and Soltan and Green and Swanborough (product owner decision, 18 Oct 2026).
+    deviations: {
+      'topSpeed@0': 'Source conflict: Thetford is 7% slower than Green and Swanborough (S59) at sea level; the model matches them within 0.3%.',
+      'climbTime@1000': 'Source conflict: Thetford climbs far slower than Davilla and Soltan (S58) and Green and Swanborough, whom the model matches.',
+      'climbTime@2987': 'Source conflict with Davilla and Soltan (S58) and Green and Swanborough, as above.',
+    },
+    checks: [
+      { type: 'topSpeed', altitude: 0, value: mph(97) },
+      { type: 'climbTime', altitude: ft(3280), value: mins(5) },
+      { type: 'climbTime', altitude: ft(9800), value: mins(18) },
+      { type: 'serviceCeiling', value: ft(18000) },
+    ],
+  },
 ];
 
 // Pass/fail tolerances (fraction of the sourced value), set by the product owner.

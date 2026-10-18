@@ -2,6 +2,7 @@
 // and the rotating-engine effects (reaction torque and angular momentum).
 
 import { ISA, ENGINE_LAPSE, PROPELLER_EFFICIENCY } from '../core/constants.js';
+import { atmosphere } from './atmosphere.js';
 
 // Fraction of sea-level power an unsupercharged engine gives at a given air
 // density (Virginia Tech AOE 3104 notes, eq. 2: A*sigma - B).
@@ -10,11 +11,24 @@ export function altitudePowerFactor(density) {
   return Math.max(0, ENGINE_LAPSE.A * sigma - ENGINE_LAPSE.B);
 }
 
+// Some engines also lost revs with height beyond the shared law (the Oberursel U.III,
+// engine.altitudeRpmLoss: { rpm, altitude }: the revs lost by that altitude). Power is
+// taken to fall in proportion to the revs, the loss growing with the drop in air density
+// from none at sea level. 1 for every engine without the entry.
+export function altitudeRpmFactor(ac, density) {
+  const loss = ac.engine.altitudeRpmLoss;
+  if (!loss) return 1;
+  const thin = Math.max(0, 1 - density / ISA.RHO0);
+  const thinAtLoss = 1 - atmosphere(loss.altitude).density / ISA.RHO0;
+  return Math.max(0, 1 - (loss.rpm / ac.engine.ratedRpm) * (thin / thinAtLoss));
+}
+
 // Power produced (W) at a throttle setting and air density.
 export function enginePower(ac, common, throttle, density) {
   const t = Math.min(1, Math.max(0, throttle));
   const fraction = common.idlePowerFraction + (1 - common.idlePowerFraction) * t;
-  return ac.engine.ratedPower * fraction * altitudePowerFactor(density);
+  const power = ac.engine.ratedPower * fraction * altitudePowerFactor(density);
+  return ac.engine.altitudeRpmLoss ? power * altitudeRpmFactor(ac, density) : power;
 }
 
 // Crankshaft speed in rad/s.

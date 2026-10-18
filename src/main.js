@@ -5,7 +5,7 @@
 
 import { createScene } from './render/scene.js';
 import { CameraRig } from './render/cameraRig.js';
-import { AIRCRAFT_LIST } from './aircraft/index.js';
+import { AIRCRAFT_LIST, ALL_AIRCRAFT } from './aircraft/index.js';
 import { attachKeyboard, pressAction } from './input/keyboard.js';
 import { loadBindings, saveBindings, defaultBindings, helpText, keysText } from './input/bindings.js';
 import { BUTTON_LABELS } from './input/joystickMapping.js';
@@ -86,7 +86,7 @@ const keyHint = (action) => {
 
 // What each key and joystick button does (the one-shot commands; held keys go to the InputMapper).
 const keyHandlers = {
-  onSelect: (i, shift) => { if (DEV && i < AIRCRAFT_LIST.length) devStart(i, shift); },
+  onSelect: (i, shift) => { if (DEV && i < ALL_AIRCRAFT.length) devStart(i, shift); },
   onRestart: () => { if (flow.state === 'flying') session.restart(); }, // not in a match
   onRecentre: () => {
     mouse.stick.centre();
@@ -149,7 +149,7 @@ const session = createSession({
   notice: showNotice, noticeText: () => notice.text, noticeUntil: () => notice.until, quality: () => qualityName,
   hudOn: () => options.hud, audio, keyHint, options: () => options,
 });
-if (DEV) overlays.testPanel = createTestPanel(AIRCRAFT_LIST, (i, id) => devStart(i, false, id), (id) => applyTestDamage(session.sim.damage, id, session.sim.surfaces));
+if (DEV) overlays.testPanel = createTestPanel(ALL_AIRCRAFT, (i, id) => devStart(i, false, id), (id) => applyTestDamage(session.sim.damage, id, session.sim.surfaces));
 
 function applyQuality(name) {
   qualityName = name;

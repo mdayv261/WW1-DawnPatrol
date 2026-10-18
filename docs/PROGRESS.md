@@ -4,7 +4,52 @@ Read this at the start of every session.
 
 ## Current status: Phases 0-7, the Pilot Roll Call and the multiplayer add-on (M1-M6) are done. Multiplayer is merged into main and published with the game at https://mdayv261.github.io/WW1-DawnPatrol/ (deployed automatically on each push to main after the tests pass). The room server runs on Cloudflare (https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev, free plan), which also serves a test copy of the game. Pushing to GitHub and deploying to Cloudflare need the product owner's permission each time.
 
-**In progress: the Early War add-on (E1-E6)** on the branch `early-war`. Stage 1 (research and plan) is approved; E1 has not started.
+**In progress: the Early War add-on (E1-E6)** on the branch `early-war`. Stage 1 is approved and committed. E1 is approved and committed. Next: plan E2 (weapons).
+
+## Early War E1: aircraft data, validation and flight-model features (D73)
+
+**Done:**
+- **Two new aircraft files:** `src/aircraft/fokkerE4.js` and `nieuport11.js`. Every value has a row in `AIRCRAFT_DATA.md`, sourced or an estimate with a reason. Each aircraft now has an `era` ('early' or 'late').
+- **New shared flight-model features.** Each is optional, so the Late War four are untouched.
+  - Per-aircraft control values (`commonFor`).
+  - Wing warping: slower roll, a pilot force limit at speed, extra drag, adverse yaw. Lightened after your first test flight: about 46 degrees a second at cruise (was 26), against 72-88 for the aileron aircraft.
+  - All-moving tail.
+  - Monoplane wing height.
+  - The U.III's loss of revs at height.
+  - The Nieuport's weak lower wing, which can break away. An F4 button damages it for testing.
+- **Validation:** 20 checks, two of them calibration points. Nieuport: 7 of 9 independent checks pass; Thetford's three slower figures are a source conflict. E.IV: 2 of 9 pass. At its 160 hp rating it climbs far too fast; kept by product owner decision and documented. See `FLIGHT_VALIDATION.md`.
+- **Proof the Late War aircraft are unchanged:** their validation tables match the saved baseline character for character (`tests/physics/lateWarFrozen.test.js`). Their own tests all pass unchanged.
+- **Test flights:** dev keys 5 (E.IV) and 6 (Nieuport), with Shift for an air start. Both also appear in the F4 test panel. They use a plain stand-in model and borrow the Dr.I's and SPAD's cockpits until E3. The E.IV has its twin LMG 08/15 guns; the Nieuport flies unarmed until E2. Neither is in the menus or the lobby yet (E4, E5).
+- **Tests:** 1,333 pass, 25 expected failures (documented deviations), 1 skipped (see below).
+
+**How to test it (browser):**
+1. `npm run dev`, open the address it prints, and click the page.
+2. **Shift+5: Fokker E.IV in the air.**
+   - Roll hard left and right: clearly slower than the Camel (Shift+1), but no longer sluggish.
+   - Dive to over 200 km/h and roll again: hardly quicker. The pilot cannot twist the wing fully at speed.
+   - Stall it (stick fully back at low power), then push forward: ease the stick back as soon as it flies, or it bunts over onto its back.
+   - Pull the stick gently: the nose answers quickly and needs constant correction.
+   - Press C for the outside view: a plain single-wing stand-in model.
+3. **Shift+6: Nieuport 11 in the air.**
+   - Roll: about as quick as the Camel.
+   - Dive steeply past about 190 km/h with F3 open: the damage line shows "lower wing", and if you keep diving it breaks away and the aircraft rolls toward that side.
+   - The status line shows GUNS none.
+4. **F4, Nieuport:** "Left lower wing 50%" damages it on demand.
+5. **Shift+1 to Shift+4:** the Late War aircraft should fly exactly as before.
+
+**Left for later phases:**
+- E2: weapons (the Nieuport's Lewis and drum changes, the three-gun E.IV).
+- E3: models, liveries, cockpits.
+- E4: era choice and AI in single-player.
+- E5: multiplayer, including sending the lower-wing damage in the snapshot.
+
+**Known issues:**
+- **E.IV climb and ceiling:** too good at the sourced 160 hp, so it out-climbs the Nieuport (product owner decision; documented).
+- **E.IV roll:** lightened to about 46 degrees a second at cruise after your test flight. Every warping value is still an estimate.
+- **E.IV stall recovery:** holding the stick forward bunts it over into an inverted stall; ease it back once the wing flies.
+- **E.IV left spin:** recovery takes up to 40 s, three times longer than the other aircraft.
+- **Nieuport at full power from a standstill:** with full forward stick it does not nose over as the others do; the torque rolls it onto a wingtip first. This depends on undercarriage estimates; the nose-over test skips the Nieuport.
+- **Nieuport tailplane:** the sourced 3.25 m span looks too wide on the model. To check against drawings in E3.
 
 ## Early War add-on: Fokker E.IV and Nieuport 11 (D72)
 

@@ -6,6 +6,7 @@ export const albatrosDv = {
   id: 'albatros',
   name: 'Albatros D.V',
   side: 'Central',
+  era: 'late', // 1917-1918 (Late War)
   instruments: { speed: 'kmh', altitude: 'm' }, // German instruments
   wings: 2,
   geometry: {

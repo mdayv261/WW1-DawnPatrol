@@ -5,11 +5,11 @@
 import { gearGeometry } from '../../physics/ground.js';
 import { common } from '../../aircraft/common.js';
 import { strut, hinged, nose, cockpitOnly } from './parts.js';
-import { COCKPITS } from '../../aircraft/cockpits.js';
+import { COCKPITS, cockpitId } from '../../aircraft/cockpits.js';
 
 // Where the fuselage is split round the cockpit (see fuselageSplit): from the back of the opening
 // to just ahead of the instrument board, so the cut end of the fuselage ahead is behind the board.
-export const cockpitSpan = (ac) => [COCKPITS[ac.id].opening.back, COCKPITS[ac.id].panel.x + 0.03];
+export const cockpitSpan = (ac) => [COCKPITS[cockpitId(ac)].opening.back, COCKPITS[cockpitId(ac)].panel.x + 0.03];
 
 export function anchors(ac) {
   const L = ac.geometry.length;
@@ -25,8 +25,9 @@ export function anchors(ac) {
     tailY: g.tailY,
     wheelR: ac.gear.wheelRadius,
     track: ac.gear.track,
-    // The top of the upper wing is the documented overall height above the ground.
-    upperY: g.contactY + ac.geometry.height - 0.1,
+    // The top of the upper wing is the documented overall height above the ground; a monoplane's
+    // wing, below the top of its pylon or rudder, is at visual.wingHeight instead.
+    upperY: g.contactY + (ac.visual.wingHeight ?? ac.geometry.height - 0.1),
   };
 }
 

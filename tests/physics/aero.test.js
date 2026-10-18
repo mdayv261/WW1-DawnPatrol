@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { liftDrag, stallFraction, wingConstants, momentCoefficients, sideForce } from '../../src/physics/aero.js';
-import { AIRCRAFT_LIST, AIRCRAFT, common } from '../../src/aircraft/index.js';
+import { ALL_AIRCRAFT as AIRCRAFT_LIST, AIRCRAFT, common } from '../../src/aircraft/index.js'; // every aircraft with a flight model
 import { FLAT_PLATE_CD } from '../../src/core/constants.js';
 
 const camel = AIRCRAFT.camel;

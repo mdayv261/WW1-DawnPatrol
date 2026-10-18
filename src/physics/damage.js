@@ -21,6 +21,10 @@ export function createDamage() {
     cables: { aileron: null, elevator: null, rudder: null }, // null = working, else the stuck position (-1 to 1)
     fuel: 1, // fraction of the tank left
     failed: { L: false, R: false, tailplane: false },
+    // The lower wing of an aircraft with a weak one (structure.lowerWing, the Nieuport 11):
+    // 0 sound to 1 broken away. Other aircraft never use these.
+    lower: { L: 0, R: 0 },
+    lowerFailed: { L: false, R: false },
     events: [], // short texts for the screen ("Right wing failed"), taken by the game
     overload: 0, // the worst load factor seen (for the readout)
   };
@@ -87,6 +91,12 @@ function markFailures(d) {
       d.events.push(`${side === 'L' ? 'Left' : 'Right'} wing failed`);
     }
   }
+  for (const side of ['L', 'R']) {
+    if (d.lower[side] >= 1 && !d.lowerFailed[side]) {
+      d.lowerFailed[side] = true;
+      d.events.push(`${side === 'L' ? 'Left' : 'Right'} lower wing broke away`);
+    }
+  }
   if (d.tailplane >= 1 && !d.failed.tailplane) {
     d.failed.tailplane = true;
     d.events.push('Tailplane failed');
@@ -115,6 +125,15 @@ export function destroyedReason(d) {
 export function wingLoss(d, side) {
   if (d.failed[side]) return 1;
   return D.wingLiftLoss * d.wing[side];
+}
+
+// Fraction of one side's lift lost through its lower wing (aircraft with a weak lower wing
+// only, structure.lowerWing; 0 for every other aircraft). A broken-away lower wing takes its
+// whole share of the lift (liftShare); a damaged one part of it, as a damaged wing does.
+export function lowerWingLoss(ac, d, side) {
+  const lw = ac.structure.lowerWing;
+  if (!lw) return 0;
+  return lw.liftShare * (d.lowerFailed[side] ? 1 : D.wingLiftLoss * d.lower[side]);
 }
 
 // Power factor of the engine (1 = healthy): damage, seizing and an empty tank.
@@ -190,24 +209,32 @@ export function stepDamage(ac, d, diag, dt, structure = true) {
   const load = Math.abs(diag.loadFactor);
   d.overload = Math.max(d.overload, load);
   if (!structure) return;
-  const vne = ac.structure.neverExceedSpeed;
   const v = equivalentSpeed(diag);
-  const xLoad = Math.max(0, (load - limit) / (ultimate - limit));
-  const xSpeed = Math.max(0, (v - vne) / (D.overspeedMargin * vne));
-  const x = Math.max(xLoad, xSpeed);
-  if (x <= 0) return;
-  if (x >= 1) {
-    failWing(d);
-  } else {
-    for (const side of ['L', 'R']) d.wing[side] = clamp01(d.wing[side] + x * D.overloadRate * dt);
-  }
+  const x = overstress(load, v, ultimate, ac.structure.neverExceedSpeed);
+  // A weak lower wing (the Nieuport 11's) has its own, lower limits and breaks away first.
+  const lw = ac.structure.lowerWing;
+  const xLower = lw ? overstress(load, v, lw.ultimateLoad, lw.neverExceedSpeed) : 0;
+  if (x <= 0 && xLower <= 0) return;
+  if (x >= 1) failWorst(d.wing);
+  else if (x > 0) for (const side of ['L', 'R']) d.wing[side] = clamp01(d.wing[side] + x * D.overloadRate * dt);
+  if (xLower >= 1) failWorst(d.lower);
+  else if (xLower > 0) for (const side of ['L', 'R']) d.lower[side] = clamp01(d.lower[side] + xLower * D.overloadRate * dt);
   markFailures(d);
 }
 
-// A wing breaks: the more damaged one (the left if they are equal).
-function failWing(d) {
-  const side = d.wing.R > d.wing.L ? 'R' : 'L';
-  d.wing[side] = 1;
+// How far past its limits a structure is: 0 within them, 1 at the ultimate load or well past
+// the never-exceed speed (where it fails). load: load factor; v: equivalent airspeed (m/s).
+function overstress(load, v, ultimate, vne) {
+  const limit = ultimate / D.safetyFactor;
+  const xLoad = Math.max(0, (load - limit) / (ultimate - limit));
+  const xSpeed = Math.max(0, (v - vne) / (D.overspeedMargin * vne));
+  return Math.max(xLoad, xSpeed);
+}
+
+// A wing breaks: the more damaged one (the left if they are equal). wings: { L, R }.
+function failWorst(wings) {
+  const side = wings.R > wings.L ? 'R' : 'L';
+  wings[side] = 1;
 }
 
 // ---- the F4 test panel's buttons -------------------------------------------
@@ -218,6 +245,7 @@ export const TEST_DAMAGE = [
   { id: 'engine', label: 'Engine 50%' },
   { id: 'seize', label: 'Engine seized' },
   { id: 'tank', label: 'Fuel leak' },
+  { id: 'lowerL', label: 'Left lower wing 50% (Nieuport 11)' },
   { id: 'tailplane', label: 'Tailplane 50%' },
   { id: 'fin', label: 'Fin 50%' },
   { id: 'aileron', label: 'Cut aileron cable' },
@@ -235,6 +263,7 @@ export function applyTestDamage(d, id, surfaces) {
     case 'engine': d.engine = clamp01(d.engine + 0.5); break;
     case 'seize': d.engine = 1; break;
     case 'tank': d.tank = 1; break;
+    case 'lowerL': d.lower.L = clamp01(d.lower.L + 0.5); break;
     case 'tailplane': d.tailplane = clamp01(d.tailplane + 0.5); break;
     case 'fin': d.fin = clamp01(d.fin + 0.5); break;
     case 'aileron': d.cables.aileron = surfaces?.roll ?? 0; break;
@@ -254,6 +283,9 @@ export function damageLines(d, ac) {
   const parts = [];
   if (d.wing.L > 0) parts.push(`left wing ${d.failed.L ? 'FAILED' : pct(d.wing.L)}`);
   if (d.wing.R > 0) parts.push(`right wing ${d.failed.R ? 'FAILED' : pct(d.wing.R)}`);
+  for (const side of ['L', 'R']) {
+    if (d.lower[side] > 0) parts.push(`${side === 'L' ? 'left' : 'right'} lower wing ${d.lowerFailed[side] ? 'GONE' : pct(d.lower[side])}`);
+  }
   if (d.engine > 0) parts.push(`engine ${engineSeized(d) ? 'SEIZED' : pct(d.engine)}`);
   if (d.tank > 0) parts.push(`fuel leak ${pct(d.tank)}`);
   if (d.tailplane > 0) parts.push(`tailplane ${pct(d.tailplane)}`);

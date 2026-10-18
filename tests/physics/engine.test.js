@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { enginePower, engineOmega, propellerThrust, rotaryEffects, torqueRigging } from '../../src/physics/engine.js';
+import { enginePower, engineOmega, propellerThrust, rotaryEffects, torqueRigging, altitudeRpmFactor } from '../../src/physics/engine.js';
 import { createSurfaces, updateSurfaces, deflections, createInput } from '../../src/physics/controls.js';
-import { AIRCRAFT_LIST, AIRCRAFT, common } from '../../src/aircraft/index.js';
+import { ALL_AIRCRAFT as AIRCRAFT_LIST, AIRCRAFT, common } from '../../src/aircraft/index.js'; // every aircraft with a flight model
 import { ISA, G, ENGINE_LAPSE, PROPELLER_EFFICIENCY } from '../../src/core/constants.js';
 
 const RHO0 = ISA.RHO0;
@@ -13,7 +13,8 @@ describe('engine power', () => {
 
   it('falls with air density as A sigma - B (unsupercharged engine)', () => {
     for (const ac of AIRCRAFT_LIST) {
-      const ratio = enginePower(ac, common, 1, RHO0 / 2) / enginePower(ac, common, 1, RHO0);
+      // (less the U.III's own sourced loss of revs with height, tested in earlyWar.test.js)
+      const ratio = enginePower(ac, common, 1, RHO0 / 2) / enginePower(ac, common, 1, RHO0) / altitudeRpmFactor(ac, RHO0 / 2);
       expect(ratio).toBeCloseTo(ENGINE_LAPSE.A * 0.5 - ENGINE_LAPSE.B, 6);
     }
   });

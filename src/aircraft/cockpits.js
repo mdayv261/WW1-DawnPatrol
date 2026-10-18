@@ -108,3 +108,9 @@ export const COCKPITS = {
     },
   },
 };
+
+// Until phase E3 builds their own, the Early War aircraft borrow a Late War cockpit and
+// instrument panel (the E.IV the Dr.I's, the Nieuport 11 the SPAD's). Look cockpits and
+// panels up through cockpitId().
+export const BORROWED_COCKPIT = { e4: 'dr1', n11: 'spad13' };
+export const cockpitId = (ac) => (COCKPITS[ac.id] ? ac.id : BORROWED_COCKPIT[ac.id]);

@@ -160,3 +160,77 @@ The table "Open research gaps" in `AIRCRAFT_DATA.md` lists them. The most useful
 - the production Dr.I and Albatros D.V wing gaps, which are currently taken from related types;
 - engine power against altitude for these specific engines;
 - printed copies of the transcribed book tables.
+
+
+## Early War aircraft: Fokker E.IV and Nieuport 11 (phase E1, 18 Oct 2026)
+
+**The sources are fewer and weaker than for the Late War four, and they conflict.**
+- No E.IV survives, and no museum record of either aircraft was found. Every figure comes from reference books read through transcriptions (S54-S60), so all are medium at best.
+- The E.IV's top speed (160 km/h, in three books) has no altitude; it is taken as sea level, as for the Albatros.
+- The Nieuport's three top speeds disagree by 7%.
+- Only the engines come from museum records of original engines (S61, S62).
+
+**Method:** unchanged. One calibration point per aircraft fixes its drag; every other figure is an independent check at the same tolerances (top speed 5%, climb and ceiling 15%).
+- E.IV: 160 km/h at sea level, 724 kg, 160 hp.
+- Nieuport 11: 162 km/h at 2,000 m, 480 kg (Davilla and Soltan).
+
+**The Late War results are unchanged.** `tests/physics/lateWarFrozen.test.js` checks that their tables match, character for character, the copy saved before this work began (`tests/fixtures/validation-baseline-late-war.md`).
+
+### Fokker E.IV
+
+| Case (source) | Quantity | Sourced | Simulated | Diff | Tolerance | Result |
+|---|---|---|---|---|---|---|
+| e4-herris (S54) | Top speed at 0 m | 44.4 m/s (99 mph) | 44.4 m/s (99 mph) | -0.0% | ±5% | calibration |
+| e4-herris (S54) | Climb to 1000 m | 3 min 00 s | 2 min 42 s | -10.0% | ±15% | pass |
+| e4-herris (S54) | Climb to 2000 m | 8 min 00 s | 6 min 01 s | -24.7% | ±15% | KNOWN DEVIATION |
+| e4-herris (S54) | Climb to 3000 m | 15 min 00 s | 10 min 17 s | -31.5% | ±15% | KNOWN DEVIATION |
+| e4-herris (S54) | Climb to 4000 m | 25 min 00 s | 16 min 08 s | -35.4% | ±15% | KNOWN DEVIATION |
+| e4-weyl (S56) | Climb to 2000 m | 7 min 00 s | 6 min 01 s | -13.9% | ±15% | pass |
+| e4-weyl (S56) | Climb to 3000 m | 15 min 00 s | 10 min 17 s | -31.5% | ±15% | KNOWN DEVIATION |
+| e4-weyl (S56) | Climb to 4000 m | 28 min 30 s | 16 min 08 s | -43.4% | ±15% | KNOWN DEVIATION |
+| e4-thetford (S55) | Service ceiling | 4115 m | 5755 m | +39.9% | ±15% | KNOWN DEVIATION |
+| e4-green (S55) | Service ceiling | 4500 m | 5741 m | +27.6% | ±15% | KNOWN DEVIATION |
+
+### Nieuport 11
+
+| Case (source) | Quantity | Sourced | Simulated | Diff | Tolerance | Result |
+|---|---|---|---|---|---|---|
+| n11-davilla (S58) | Top speed at 2000 m | 45.0 m/s (101 mph) | 45.0 m/s (101 mph) | +0.0% | ±5% | calibration |
+| n11-davilla (S58) | Climb to 2000 m | 8 min 30 s | 7 min 59 s | -6.0% | ±15% | pass |
+| n11-davilla (S58) | Climb to 3000 m | 15 min 00 s | 13 min 43 s | -8.6% | ±15% | pass |
+| n11-davilla (S58) | Service ceiling | 5000 m | 5491 m | +9.8% | ±15% | pass |
+| n11-green (S59) | Top speed at 0 m | 46.4 m/s (104 mph) | 46.2 m/s (103 mph) | -0.3% | ±5% | pass |
+| n11-green (S59) | Climb to 3000 m | 15 min 00 s | 13 min 43 s | -8.6% | ±15% | pass |
+| n11-thetford (S59) | Top speed at 0 m | 43.4 m/s (97 mph) | 46.2 m/s (103 mph) | +6.6% | ±5% | KNOWN DEVIATION |
+| n11-thetford (S59) | Climb to 1000 m | 5 min 00 s | 3 min 34 s | -28.5% | ±15% | KNOWN DEVIATION |
+| n11-thetford (S59) | Climb to 2987 m | 18 min 00 s | 13 min 38 s | -24.3% | ±15% | KNOWN DEVIATION |
+| n11-thetford (S59) | Service ceiling | 5486 m | 5491 m | +0.1% | ±15% | pass |
+
+### Summary: 20 sourced checks, two of them calibration points
+
+- **Nieuport 11: 7 of 9 independent checks pass.**
+  - Davilla and Soltan: all checks pass.
+  - Green and Swanborough: both checks pass. Their sea-level speed (167 km/h) is matched within 0.3%, independently of the calibration.
+  - Thetford's RNAS figures: the speed and both climbs are slower than the other two books, so they are known deviations (a source conflict, like King against Mason for the Camel). His ceiling matches.
+- **Fokker E.IV: 2 of 9 independent checks pass** (the 1,000 m climb, and Weyl's 2,000 m).
+  - At the sourced 160 hp rating, the model climbs 25-43% faster than every source and its ceiling is 28-40% too high.
+  - The books say the Oberursel U.III gave less than its rating in service:
+    - low compression and poor feed, losing revs at height (Weyl);
+    - "lacked the reliability or flexibility" of the smaller rotaries (Thetford and Gray);
+    - Boelcke reported the climb "inadequate" above 3,000 m (Weyl).
+  - None gives a figure. A check (not used) shows that an effective 120 hp, with the drag re-fitted to the same top speed, would match every climb and ceiling within 10%, Thetford and Gray's ceiling aside (+20%).
+  - **Product owner decision (18 Oct 2026): keep the sourced 160 hp** and document the seven checks, as was done for the SPAD's engine.
+  - Consequence in play: the E.IV out-climbs the Nieuport (3,000 m in 10.3 min against 13.7), the reverse of what Boelcke reported.
+- **The E.IV's fitted drag is high** (CD0 0.096, drag area 1.54 m²). Like the Albatros's, it absorbs any shortfall of the engine below its rating at the calibration speed.
+
+### Handling checks (`tests/physics/earlyWar.test.js`, `behaviour.test.js`)
+
+- **E.IV roll (wing warping):** about 46 degrees per second at cruise, against 72-88 for the Albatros, the Nieuport and the Camel. In a fast dive it rolls only about 15% faster, where the aileron aircraft roll about 60% faster, because the pilot can no longer hold full warp. Every warping value is an estimate. The first set gave 26 degrees per second, which the product owner found too heavy after a test flight; it was lightened (18 Oct 2026).
+- **E.IV pitch (all-moving tail):** pitches about 25% faster for the same stick than the Albatros.
+- **Stalls:** both new aircraft stall within 1 to 3 seconds, drop a wing and recover.
+  - **The E.IV must not be held stick-forward.** Its strong all-moving elevator and near-neutral stability bunt it over into an inverted stall (angle of attack about -150 degrees) if the stick stays forward as the speed builds. Eased back to trim once the wing flies, it recovers within about 5 s. The test uses that technique for the E.IV and checks the bunt-over happens when it does not. This fits Thetford and Gray's "continual vigilance"; no source describes the E.IV's stall itself.
+- **Spins:** both recover, as the spec requires.
+  - The Nieuport recovers within 14 s in both directions.
+  - The E.IV's left spin takes up to 40 s to recover, about three times longer than any other aircraft.
+- **Corrected estimate:** a first estimate of the E.IV's weathercock stability (0.05, lower for having no fixed fin) left it unable to recover from a stall. It was inconsistent with the Dr.I, which also has a rudder and no fin and uses 0.08, so it was set to 0.08.
+- **Nieuport ground handling:** at full power from a standstill it does not nose over as the other five do. It only just lifts its tail, and the engine torque rolls it onto a wingtip first. This depends on undercarriage estimates; it is a known issue (PROGRESS.md).
