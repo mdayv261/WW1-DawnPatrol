@@ -14,6 +14,7 @@ import { SKILLS, PATROL, COMBAT } from '../aircraft/aiData.js';
 import { CARTRIDGES, GUN_TYPES } from '../aircraft/weapons.js';
 import { Observer, geometry } from './perception.js';
 import { Pilot } from './steering.js';
+import { structureLimits } from '../physics/damage.js';
 import { aimSolution, AimError, Trigger } from './aiming.js';
 import { DefensiveBreak, BreakAway } from './manoeuvres.js';
 import { chooseManoeuvre, chooseEscape } from './tactics.js';
@@ -214,7 +215,7 @@ export class AiBrain {
     }
     // Fine aim only while it is safe: not near the ground, and not diving toward its never-exceed speed.
     const eas = sim.diag ? sim.diag.speed * Math.sqrt(sim.diag.density) : 0;
-    const tooFast = eas > COMBAT.fineAimSpeed * this.aircraft.structure.neverExceedSpeed;
+    const tooFast = eas > COMBAT.fineAimSpeed * structureLimits(this.aircraft).neverExceedSpeed;
     this.lastInput = want.fineAim && !tooFast && !this.pilot.safeDirection(sim, want.dir, solidAt).urgent
       ? this.pilot.aimNose(sim, want.fineAim, want.speed, dt, want.gShare)
       : this.pilot.steer(sim, want, dt, solidAt);

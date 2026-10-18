@@ -127,6 +127,17 @@ export function wingLoss(d, side) {
   return D.wingLiftLoss * d.wing[side];
 }
 
+// The limits the structure as a whole must be kept within: the lowest never-exceed speed and
+// ultimate load of its parts. For an aircraft with a weak lower wing (the Nieuport 11) these are
+// the lower wing's; for every other aircraft exactly its own structure's figures. Used by the AI
+// pilots and the player's warnings.
+export function structureLimits(ac) {
+  const s = ac.structure;
+  const lw = s.lowerWing;
+  if (!lw) return { neverExceedSpeed: s.neverExceedSpeed, ultimateLoad: s.ultimateLoad };
+  return { neverExceedSpeed: Math.min(s.neverExceedSpeed, lw.neverExceedSpeed), ultimateLoad: Math.min(s.ultimateLoad, lw.ultimateLoad) };
+}
+
 // Fraction of one side's lift lost through its lower wing (aircraft with a weak lower wing
 // only, structure.lowerWing; 0 for every other aircraft). A broken-away lower wing takes its
 // whole share of the lift (liftShare); a damaged one part of it, as a damaged wing does.

@@ -4,7 +4,23 @@ Read this at the start of every session.
 
 ## Current status: Phases 0-7, the Pilot Roll Call and the multiplayer add-on (M1-M6) are done. Multiplayer is merged into main and published with the game at https://mdayv261.github.io/WW1-DawnPatrol/ (deployed automatically on each push to main after the tests pass). The room server runs on Cloudflare (https://dawn-patrol-mp.dawn-patrol-mp-server.workers.dev, free plan), which also serves a test copy of the game. Pushing to GitHub and deploying to Cloudflare need the product owner's permission each time.
 
-**In progress: the Early War add-on (E1-E6)** on the branch `early-war`. Stage 1 is approved and committed. E1 is approved and committed. E2 (weapons) is approved and committed. E3 (models, colour schemes and cockpits) is approved and committed. Next: plan E4 (era selection in single-player, AI flying both new types).
+**In progress: the Early War add-on (E1-E6)** on the branch `early-war`. Stage 1 is approved and committed. E1 is approved and committed. E2 (weapons) is approved and committed. E3 is approved and committed. E4 (era selection in single-player, AI on the new types) is approved and committed. Next: plan E5 (era in the multiplayer lobby).
+
+## Early War E4: era selection and AI (D76)
+
+**Done:**
+- **Mission screen:** a new Era choice (Late War or Early War), a Guns choice for the E.IV, and enemies from the same era. Old saved settings become Late War.
+- **AI:** flies, fights and changes drums in the E.IV and Nieuport, and respects the Nieuport's lower-wing limits (as do the player's warnings).
+- **AI tuning:** the E.IV's AI and drone pilots needed extra pitch damping. An exact reversal is now a climbing turn.
+- **Tests:** `eras.test.js` and `earlyWarFight.test.js` are new, and the AI tests now run on all six aircraft. 1,452 pass, 25 expected failures, 3 skipped.
+
+**Left:**
+- a browser check of the menus (Fly a mission, then Era: Early War), not yet done.
+
+**Known issues:**
+- The E.IV and Nieuport AI do not fly the Immelmann.
+- The scripted engagement test skips the Nieuport.
+- See D76.
 
 ## Early War E3: models, colour schemes and cockpits (D75)
 

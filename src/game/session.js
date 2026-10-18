@@ -13,7 +13,7 @@ import { readoutText } from '../ui/instrumentMath.js';
 import { attitude, startScenario, SCENARIOS } from '../dev/flightScenarios.js';
 import { FixedStepLoop } from '../core/fixedStepLoop.js';
 import { Simulation } from '../core/simulation.js';
-import { AIRCRAFT_LIST, common } from '../aircraft/index.js';
+import { common } from '../aircraft/index.js';
 import { DEV_FLIGHTS } from './devFlights.js';
 import { mixJoystick } from '../input/mouse.js';
 import { debugLines, airfieldLine } from '../ui/debugText.js';
@@ -25,7 +25,7 @@ import { combatText, combatLines } from '../ui/combatHud.js';
 import { damagedDeflections, damageLines, pilotDead, engineSeized, fuelOut } from '../physics/damage.js';
 import { showDamage } from '../render/damageView.js';
 import { perfLines } from '../ui/perfStats.js';
-import { startMission } from './mission.js';
+import { startMission, missionAircraft } from './mission.js';
 import { enemyLabel } from '../ui/hudMath.js';
 import { applyTimeOfDay, skyFor } from '../render/sky.js';
 import { skyEnvironment } from '../render/cockpit/environment.js';
@@ -124,7 +124,7 @@ export function createSession(ctx) {
     offline();
     s.config = config;
     s.runner = null;
-    const ac = AIRCRAFT_LIST.find((a) => a.id === config.aircraft) ?? AIRCRAFT_LIST[0];
+    const ac = missionAircraft(config); // the chosen type with its loadout
     buildAircraft(ac);
     const { input, watcher } = startMission(config, { sim, combat, world });
     s.watcher = watch ? watcher : null;

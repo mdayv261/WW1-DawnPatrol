@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Simulation } from '../src/core/simulation.js';
-import { AIRCRAFT, AIRCRAFT_LIST } from '../src/aircraft/index.js';
+import { AIRCRAFT, ALL_AIRCRAFT as AIRCRAFT_LIST } from '../src/aircraft/index.js'; // every aircraft, both eras
 import { SKILLS, SKILL_ORDER, PATROL, stepSkill } from '../src/aircraft/aiData.js';
 import { DAMAGE } from '../src/aircraft/damageModel.js';
 import { TARGETS } from '../src/aircraft/weapons.js';

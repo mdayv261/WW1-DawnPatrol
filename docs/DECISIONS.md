@@ -914,3 +914,16 @@ The propeller's turning angle is followed from the engine speed the flight model
 - **Every aircraft now has its own cockpit.** `BORROWED_COCKPIT` is empty but kept; the stand-in model stays as a fallback for any future aircraft without one.
 - **The hangar page shows every aircraft**, spaced and framed for however many there are.
 
+## D76. Early War add-on, phase E4: era selection and AI on the new aircraft
+- **Era is a mission setting** (`era`, default `late`, so saved settings are unchanged), with the aircraft list from `aircraftOfEra()` (`src/aircraft/eras.js`). Enemies are the other side of the same era. `AIRCRAFT_LIST` stays the Late War four for multiplayer until E5. A `loadout` setting offers the E.IV's three guns.
+- **`structureLimits()`** gives the weakest part's limits (the Nieuport's lower wing) to the AI and the warnings. It returns exactly the old figures for the other five.
+- **AI fixes found by running the AI tests on all six:**
+  - When the wanted direction was exactly behind, the AI pulled straight up. The Nieuport stalled doing this, so it now makes a climbing turn to the right. This is shared code, but it acts only in that exact case, and all Late War AI tests still pass.
+  - The E.IV rocked in pitch under the shared AI and drone controllers. `STEERING_FOR.e4` (in `aiData.js`) gives it twice the AI pitch damping and drone pitch damping 0.8. This is measured, not sourced, and the other aircraft are unchanged.
+- **Measured limits recorded in the tests, not hidden:**
+  - The E.IV and Nieuport do not try the Immelmann; the AI's own speed-margin check rules it out.
+  - The E.IV loses up to 200 m in a reversal.
+  - The E.IV brushes its g limit in a split-S.
+  - The Nieuport dives more gently, because of its lower wing.
+  - The scripted test pilot in `engagement.test.js` cannot fly the Nieuport, so that case is skipped. The new AI fight test (`earlyWarFight.test.js`) covers the Nieuport instead.
+

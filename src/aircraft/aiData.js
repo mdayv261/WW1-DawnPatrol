@@ -120,6 +120,16 @@ export const STEERING = {
 };
 
 // Patrol: a circuit flown at a set height, looking for the enemy.
+// A pilot's hands adapted to one aircraft, over STEERING. The Fokker E.IV (large pitch inertia, a
+// heavy two-row rotary, near-neutral pitch stability and the least speed margin over its stall) set
+// the shared load-factor loop rocking in pitch after every hard turn: twice the pitch damping steadies
+// it. The Drone's simple height-holding loop has no pitch damping and diverged on the E.IV (it lost
+// 600 m a minute and stalled); dronePitchDamping (pull per rad/s of pitch rate) steadies it. Both
+// measured in Phase E4; every other aircraft uses the shared values (no drone pitch damping).
+export const STEERING_FOR = {
+  e4: { pitchDamping: 0.5, dronePitchDamping: 0.8 },
+};
+
 export const PATROL = {
   radius: 1500, // m, radius of the circuit
   climbSlope: 0.12, // slope of the climb or descent onto the patrol height

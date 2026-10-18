@@ -25,6 +25,11 @@ top priority; graphics are clean and low-polygon, not photorealistic.
 | Fokker Dr.I       | Central | Rotary      |
 | Albatros D.V      | Central | Inline 6    |
 
+Early War add-on (Oct 2026): a mission or match is set in an era. Late War (1917-1918) is
+the four above; Early War (1916) is the Nieuport 11 (Allied, rotary, over-wing Lewis gun)
+against the Fokker E.IV (Central, two-row rotary, wing warping, optional three guns). AI
+enemies come from the player's era. See docs/PROGRESS.md (E1-E6).
+
 All performance and dimension figures come from documented
 historical sources (museum records, aviation reference books,
 government or university publications). Record each value in

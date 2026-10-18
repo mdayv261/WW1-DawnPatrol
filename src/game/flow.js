@@ -4,7 +4,8 @@
 // under which the match flies on). Also the mission settings the player chooses,
 // cleaned up and remembered in the browser. The screens themselves are in src/ui/screens/.
 
-import { AIRCRAFT_LIST } from '../aircraft/index.js';
+import { ALL_AIRCRAFT, AIRCRAFT } from '../aircraft/index.js';
+import { ERAS, DEFAULT_ERA, aircraftOfEra } from '../aircraft/eras.js';
 import { SKILL_ORDER } from '../aircraft/aiData.js';
 
 export const STATES = ['menu', 'setup', 'options', 'controls', 'roster', 'flying', 'paused', 'results', 'multiplayer', 'lobby', 'mpFlying', 'mpEsc', 'mpResults'];
@@ -100,19 +101,29 @@ export const TIMES = [
 ];
 export const MAX_ENEMIES = 4;
 
-export const DEFAULT_CONFIG = { aircraft: 'camel', enemyType: 'mixed', enemyCount: 2, skill: 'regular', start: '1000', timeOfDay: 'day' };
+export const DEFAULT_CONFIG = { era: DEFAULT_ERA, aircraft: 'camel', loadout: 'standard', enemyType: 'mixed', enemyCount: 2, skill: 'regular', start: '1000', timeOfDay: 'day' };
 export const CONFIG_KEY = 'dawnPatrol.mission';
 
-// The enemy types for a player's aircraft: the other side's (or 'mixed', all of them in turn).
+// The enemy types for a player's aircraft: the other side's of the same era (or 'mixed', all of
+// them in turn).
 export function enemyChoices(aircraftId) {
-  const mine = AIRCRAFT_LIST.find((a) => a.id === aircraftId) ?? AIRCRAFT_LIST[0];
-  return ['mixed', ...AIRCRAFT_LIST.filter((a) => a.side !== mine.side).map((a) => a.id)];
+  const mine = ALL_AIRCRAFT.find((a) => a.id === aircraftId) ?? ALL_AIRCRAFT[0];
+  return ['mixed', ...ALL_AIRCRAFT.filter((a) => a.side !== mine.side && a.era === mine.era).map((a) => a.id)];
 }
 
-// The aircraft a pilot of `side` ('allied' or 'german') may fly; all of them with no side.
-export function aircraftFor(side) {
-  if (!side) return AIRCRAFT_LIST;
-  return AIRCRAFT_LIST.filter((a) => (a.side === 'Allied') === (side === 'allied'));
+// The aircraft of an era (default Late War) a pilot of `side` ('allied' or 'german') may fly;
+// all of that era's with no side.
+export function aircraftFor(side, era = DEFAULT_ERA) {
+  const list = aircraftOfEra(era);
+  if (!side) return list;
+  return list.filter((a) => (a.side === 'Allied') === (side === 'allied'));
+}
+
+// The gun loadouts an aircraft can fly with: [id, label], the standard guns first.
+export function loadoutChoices(aircraftId) {
+  const ac = AIRCRAFT[aircraftId];
+  const extra = Object.entries(ac?.loadouts ?? {}).map(([id, lo]) => [id, lo.label]);
+  return [['standard', extra.length ? 'Standard (two guns)' : 'Standard'], ...extra];
 }
 
 // A clean config from anything (a saved copy, a form): unknown or bad values fall back to the
@@ -120,8 +131,10 @@ export function aircraftFor(side) {
 export function cleanConfig(raw, side = null) {
   const r = raw && typeof raw === 'object' ? raw : {};
   const c = { ...DEFAULT_CONFIG };
-  const allowed = aircraftFor(side);
+  if (ERAS.some((e) => e.id === r.era)) c.era = r.era; // settings saved before the eras existed are Late War
+  const allowed = aircraftFor(side, c.era);
   c.aircraft = allowed.some((a) => a.id === r.aircraft) ? r.aircraft : allowed.some((a) => a.id === c.aircraft) ? c.aircraft : allowed[0].id;
+  if (loadoutChoices(c.aircraft).some(([id]) => id === r.loadout)) c.loadout = r.loadout;
   if (enemyChoices(c.aircraft).includes(r.enemyType)) c.enemyType = r.enemyType;
   const n = Number(r.enemyCount);
   if (Number.isInteger(n) && n >= 0 && n <= MAX_ENEMIES) c.enemyCount = n;

@@ -98,7 +98,7 @@ describe('mission settings', () => {
     expect(cleanConfig({ aircraft: 'zeppelin', enemyCount: 9, skill: 'god', start: 'moon', timeOfDay: 'midnight' })).toEqual(DEFAULT_CONFIG);
     expect(cleanConfig({ aircraft: 'camel', enemyType: 'spad13' }).enemyType).toBe('mixed');
     expect(cleanConfig({ aircraft: 'dr1', enemyType: 'spad13', enemyCount: '3', skill: 'ace', start: 'airfield', timeOfDay: 'dusk' }))
-      .toEqual({ aircraft: 'dr1', enemyType: 'spad13', enemyCount: 3, skill: 'ace', start: 'airfield', timeOfDay: 'dusk' });
+      .toEqual({ era: 'late', aircraft: 'dr1', loadout: 'standard', enemyType: 'spad13', enemyCount: 3, skill: 'ace', start: 'airfield', timeOfDay: 'dusk' });
     expect(cleanConfig({ enemyCount: 0 }).enemyCount).toBe(0); // free flight
   });
 
